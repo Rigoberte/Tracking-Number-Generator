@@ -6,8 +6,15 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 import pandas as pd
 
+def iniciar_sesion_TA(driver, username: str, password: str):
+    """
+    Inicia sesión en la página de TA
 
-def iniciar_sesion_TA(driver, username, password):
+    Args:
+        driver (webdriver): driver de selenium
+        username (str): nombre de usuario
+        password (str): contraseña
+    """
     driver.get("https://sgi.tanet.com.ar/sgi/index.php")
 
     wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/button")))
@@ -16,11 +23,33 @@ def iniciar_sesion_TA(driver, username, password):
     driver.find_element(By.XPATH, "/html/body/form/input[2]").send_keys(password)
     driver.find_element(By.XPATH, "/html/body/form/button").click()
 
-def completar_formulario_orden_envio(driver, url, referencia,
-                                    recoleccion_fecha, recoleccion_hora_desde, recoleccion_hora_hasta,
-                                    entrega_fecha, entrega_hora_desde, entrega_hora_hasta,
-                                    tipo_material, temperatura,
-                                    contactos, cantidad_cajas):
+def completar_formulario_orden_envio(driver, url: str, referencia: str,
+                                    recoleccion_fecha: str, recoleccion_hora_desde: str, recoleccion_hora_hasta: str,
+                                    entrega_fecha: str, entrega_hora_desde: str, entrega_hora_hasta: str,
+                                    tipo_material: str, temperatura: str,
+                                    contactos: str, cantidad_cajas: int) -> str :
+    """
+    Completa el formulario de orden de envío
+
+    Args:
+        driver (webdriver): driver de selenium
+        url (str): url de la página
+        referencia (str): referencia de la orden de envío
+        recoleccion_fecha (str): fecha de recolección
+        recoleccion_hora_desde (str): hora de recolección desde
+        recoleccion_hora_hasta (str): hora de recolección hasta
+        entrega_fecha (str): fecha de entrega
+        entrega_hora_desde (str): hora de entrega desde
+        entrega_hora_hasta (str): hora de entrega hasta
+        tipo_material (str): tipo de material
+        temperatura (str): temperatura
+        contactos (str): contactos
+        cantidad_cajas (int): cantidad de cajas
+    
+    Returns:
+        str: tracking number
+    """
+
     driver.get(url)
     
     wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[7]/td/div[2]/table/tbody/tr/td[1]/input")))
@@ -74,18 +103,118 @@ def completar_formulario_orden_envio(driver, url, referencia,
 
     #return driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption/text()").text[-9:]
 
+def completar_formulario_retorno_credo(driver) -> str:
+    """
+    Completa el formulario de retorno de credo
+    """
+    
+    
+    return ""
+
+def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
+                        recoleccion_fecha: str, recoleccion_hora_desde: str, recoleccion_hora_hasta: str,
+                        entrega_fecha: str, entrega_hora_desde: str, entrega_hora_hasta: str,
+                        tipo_material: str, temperatura: str,
+                        contactos: str, cantidad_cajas: int, credo_return:bool ) -> str:
+    """
+    Procesa una orden de envio completando el formulario de TA y le crea una orden de retorno de credo si es necesario
+
+    Args:
+        driver (webdriver): driver de selenium
+        TA_ID (int): id de ubicación de TA
+        system_number (int): número de sistema
+        ivrs_number (str): número de ivrs
+        recoleccion_fecha (str): fecha de recolección
+        recoleccion_hora_desde (str): hora de recolección desde
+        recoleccion_hora_hasta (str): hora de recolección hasta
+        entrega_fecha (str): fecha de entrega
+        entrega_hora_desde (str): hora de entrega desde
+        entrega_hora_hasta (str): hora de entrega hasta
+        tipo_material (str): tipo de material
+        temperatura (str): temperatura
+        contactos (str): contactos
+        cantidad_cajas (int): cantidad de cajas
+        credo_return (bool): si es necesario crear una orden de retorno de credo
+    
+    Returns:
+        str: tracking number
+        str: tracking number de retorno de credo
+    """
+
+    url = "https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarEnvio+idubicacion=" + str(TA_ID)
+    referencia = str(system_number) + " " + ivrs_number
+
+    driver.get(url)
+
+    tracking_number = completar_formulario_orden_envio(driver,
+                                url, referencia, 
+                                recoleccion_fecha, recoleccion_hora_desde, recoleccion_hora_hasta,
+                                entrega_fecha, entrega_hora_desde, entrega_hora_hasta,
+                                tipo_material, temperatura,
+                                contactos, cantidad_cajas)
+    
+    credo_return_tracking_number = completar_formulario_retorno_credo(driver) if credo_return else ""
+
+    return tracking_number, credo_return_tracking_number
+
 def cargar_tabla_ordenes_envio(driver, date):
-    df = pd.DataFrame({})
+    """
+    Carga la tabla de ordenes de envío
+
+    Args:
+        driver (webdriver): driver de selenium
+        date (str): fecha de las ordenes a procesar
+
+    Returns:
+        DataFrame: tabla de ordenes de envío
+    """
+
+    df = pd.DataFrame({"SYSTEM_NUMBER": [12345, 12346, 12347, 12348, 12349],
+                       "IVRS_NUMBER": ["IVRS_NUMBER_01", "IVRS_NUMBER_02", "IVRS_NUMBER_03", "IVRS_NUMBER_04", "IVRS_NUMBER_05"],
+                        "TA_ID": [5616, 5616, 5616, 5616, 5616],
+                        "RECOLECCION_FECHA": ["2012", "2012", "2012", "2012", "2012"],
+                        "RECOLECCION_HORA_DESDE": ["19", "19", "19", "19", "19"],
+                        "RECOLECCION_HORA_HASTA": ["1930", "1930", "1930", "1930", "1930"],
+                        "ENTREGA_FECHA": ["2112", "2112", "2112", "2112", "2112"],
+                        "ENTREGA_HORA_DESDE": ["10", "10", "10", "10", "10"],
+                        "ENTREGA_HORA_HASTA": ["12", "12", "12", "12", "12"],
+                        "TIPO_MATERIAL": ["Medicacion", "Materiales", "Medicacion", "Materiales", "Medicacion"],
+                        "TEMPERATURA": ["Refrigerado", "Ambiente", "Ambiente Controlado", "Ambiente", "Ambiente"],
+                        "CONTACTOS": ["Contactos_01", "Contactos_02", "Contactos_03", "Contactos_04", "Contactos_05"],
+                        "CANTIDAD_CAJAS": [1, 3, 2, 4, 1],
+                        "CREDO_RETURN": [False, False, False, False, False],
+                        "TRACKING_NUMBER": ["", "", "", "", ""],
+                        "CREDO_RETURN_TRACKING_NUMBER": ["", "", "", "", ""]})
+    
     return df
 
 def procesar_ordenes_envios(driver, df):
+    """
+    Procesa todas las ordenes de envío de la tabla
 
-    tracking_number = completar_formulario_orden_envio(driver,
-                                "https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarEnvio+idubicacion=5616", "Referencia", 
-                                "2012", "19", "1930",
-                                "2112", "10", "12",
-                                "Medicacion", "Ambiente Controlado",
-                                "Contactos", "2")
+    Args:
+        driver (webdriver): driver de selenium
+        df (DataFrame): tabla de ordenes de envío
+    """
+    
+    #for index, row in df.iterrows():
+    #    tracking_number, credo_return_tracking_number = procesar_orden_envio(driver, 
+    #                                                row["TA_ID"], row["SYSTEM_NUMBER"], row["IVRS_NUMBER"],
+    #                                                row["RECOLECCION_FECHA"], row["RECOLECCION_HORA_DESDE"], row["RECOLECCION_HORA_HASTA"],
+    #                                                row["ENTREGA_FECHA"], row["ENTREGA_HORA_DESDE"], row["ENTREGA_HORA_HASTA"],
+    #                                                row["TIPO_MATERIAL"], row["TEMPERATURA"],
+    #                                                row["CONTACTOS"], row["CANTIDAD_CAJAS"], row["CREDO_RETURN"])
+    #    
+    #    df.loc[index, "TRACKING_NUMBER"] = tracking_number
+    #    df.loc[index, "CREDO_RETURN_TRACKING_NUMBER"] = credo_return_tracking_number
+
+    tracking_number, credo_return_tracking_number = procesar_orden_envio(driver, 
+                                                    "5616", 12345, "IVRS_NUMBER",
+                                                    "2012", "19", "1930",
+                                                    "2112", "10", "12",
+                                                    "Medicacion", "Refrigerado",
+                                                    "Contactos", 2, False)
+    
 
 def main():
     global wait
@@ -94,12 +223,11 @@ def main():
 
     iniciar_sesion_TA(driver, "inaki.costa", "Alejan1961")
 
-    driver.get("https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarEnvio+idubicacion=5616")
-
     df = cargar_tabla_ordenes_envio(driver, "20dic23")
 
     procesar_ordenes_envios(driver, df)
 
     time.sleep(20)
     driver.quit()
+
 main()
