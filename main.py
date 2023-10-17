@@ -283,7 +283,10 @@ def cargar_tabla_ordenes_envio(date) -> pd.DataFrame:
                         "CANTIDAD_CAJAS": [1, 3, 2, 4, 1],
                         "RETURN": [False, False, False, False, False],
                         "TRACKING_NUMBER": ["", "", "", "", ""],
-                        "RETURN_TRACKING_NUMBER": ["", "", "", "", ""]})
+                        "RETURN_TRACKING_NUMBER": ["", "", "", "", ""]
+                        "STUDY": ["Test", "Test", "Test", "Test", "Test"]
+                        "SITE#": ["01", "02", "03", "01", "03"]
+                        })
     
     return df
 
