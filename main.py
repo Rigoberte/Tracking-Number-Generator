@@ -250,7 +250,7 @@ def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
 
     return tracking_number, return_tracking_number
 
-def cargar_tabla_ordenes_envio(date) -> pd.DataFrame:
+def cargar_tabla_ordenes_envio( date ) -> pd.DataFrame:
     """
     Carga la tabla de ordenes de envío
 
@@ -262,9 +262,10 @@ def cargar_tabla_ordenes_envio(date) -> pd.DataFrame:
         DataFrame: tabla de ordenes de envío
     """
 
-    #df = pd.read_excel("C:/Users/inaki.costa/Thermo Fisher Scientific/Power BI Lilly Argentina - General", sheet_name="Shipments")
+    excel_ruta = r"C:/Users/inaki.costa/Thermo Fisher Scientific/Power BI Lilly Argentina - General"
+    #df = pd.read_excel(excel_ruta, sheet_name="Shipments")
 
-    #df = df[df["Ship Date"] == dt.datetime.today + 1]
+    #df = df[df["Ship Date"] == date]
 
     #print(df)
 
@@ -283,8 +284,8 @@ def cargar_tabla_ordenes_envio(date) -> pd.DataFrame:
                         "CANTIDAD_CAJAS": [1, 3, 2, 4, 1],
                         "RETURN": [False, False, False, False, False],
                         "TRACKING_NUMBER": ["", "", "", "", ""],
-                        "RETURN_TRACKING_NUMBER": ["", "", "", "", ""]
-                        "STUDY": ["Test", "Test", "Test", "Test", "Test"]
+                        "RETURN_TRACKING_NUMBER": ["", "", "", "", ""],
+                        "STUDY": ["Test", "Test", "Test", "Test", "Test"],
                         "SITE#": ["01", "02", "03", "01", "03"]
                         })
     
@@ -317,8 +318,6 @@ def procesar_ordenes_envios(driver, df):
                                                     "Medicacion", "Refrigerado",
                                                     "Contactos", 2, False, False, "CREDO" , 2)
     
-    print(df)
-    
 def main():
     """
     Procesa todas las ordenes de envío de la tabla
@@ -328,11 +327,13 @@ def main():
     driver = webdriver.Chrome()
     wait = WebDriverWait(driver, 10)
 
-    #iniciar_sesion_TA(driver, "inaki.costa", "Alejan1961")
+    iniciar_sesion_TA(driver, "inaki.costa", "Alejan1961")
 
-    df = cargar_tabla_ordenes_envio("20dic23")
+    df = cargar_tabla_ordenes_envio(dt.date(2023, 12, 20))
 
-    #procesar_ordenes_envios(driver, df)
+    procesar_ordenes_envios(driver, df)
+    
+    #print(df)
 
     time.sleep(20)
     driver.quit()
