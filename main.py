@@ -5,6 +5,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 import pandas as pd
+import datetime as dt
 
 def iniciar_sesion_TA(driver, username: str, password: str):
     """
@@ -27,7 +28,7 @@ def completar_formulario_orden_envio(driver, url: str, referencia: str,
                                     recoleccion_fecha: str, recoleccion_hora_desde: str, recoleccion_hora_hasta: str,
                                     entrega_fecha: str, entrega_hora_desde: str, entrega_hora_hasta: str,
                                     tipo_material: str, temperatura: str,
-                                    contactos: str, cantidad_cajas: int) -> str :
+                                    contactos: str, cantidad_bultos: int) -> str :
     """
     Completa el formulario de orden de envío
 
@@ -44,7 +45,7 @@ def completar_formulario_orden_envio(driver, url: str, referencia: str,
         tipo_material (str): tipo de material
         temperatura (str): temperatura
         contactos (str): contactos
-        cantidad_cajas (int): cantidad de cajas
+        cantidad_bultos (int): cantidad de bultos
     
     Returns:
         str: tracking number
@@ -102,15 +103,19 @@ def completar_formulario_orden_envio(driver, url: str, referencia: str,
 
     driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").clear()
     driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").send_keys(contactos)
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[12]/td/input").send_keys(cantidad_cajas)
+    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[12]/td/input").send_keys(cantidad_bultos)
     
     #driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/button").click()
 
+    # Error, no se pudo crear el Job
+    time.sleep(1)
+    if EC.presence_of_element_located((By.ID, "CtrlajaxErrorListItem")): return ""
+
     return "" #driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption/text()").text[-9:]
 
-def completar_formulario_retorno_credo(driver, url: str, referencia: str,
+def completar_formulario_retorno(driver, url: str, referencia: str,
                                     entrega_fecha: str, entrega_hora_desde: str, entrega_hora_hasta: str,
-                                    tipo_retorno: str, contactos: str, cantidad_cajas: int) -> str:
+                                    tipo_retorno: str, contactos: str, cantidad_bultos: int) -> str:
     """
     Completa el formulario de retorno de credo
 
@@ -123,7 +128,7 @@ def completar_formulario_retorno_credo(driver, url: str, referencia: str,
         entrega_hora_hasta (str): hora de entrega hasta
         tipo_retorno (str): tipo de retorno
         contactos (str): contactos
-        cantidad_cajas (int): cantidad de cajas
+        cantidad_bultos (int): cantidad de bultos
 
     Returns:
         str: tracking number de retorno de credo
@@ -142,19 +147,23 @@ def completar_formulario_retorno_credo(driver, url: str, referencia: str,
     driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[3]").send_keys(entrega_hora_hasta)
 
     # Selecciona el tipo de retorno
-    if tipo_retorno == "CREDO": it_tipo_retorno = 0
-    elif tipo_retorno == "DATALOGGER": it_tipo_retorno = 1
-    else: it_tipo_retorno = 2
+    if tipo_retorno == "CREDO": it_tipo_retorno = 1
+    elif tipo_retorno == "DATALOGGER": it_tipo_retorno = 2
+    else: it_tipo_retorno = 3
     for i in range(0, it_tipo_retorno):
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[9]/td/select").send_keys(Keys.DOWN)
 
     driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[12]/td/input[1]").send_keys(contactos)
     
     driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/input").clear()
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/input").send_keys(cantidad_cajas)
+    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/input").send_keys(cantidad_bultos)
 
     #driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[14]/td/button").click()
     
+    # Error, no se pudo crear el Job de retorno
+    time.sleep(1)
+    if EC.presence_of_element_located((By.ID, "CtrlajaxErrorListItem")): return ""
+
     return "" #driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption/text()").text[-9:]
 
 def imprimir_documentos_TA(driver, tracking_number: str):
@@ -176,10 +185,12 @@ def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
                         recoleccion_fecha: str, recoleccion_hora_desde: str, recoleccion_hora_hasta: str,
                         entrega_fecha: str, entrega_hora_desde: str, entrega_hora_hasta: str,
                         tipo_material: str, temperatura: str,
-                        contactos: str, cantidad_cajas: int,
-                        credo_return: bool, credo_return_TA: bool, credo_return_cant: int) -> str:
+                        contactos: str, cantidad_bultos: int,
+                        return_: bool, return_to_TA: bool, tipo_retorno: str , return_cantidad: int) -> str:
     """
-    Procesa una orden de envio completando el formulario de TA y le crea una orden de retorno de credo si es necesario
+    -Procesa una orden de envio completando el formulario de TA
+    -Le crea una orden de retorno de credo si es necesario
+    -Imprime los documentos de la orden de envío
 
     Args:
         driver (webdriver): driver de selenium
@@ -195,10 +206,10 @@ def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
         tipo_material (str): tipo de material
         temperatura (str): temperatura
         contactos (str): contactos
-        cantidad_cajas (int): cantidad de cajas
-        credo_return (bool): si es necesario crear una orden de retorno de credo
-        credo_return_TA (bool): si es necesario, decide si la orden de retorno va a TA
-        credo_return_cant (int): cantidad de cajas de la orden de retorno de credo
+        cantidad_bultos (int): cantidad de bultos
+        return_ (bool): si es necesario crear una orden de retorno de credo
+        return_to_TA (bool): si es necesario, decide si la orden de retorno va a TA
+        return_cantidad (int): cantidad de cajas de la orden de retorno de credo
     
     Returns:
         str: tracking number
@@ -215,28 +226,29 @@ def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
                                 recoleccion_fecha, recoleccion_hora_desde, recoleccion_hora_hasta,
                                 entrega_fecha, entrega_hora_desde, entrega_hora_hasta,
                                 tipo_material, temperatura,
-                                contactos, cantidad_cajas)
+                                contactos, cantidad_bultos)
     
-    if credo_return:
-        url_credo_return = "https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarRetorno+idsp=" + tracking_number[:7] + "&idubicacion=" + str(TA_ID)
-        url_credo_return += "&returnToTa=true" if credo_return_TA else ""
+    if tracking_number == "": return "", ""
 
-        referencia_credo_return = referencia + " RET " + tracking_number
+    if return_:
+        url_return = "https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarRetorno+idsp=" + tracking_number[:7] + "&idubicacion=" + str(TA_ID)
+        url_return += "&returnToTa=true" if return_to_TA else ""
 
-        driver.get(url_credo_return)
+        referencia_return = referencia + " RET " + tracking_number
 
-        credo_return_tracking_number = completar_formulario_retorno_credo(driver, url_credo_return, 
-                                                                        referencia_credo_return,
+        driver.get(url_return)
+
+        return_tracking_number = completar_formulario_retorno(driver, url_return, 
+                                                                        referencia_return,
                                                                         "2512", "9", "16",
-                                                                        "CREDO", "Personal de FCS", 
-                                                                        credo_return_cant)
+                                                                        tipo_retorno, "Personal de FCS", 
+                                                                        return_cantidad)
     else:
-        credo_return_tracking_number = ""
-
+        return_tracking_number = ""
 
     #imprimir_documentos_TA(driver, tracking_number)
 
-    return tracking_number, credo_return_tracking_number
+    return tracking_number, return_tracking_number
 
 def cargar_tabla_ordenes_envio(date) -> pd.DataFrame:
     """
@@ -249,6 +261,12 @@ def cargar_tabla_ordenes_envio(date) -> pd.DataFrame:
     Returns:
         DataFrame: tabla de ordenes de envío
     """
+
+    #df = pd.read_excel("C:/Users/inaki.costa/Thermo Fisher Scientific/Power BI Lilly Argentina - General", sheet_name="Shipments")
+
+    #df = df[df["Ship Date"] == dt.datetime.today + 1]
+
+    #print(df)
 
     df = pd.DataFrame({ "SYSTEM_NUMBER": [12345, 12346, 12347, 12348, 12349],
                         "IVRS_NUMBER": ["IVRS_NUMBER_01", "IVRS_NUMBER_02", "IVRS_NUMBER_03", "IVRS_NUMBER_04", "IVRS_NUMBER_05"],
@@ -263,9 +281,9 @@ def cargar_tabla_ordenes_envio(date) -> pd.DataFrame:
                         "TEMPERATURA": ["Refrigerado", "Ambiente", "Ambiente Controlado", "Ambiente", "Ambiente"],
                         "CONTACTOS": ["Contactos_01", "Contactos_02", "Contactos_03", "Contactos_04", "Contactos_05"],
                         "CANTIDAD_CAJAS": [1, 3, 2, 4, 1],
-                        "CREDO_RETURN": [False, False, False, False, False],
+                        "RETURN": [False, False, False, False, False],
                         "TRACKING_NUMBER": ["", "", "", "", ""],
-                        "CREDO_RETURN_TRACKING_NUMBER": ["", "", "", "", ""]})
+                        "RETURN_TRACKING_NUMBER": ["", "", "", "", ""]})
     
     return df
 
@@ -279,36 +297,39 @@ def procesar_ordenes_envios(driver, df):
     """
     
     #for index, row in df.iterrows():
-    #    tracking_number, credo_return_tracking_number = procesar_orden_envio(driver, 
+    #    tracking_number, return_tracking_number = procesar_orden_envio(driver, 
     #                                                row["TA_ID"], row["SYSTEM_NUMBER"], row["IVRS_NUMBER"],
     #                                                row["RECOLECCION_FECHA"], row["RECOLECCION_HORA_DESDE"], row["RECOLECCION_HORA_HASTA"],
     #                                                row["ENTREGA_FECHA"], row["ENTREGA_HORA_DESDE"], row["ENTREGA_HORA_HASTA"],
     #                                                row["TIPO_MATERIAL"], row["TEMPERATURA"],
-    #                                                row["CONTACTOS"], row["CANTIDAD_CAJAS"], row["CREDO_RETURN"])
+    #                                                row["CONTACTOS"], row["CANTIDAD_CAJAS"], row["RETURN"])
     #    
     #    df.loc[index, "TRACKING_NUMBER"] = tracking_number
-    #    df.loc[index, "CREDO_RETURN_TRACKING_NUMBER"] = credo_return_tracking_number
+    #    df.loc[index, "RETURN_TRACKING_NUMBER"] = return_tracking_number
 
-    tracking_number, credo_return_tracking_number = procesar_orden_envio(driver, 
+    tracking_number, return_tracking_number = procesar_orden_envio(driver, 
                                                     5616, 12345, "IVRS_NUMBER",
                                                     "2012", "19", "1930",
                                                     "2112", "10", "12",
                                                     "Medicacion", "Refrigerado",
-                                                    "Contactos", 2, False, False, 2)
+                                                    "Contactos", 2, False, False, "CREDO" , 2)
     
     print(df)
     
-
 def main():
+    """
+    Procesa todas las ordenes de envío de la tabla
+    """
     global wait
+
     driver = webdriver.Chrome()
     wait = WebDriverWait(driver, 10)
 
-    iniciar_sesion_TA(driver, "inaki.costa", "Alejan1961")
+    #iniciar_sesion_TA(driver, "inaki.costa", "Alejan1961")
 
     df = cargar_tabla_ordenes_envio("20dic23")
 
-    procesar_ordenes_envios(driver, df)
+    #procesar_ordenes_envios(driver, df)
 
     time.sleep(20)
     driver.quit()
