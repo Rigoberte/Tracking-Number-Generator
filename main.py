@@ -111,7 +111,9 @@ def completar_formulario_orden_envio(driver, url: str, referencia: str,
     time.sleep(1)
     if EC.presence_of_element_located((By.ID, "CtrlajaxErrorListItem")): return ""
 
-    return "" #driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption/text()").text[-9:]
+    wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))
+
+    return "" #driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:15]
 
 def completar_formulario_retorno(driver, url: str, referencia: str,
                                     entrega_fecha: str, entrega_hora_desde: str, entrega_hora_hasta: str,
@@ -164,7 +166,9 @@ def completar_formulario_retorno(driver, url: str, referencia: str,
     time.sleep(1)
     if EC.presence_of_element_located((By.ID, "CtrlajaxErrorListItem")): return ""
 
-    return "" #driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption/text()").text[-9:]
+    wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))
+
+    return "" #driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:15]
 
 def imprimir_documentos_TA(driver, tracking_number: str):
     """
@@ -176,10 +180,16 @@ def imprimir_documentos_TA(driver, tracking_number: str):
     """
     # Carga la página
     url_guias = "https://sgi.tanet.com.ar/sgi/srv.SrvPdf.emitirOde+id=" + str(tracking_number)[:7] + "&idservicio=" + str(tracking_number)[:7]
-    #driver.get(url_guias)
+    driver.get(url_guias)
+    driver.print()
+    driver.print() 
+
+    time.sleep(1)
 
     url_rotulo = "https://sgi.tanet.com.ar/sgi/srv.RotuloPdf.emitir+id=" + str(tracking_number)[:7] + "&idservicio=" + str(tracking_number)[:7]
-    #driver.get(url_rotulo)
+    driver.get(url_rotulo)
+    driver.print()
+    driver.print()
 
 def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
                         recoleccion_fecha: str, recoleccion_hora_desde: str, recoleccion_hora_hasta: str,
@@ -246,31 +256,56 @@ def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
     else:
         return_tracking_number = ""
 
-    #imprimir_documentos_TA(driver, tracking_number)
+    imprimir_documentos_TA(driver, tracking_number)
 
     return tracking_number, return_tracking_number
 
-def cargar_tabla_ordenes_envio( date ) -> pd.DataFrame:
+def cargar_tabla_ordenes_envio(date : dt.datetime, team: str ) -> pd.DataFrame:
     """
-    Carga la tabla de ordenes de envío
+    Carga la tabla de ordenes de envío segun la fecha y el equipo
 
     Args:
         driver (webdriver): driver de selenium
         date (str): fecha de las ordenes a procesar
+        team (str): equipo a procesar
 
     Returns:
         DataFrame: tabla de ordenes de envío
     """
+    if team == "Lilly":
+        excel_ruta = r"C:/Users/inaki.costa/Thermo Fisher Scientific/Power BI Lilly Argentina - General/Share Point Lilly Argentina.xlsx"
+        df = pd.read_excel(excel_ruta, sheet_name="Shipments")
 
-    excel_ruta = r"C:/Users/inaki.costa/Thermo Fisher Scientific/Power BI Lilly Argentina - General"
-    #df = pd.read_excel(excel_ruta, sheet_name="Shipments")
+        df["Ship date"] = pd.to_datetime(df["Ship date"], format="%d/%m/%Y") 
 
-    #df = df[df["Ship Date"] == date]
+        df = df[df["Ship date"] == date]
 
-    #print(df)
+    elif team == "GPM":
+        df = pd.DataFrame({})
 
-    df = pd.DataFrame({ "SYSTEM_NUMBER": [12345, 12346, 12347, 12348, 12349],
-                        "IVRS_NUMBER": ["IVRS_NUMBER_01", "IVRS_NUMBER_02", "IVRS_NUMBER_03", "IVRS_NUMBER_04", "IVRS_NUMBER_05"],
+    elif team == "Test":
+        df = pd.DataFrame({ "SYSTEM_NUMBER": [12345],
+                        "IVRS_NUMBER": ["IVRS_NUMBER_T1_01"],
+                        "TA_ID": [5616],
+                        "RECOLECCION_FECHA": ["2012"],
+                        "RECOLECCION_HORA_DESDE": ["19"],
+                        "RECOLECCION_HORA_HASTA": ["1930"],
+                        "ENTREGA_FECHA": ["2112"],
+                        "ENTREGA_HORA_DESDE": ["10"],
+                        "ENTREGA_HORA_HASTA": ["12"],
+                        "TIPO_MATERIAL": ["Medicacion"],
+                        "TEMPERATURA": ["Refrigerado"],
+                        "CONTACTOS": ["Contactos_01"],
+                        "CANTIDAD_CAJAS": [2],
+                        "RETURN": [False],
+                        "TRACKING_NUMBER": [""],
+                        "RETURN_TRACKING_NUMBER": [""],
+                        "STUDY": ["Test"],
+                        "SITE#": ["01"] })
+        
+    elif team == "Test_5_ordenes":
+        df = pd.DataFrame({ "SYSTEM_NUMBER": [12345, 12346, 12347, 12348, 12349],
+                        "IVRS_NUMBER": ["IVRS_NUMBER_T5_01", "IVRS_NUMBER_T5_02", "IVRS_NUMBER_T5_03", "IVRS_NUMBER_T5_04", "IVRS_NUMBER_T5_05"],
                         "TA_ID": [5616, 5616, 5616, 5616, 5616],
                         "RECOLECCION_FECHA": ["2012", "2012", "2012", "2012", "2012"],
                         "RECOLECCION_HORA_DESDE": ["19", "19", "19", "19", "19"],
@@ -278,7 +313,7 @@ def cargar_tabla_ordenes_envio( date ) -> pd.DataFrame:
                         "ENTREGA_FECHA": ["2112", "2112", "2112", "2112", "2112"],
                         "ENTREGA_HORA_DESDE": ["10", "10", "10", "10", "10"],
                         "ENTREGA_HORA_HASTA": ["12", "12", "12", "12", "12"],
-                        "TIPO_MATERIAL": ["Medicacion", "Materiales", "Medicacion", "Materiales", "Medicacion"],
+                        "TIPO_MATERIAL": ["Medicacion", "Material", "Medicacion", "Material", "Medicacion"],
                         "TEMPERATURA": ["Refrigerado", "Ambiente", "Ambiente Controlado", "Ambiente", "Ambiente"],
                         "CONTACTOS": ["Contactos_01", "Contactos_02", "Contactos_03", "Contactos_04", "Contactos_05"],
                         "CANTIDAD_CAJAS": [1, 3, 2, 4, 1],
@@ -300,23 +335,21 @@ def procesar_ordenes_envios(driver, df):
         df (DataFrame): tabla de ordenes de envío
     """
     
-    #for index, row in df.iterrows():
-    #    tracking_number, return_tracking_number = procesar_orden_envio(driver, 
-    #                                                row["TA_ID"], row["SYSTEM_NUMBER"], row["IVRS_NUMBER"],
-    #                                                row["RECOLECCION_FECHA"], row["RECOLECCION_HORA_DESDE"], row["RECOLECCION_HORA_HASTA"],
-    #                                                row["ENTREGA_FECHA"], row["ENTREGA_HORA_DESDE"], row["ENTREGA_HORA_HASTA"],
-    #                                                row["TIPO_MATERIAL"], row["TEMPERATURA"],
-    #                                                row["CONTACTOS"], row["CANTIDAD_CAJAS"], row["RETURN"])
-    #    
-    #    df.loc[index, "TRACKING_NUMBER"] = tracking_number
-    #    df.loc[index, "RETURN_TRACKING_NUMBER"] = return_tracking_number
+    for index, row in df.iterrows():
+        if df.loc[index, "TRACKING_NUMBER"] != "": continue
 
-    tracking_number, return_tracking_number = procesar_orden_envio(driver, 
-                                                    5616, 12345, "IVRS_NUMBER",
-                                                    "2012", "19", "1930",
-                                                    "2112", "10", "12",
-                                                    "Medicacion", "Refrigerado",
-                                                    "Contactos", 2, False, False, "CREDO" , 2)
+        tracking_number, return_tracking_number = procesar_orden_envio(driver, 
+                                                        row["TA_ID"], row["SYSTEM_NUMBER"], row["IVRS_NUMBER"],
+                                                        row["RECOLECCION_FECHA"], row["RECOLECCION_HORA_DESDE"], row["RECOLECCION_HORA_HASTA"],
+                                                        row["ENTREGA_FECHA"], row["ENTREGA_HORA_DESDE"], row["ENTREGA_HORA_HASTA"],
+                                                        row["TIPO_MATERIAL"], row["TEMPERATURA"],
+                                                        row["CONTACTOS"], row["CANTIDAD_CAJAS"],
+                                                        row["RETURN"], False, "CREDO" , 2)
+        
+        if tracking_number == "": continue
+
+        df.loc[index, "TRACKING_NUMBER"] = tracking_number
+        df.loc[index, "RETURN_TRACKING_NUMBER"] = return_tracking_number
     
 def main():
     """
@@ -329,12 +362,12 @@ def main():
 
     iniciar_sesion_TA(driver, "inaki.costa", "Alejan1961")
 
-    df = cargar_tabla_ordenes_envio(dt.date(2023, 12, 20))
+    df = cargar_tabla_ordenes_envio( dt.datetime(2023, 10, 19), "Test" )
 
-    procesar_ordenes_envios(driver, df)
+    #procesar_ordenes_envios(driver, df)
     
-    #print(df)
-
+    print(df[["SYSTEM_NUMBER", "IVRS_NUMBER", "TRACKING_NUMBER", "RETURN_TRACKING_NUMBER"]])
+    
     time.sleep(20)
     driver.quit()
 
