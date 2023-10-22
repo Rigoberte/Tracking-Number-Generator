@@ -3,9 +3,36 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service as ChromeService
 import time
 import pandas as pd
 import datetime as dt
+
+def cargar_rutas(team: str) -> (str, str):
+    """
+    Carga las rutas de los archivos de excel
+
+    Args:
+        team (str): equipo a procesar
+
+    Returns:
+        str: ruta del archivo de excel
+        str: nombre de la hoja de excel
+    """
+    if team == "Lilly":
+        path = r"C:/Users/inaki.costa/Thermo Fisher Scientific/Power BI Lilly Argentina - General/Share Point Lilly Argentina.xlsx"
+        sheet = "Shipments"
+    elif team == "GPM":
+        path = r"C:/Users/inaki.costa/OneDrive - Thermo Fisher Scientific/Desktop/Automatizacion_Ordenes.xlsx"
+        sheet = "Vacio"
+    elif team == "Test":
+        path = r"C:/Users/inaki.costa/OneDrive - Thermo Fisher Scientific/Desktop/Automatizacion_Ordenes.xlsx"
+        sheet = "Test"
+    elif team == "Test_5_ordenes":
+        path = r"C:/Users/inaki.costa/OneDrive - Thermo Fisher Scientific/Desktop/Automatizacion_Ordenes.xlsx"
+        sheet = "Test_5_ordenes"
+    
+    return path, sheet
 
 def iniciar_sesion_TA(driver, username: str, password: str):
     """
@@ -23,6 +50,39 @@ def iniciar_sesion_TA(driver, username: str, password: str):
     driver.find_element(By.XPATH, "/html/body/form/input[1]").send_keys(username)
     driver.find_element(By.XPATH, "/html/body/form/input[2]").send_keys(password)
     driver.find_element(By.XPATH, "/html/body/form/button").click()
+
+def cargar_tabla_ordenes_envio(date : dt.datetime, team: str,  path: str, sheet: str ) -> pd.DataFrame:
+    """
+    Carga la tabla de ordenes de envío segun la fecha y el equipo
+
+    Args:
+        date (dt.datetime): fecha de las ordenes de envío
+        team (str): equipo a procesar
+        path (str): ruta del archivo de excel
+        sheet (str): nombre de la hoja de excel
+
+    Returns:
+        DataFrame: tabla de ordenes de envío
+    """
+
+    df = pd.read_excel(path, sheet_name=sheet, header=0)
+
+    if team == "Lilly":
+        df["Ship date"] = pd.to_datetime(df["Ship date"], format="%d/%m/%Y") 
+        #df = df[df["Ship date"] == date]
+
+    elif team == "GPM":
+        df = df # TODO
+
+    elif team == "Test":
+        df.fillna('', inplace=True)
+        df["RETURN_TO_TA"] = df["RETURN_TO_TA"].astype(bool)
+
+    elif team == "Test_5_ordenes":
+        df.fillna('', inplace=True)
+        df["RETURN_TO_TA"] = df["RETURN_TO_TA"].astype(bool)
+
+    return df
 
 def completar_formulario_orden_envio(driver, url: str, referencia: str,
                                     recoleccion_fecha: str, recoleccion_hora_desde: str, recoleccion_hora_hasta: str,
@@ -105,15 +165,15 @@ def completar_formulario_orden_envio(driver, url: str, referencia: str,
     driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").send_keys(contactos)
     driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[12]/td/input").send_keys(cantidad_bultos)
     
-    #driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/button").click()
+    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/button").click()
 
     # Error, no se pudo crear el Job
     time.sleep(1)
-    if EC.presence_of_element_located((By.ID, "CtrlajaxErrorListItem")): return ""
+    #if EC.presence_of_element_located((By.ID, "CtrlajaxErrorListItem")): return ""    
 
     wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))
-
-    return "" #driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:15]
+    
+    return driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:15]
 
 def completar_formulario_retorno(driver, url: str, referencia: str,
                                     entrega_fecha: str, entrega_hora_desde: str, entrega_hora_hasta: str,
@@ -160,36 +220,33 @@ def completar_formulario_retorno(driver, url: str, referencia: str,
     driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/input").clear()
     driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/input").send_keys(cantidad_bultos)
 
-    #driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[14]/td/button").click()
+    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[14]/td/button").click()
     
     # Error, no se pudo crear el Job de retorno
     time.sleep(1)
-    if EC.presence_of_element_located((By.ID, "CtrlajaxErrorListItem")): return ""
+    #if EC.presence_of_element_located((By.ID, "CtrlajaxErrorListItem")): return ""
 
     wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))
 
-    return "" #driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:15]
+    return driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:15]
 
-def imprimir_documentos_TA(driver, tracking_number: str):
+def imprimir_documentos_TA(driver, url: str):
     """
-    Imprime los documentos (guias y rotulo) de la orden de envío
+    Imprime los documentos de la página
 
     Args:
         driver (webdriver): driver de selenium
-        tracking_number (str): tracking number de la orden de envío
+        url (str): url de la página
     """
-    # Carga la página
-    url_guias = "https://sgi.tanet.com.ar/sgi/srv.SrvPdf.emitirOde+id=" + str(tracking_number)[:7] + "&idservicio=" + str(tracking_number)[:7]
-    driver.get(url_guias)
-    driver.print()
-    driver.print() 
-
+    driver.get(url)
     time.sleep(1)
+    #driver.find_element(By.TAG_NAME, "body").send_keys(Keys.CONTROL + 'p')
 
-    url_rotulo = "https://sgi.tanet.com.ar/sgi/srv.RotuloPdf.emitir+id=" + str(tracking_number)[:7] + "&idservicio=" + str(tracking_number)[:7]
-    driver.get(url_rotulo)
-    driver.print()
-    driver.print()
+    # Espera un momento para que aparezca el diálogo de impresión (ajusta el tiempo si es necesario)
+    #driver.implicitly_wait(5)
+    #driver.find_element(By.TAG_NAME, "body").send_keys(Keys.RETURN)
+
+    #driver.print() 
 
 def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
                         recoleccion_fecha: str, recoleccion_hora_desde: str, recoleccion_hora_hasta: str,
@@ -228,6 +285,7 @@ def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
 
     url = "https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarEnvio+idubicacion=" + str(TA_ID)
     referencia = str(system_number) + " " + ivrs_number
+    referencia = referencia[:50]
 
     driver.get(url)
 
@@ -245,9 +303,9 @@ def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
         url_return += "&returnToTa=true" if return_to_TA else ""
 
         referencia_return = referencia + " RET " + tracking_number
+        referencia_return = referencia_return[:50]
 
         driver.get(url_return)
-
         return_tracking_number = completar_formulario_retorno(driver, url_return, 
                                                                         referencia_return,
                                                                         "2512", "9", "16",
@@ -256,77 +314,17 @@ def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
     else:
         return_tracking_number = ""
 
-    imprimir_documentos_TA(driver, tracking_number)
+    url_guias = "https://sgi.tanet.com.ar/sgi/srv.SrvPdf.emitirOde+id=" + str(tracking_number)[:7] + "&idservicio=" + str(tracking_number)[:7]
+    driver.get(url_guias)
+    imprimir_documentos_TA(driver, url_guias)
+
+    url_rotulo = "https://sgi.tanet.com.ar/sgi/srv.RotuloPdf.emitir+id=" + str(tracking_number)[:7] + "&idservicio=" + str(tracking_number)[:7]
+    driver.get(url_rotulo)
+    imprimir_documentos_TA(driver, url_rotulo)
 
     return tracking_number, return_tracking_number
 
-def cargar_tabla_ordenes_envio(date : dt.datetime, team: str ) -> pd.DataFrame:
-    """
-    Carga la tabla de ordenes de envío segun la fecha y el equipo
-
-    Args:
-        driver (webdriver): driver de selenium
-        date (str): fecha de las ordenes a procesar
-        team (str): equipo a procesar
-
-    Returns:
-        DataFrame: tabla de ordenes de envío
-    """
-    if team == "Lilly":
-        excel_ruta = r"C:/Users/inaki.costa/Thermo Fisher Scientific/Power BI Lilly Argentina - General/Share Point Lilly Argentina.xlsx"
-        df = pd.read_excel(excel_ruta, sheet_name="Shipments")
-
-        df["Ship date"] = pd.to_datetime(df["Ship date"], format="%d/%m/%Y") 
-
-        df = df[df["Ship date"] == date]
-
-    elif team == "GPM":
-        df = pd.DataFrame({})
-
-    elif team == "Test":
-        df = pd.DataFrame({ "SYSTEM_NUMBER": [12345],
-                        "IVRS_NUMBER": ["IVRS_NUMBER_T1_01"],
-                        "TA_ID": [5616],
-                        "RECOLECCION_FECHA": ["2012"],
-                        "RECOLECCION_HORA_DESDE": ["19"],
-                        "RECOLECCION_HORA_HASTA": ["1930"],
-                        "ENTREGA_FECHA": ["2112"],
-                        "ENTREGA_HORA_DESDE": ["10"],
-                        "ENTREGA_HORA_HASTA": ["12"],
-                        "TIPO_MATERIAL": ["Medicacion"],
-                        "TEMPERATURA": ["Refrigerado"],
-                        "CONTACTOS": ["Contactos_01"],
-                        "CANTIDAD_CAJAS": [2],
-                        "RETURN": [False],
-                        "TRACKING_NUMBER": [""],
-                        "RETURN_TRACKING_NUMBER": [""],
-                        "STUDY": ["Test"],
-                        "SITE#": ["01"] })
-        
-    elif team == "Test_5_ordenes":
-        df = pd.DataFrame({ "SYSTEM_NUMBER": [12345, 12346, 12347, 12348, 12349],
-                        "IVRS_NUMBER": ["IVRS_NUMBER_T5_01", "IVRS_NUMBER_T5_02", "IVRS_NUMBER_T5_03", "IVRS_NUMBER_T5_04", "IVRS_NUMBER_T5_05"],
-                        "TA_ID": [5616, 5616, 5616, 5616, 5616],
-                        "RECOLECCION_FECHA": ["2012", "2012", "2012", "2012", "2012"],
-                        "RECOLECCION_HORA_DESDE": ["19", "19", "19", "19", "19"],
-                        "RECOLECCION_HORA_HASTA": ["1930", "1930", "1930", "1930", "1930"],
-                        "ENTREGA_FECHA": ["2112", "2112", "2112", "2112", "2112"],
-                        "ENTREGA_HORA_DESDE": ["10", "10", "10", "10", "10"],
-                        "ENTREGA_HORA_HASTA": ["12", "12", "12", "12", "12"],
-                        "TIPO_MATERIAL": ["Medicacion", "Material", "Medicacion", "Material", "Medicacion"],
-                        "TEMPERATURA": ["Refrigerado", "Ambiente", "Ambiente Controlado", "Ambiente", "Ambiente"],
-                        "CONTACTOS": ["Contactos_01", "Contactos_02", "Contactos_03", "Contactos_04", "Contactos_05"],
-                        "CANTIDAD_CAJAS": [1, 3, 2, 4, 1],
-                        "RETURN": [False, False, False, False, False],
-                        "TRACKING_NUMBER": ["", "", "", "", ""],
-                        "RETURN_TRACKING_NUMBER": ["", "", "", "", ""],
-                        "STUDY": ["Test", "Test", "Test", "Test", "Test"],
-                        "SITE#": ["01", "02", "03", "01", "03"]
-                        })
-    
-    return df
-
-def procesar_ordenes_envios(driver, df):
+def procesar_ordenes_envios(driver, df: pd.DataFrame):
     """
     Procesa todas las ordenes de envío de la tabla
 
@@ -344,31 +342,64 @@ def procesar_ordenes_envios(driver, df):
                                                         row["ENTREGA_FECHA"], row["ENTREGA_HORA_DESDE"], row["ENTREGA_HORA_HASTA"],
                                                         row["TIPO_MATERIAL"], row["TEMPERATURA"],
                                                         row["CONTACTOS"], row["CANTIDAD_CAJAS"],
-                                                        row["RETURN"], False, "CREDO" , 2)
+                                                        row["RETURN"], row["RETURN_TO_TA"], row["TIPO_RETORNO"] , row["RETURN_CANTIDAD"])
         
         if tracking_number == "": continue
 
         df.loc[index, "TRACKING_NUMBER"] = tracking_number
         df.loc[index, "RETURN_TRACKING_NUMBER"] = return_tracking_number
-    
+
+def actualizar_tabla_ordenes_envio(df: pd.DataFrame, path: str, sheet: str):
+    """
+    Actualiza la tabla de ordenes de envío
+
+    Args:
+        df (DataFrame): tabla de ordenes de envío
+        path (str): ruta del archivo de excel
+        sheet (str): nombre de la hoja de excel
+    """
+
+    with pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+            df.to_excel(writer, sheet_name=sheet, index=False)
+
 def main():
     """
     Procesa todas las ordenes de envío de la tabla
+    
+    Variables:
+        driver (webdriver): driver de selenium
+        wait (WebDriverWait): espera de selenium
+        team (str): equipo a procesar
+        df_path (str): ruta del archivo de excel
+        sheet (str): nombre de la hoja de excel
+        df (DataFrame): tabla de ordenes de envío
     """
     global wait
 
-    driver = webdriver.Chrome()
+    chrome_service = ChromeService(log_path='NUL', log_level=0)
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument("--start-maximized")  # Inicia la ventana del navegador maximizada
+    driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
     wait = WebDriverWait(driver, 10)
+
+    team = "Test_5_ordenes"
+
+    df_path, sheet = cargar_rutas(team)
 
     iniciar_sesion_TA(driver, "inaki.costa", "Alejan1961")
 
-    df = cargar_tabla_ordenes_envio( dt.datetime(2023, 10, 19), "Test" )
+    df = cargar_tabla_ordenes_envio( dt.datetime(2023, 10, 19), team, df_path, sheet)
 
-    #procesar_ordenes_envios(driver, df)
+    procesar_ordenes_envios(driver, df)
     
-    print(df[["SYSTEM_NUMBER", "IVRS_NUMBER", "TRACKING_NUMBER", "RETURN_TRACKING_NUMBER"]])
-    
-    time.sleep(20)
+    actualizar_tabla_ordenes_envio(df, df_path, sheet)
+
+    if not df.empty:
+        print(df[["SYSTEM_NUMBER", "IVRS_NUMBER", "TRACKING_NUMBER", "RETURN_TRACKING_NUMBER"]])
+    else:
+        print("Empty DataFrame")
+
+    time.sleep(1)
     driver.quit()
 
 main()
