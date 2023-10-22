@@ -19,6 +19,7 @@ def cargar_rutas(team: str) -> (str, str):
         str: ruta del archivo de excel
         str: nombre de la hoja de excel
     """
+    
     if team == "Lilly":
         path = r"C:/Users/inaki.costa/Thermo Fisher Scientific/Power BI Lilly Argentina - General/Share Point Lilly Argentina.xlsx"
         sheet = "Shipments"
