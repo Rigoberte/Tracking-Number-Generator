@@ -7,8 +7,9 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 import time
 import pandas as pd
 import datetime as dt
+import os
 
-def cargar_rutas(team: str) -> (str, str):
+def cargar_rutas(team: str) -> (str, str, str):
     """
     Carga las rutas de los archivos de excel
 
@@ -18,22 +19,27 @@ def cargar_rutas(team: str) -> (str, str):
     Returns:
         str: ruta del archivo de excel
         str: nombre de la hoja de excel
+        str: nombre de la hoja de excel de información de los sitios
     """
     
     if team == "Lilly":
         path = r"C:/Users/inaki.costa/Thermo Fisher Scientific/Power BI Lilly Argentina - General/Share Point Lilly Argentina.xlsx"
         sheet = "Shipments"
+        info_sites_sheet = "Dias y Destinos"
     elif team == "GPM":
         path = r"C:/Users/inaki.costa/OneDrive - Thermo Fisher Scientific/Desktop/Automatizacion_Ordenes.xlsx"
         sheet = "Vacio"
+        info_sites_sheet = ""
     elif team == "Test":
         path = r"C:/Users/inaki.costa/OneDrive - Thermo Fisher Scientific/Desktop/Automatizacion_Ordenes.xlsx"
         sheet = "Test"
+        info_sites_sheet = ""
     elif team == "Test_5_ordenes":
         path = r"C:/Users/inaki.costa/OneDrive - Thermo Fisher Scientific/Desktop/Automatizacion_Ordenes.xlsx"
         sheet = "Test_5_ordenes"
+        info_sites_sheet = ""
     
-    return path, sheet
+    return path, sheet, info_sites_sheet
 
 def iniciar_sesion_TA(driver, username: str, password: str):
     """
@@ -65,25 +71,100 @@ def cargar_tabla_ordenes_envio(date : dt.datetime, team: str,  path: str, sheet:
     Returns:
         DataFrame: tabla de ordenes de envío
     """
-
-    df = pd.read_excel(path, sheet_name=sheet, header=0)
-
     if team == "Lilly":
-        df["Ship date"] = pd.to_datetime(df["Ship date"], format="%d/%m/%Y") 
-        #df = df[df["Ship date"] == date]
+        columns_names = {"CT-WIN": "SYSTEM_NUMBER", "IVRS": "IVRS_NUMBER",
+                        "Trial Alias": "STUDY", "Site ": "SITE#", "TA ID": "TA_ID",
+                        "Order received": "ENTER DATE", "Ship date": "SHIP DATE",
+                        "Recoleccion Hora Desde": "RECOLECCION_HORA_DESDE", 
+                        "Recoleccion Hora Hasta": "RECOLECCION_HORA_HASTA", 
+                        "POD": "ENTREGA_FECHA", "Destination": "DESTINATION",
+                        "Entrega Hora Desde": "ENTREGA_HORA_DESDE", 
+                        "Entrega Hora Hasta": "ENTREGA_HORA_HASTA", 
+                        "Tipo Material": "TIPO_MATERIAL", "CONDICION": "TEMPERATURA",
+                        "Contactos": "CONTACTOS", "TT4": "CANTIDAD_BULTOS", 
+                        "Return": "RETURN", "Return to TA": "RETURN_TO_TA", 
+                        "Tipo Retorno": "TIPO_RETORNO", "Return Cantidad": "RETURN_CANTIDAD", 
+                        "AWB": "TRACKING_NUMBER", "Shipper return AWB": "RETURN_TRACKING_NUMBER"}
+        
+        columns_types = {"CT-WIN": int, "IVRS": str, 
+                        "Trial Alias": str, "Site ": str, 
+                        "Order received": str, 
+                        "Ship date": dt.datetime, "POD": dt.datetime,
+                        #"RECOLECCION_HORA_DESDE": str, "RECOLECCION_HORA_HASTA": str, "ENTREGA_FECHA": str, 
+                        #"ENTREGA_HORA_DESDE": str, "ENTREGA_HORA_HASTA": str, "TIPO_MATERIAL": str, 
+                        "CONDICION": str, #"CONTACTOS": str, 
+                        "TT4": str, #"RETURN": bool, "RETURN_TO_TA": bool, 
+                        #"TIPO_RETORNO": str, "RETURN_CANTIDAD": int, 
+                        "AWB": str, "Shipper return AWB": str}
 
     elif team == "GPM":
-        df = df # TODO
+        columns_names = {}
+        columns_types = {}
 
     elif team == "Test":
-        df.fillna('', inplace=True)
-        df["RETURN_TO_TA"] = df["RETURN_TO_TA"].astype(bool)
+        columns_names = {}
+        columns_types = {"RETURN_TO_TA": bool}
 
     elif team == "Test_5_ordenes":
-        df.fillna('', inplace=True)
-        df["RETURN_TO_TA"] = df["RETURN_TO_TA"].astype(bool)
+        columns_names = {}
+        columns_types = {"RETURN_TO_TA": bool}
 
-    return df
+    df = pd.read_excel(path, sheet_name=sheet, header=0, dtype=columns_types)
+    
+    df.rename(columns=columns_names, inplace=True)
+
+    df = df[df["SHIP DATE"] == date]
+    
+    df["SHIP DATE"] = df["SHIP DATE"].dt.strftime('%d%m%y')
+    df["ENTREGA_FECHA"] = df["ENTREGA_FECHA"].dt.strftime('%d%m%y')
+    df["SITE#"] = df["SITE#"].astype(object)
+
+    if team == "Lilly": # Casos especiales del equipo Lilly
+        df["TIPO_MATERIAL"] = "Medicacion"
+        #df["TEMPERATURA"] = df["TEMPERATURA"].str.replace(
+        #    ["Ambiente", "Ambiente Controlado", "Refrigerado", "Congelado", "Congelado -20"], 
+        #    ["Ambiente", "Ambiente Controlado", "Refrigerado", "Congelado", "Congelado"])
+        df["RETURN"] = df["TEMPERATURA"] != "Ambiente"
+        df["RETURN_TO_TA"] = False
+        df["TIPO_RETORNO"] = "CREDO"
+        df["RETURN_CANTIDAD"] = df["CANTIDAD_BULTOS"]
+    
+    elif team == "GPM": # Casos especiales del equipo GPM
+        df = df #TODO
+
+    df.fillna('', inplace=True)
+    
+    return df[['SYSTEM_NUMBER', 'IVRS_NUMBER', 'STUDY', 'SITE#',
+               'SHIP DATE', 'ENTREGA_FECHA', 'TIPO_MATERIAL', 
+               'TEMPERATURA', 'CANTIDAD_BULTOS', 'RETURN', 
+               'RETURN_TO_TA', 'TIPO_RETORNO', 'RETURN_CANTIDAD',
+               'TRACKING_NUMBER', 'RETURN_TRACKING_NUMBER']]
+
+def cargar_tabla_info_sites(team: str, path: str, sheet: str) -> pd.DataFrame:
+    """
+    Carga la tabla de información de los sitios segun el equipo
+
+    Args:
+        team (str): equipo a procesar
+        path (str): ruta del archivo de excel
+        sheet (str): nombre de la hoja de excel
+
+    Returns:
+        DataFrame: tabla de información de los sitios
+    """
+    if team == "Lilly":
+        columns_names = {"Protocolo": "STUDY", "Codigo": "TA_ID", "Site": "SITE#",
+                        "Horario inicio": "ENTREGA_HORA_DESDE", "Horario fin": "ENTREGA_HORA_HASTA"}
+        columns_types = {"STUDY": str, "SITE#": str, "TA_ID": int, "ENTREGA_HORA_DESDE": str, "ENTREGA_HORA_HASTA": str}
+    else:
+        columns_names = {}
+        columns_types = {}
+
+    df = pd.read_excel(path, sheet_name=sheet, header=0, dtype=columns_types)
+    df.rename(columns=columns_names, inplace=True)
+    df.fillna('', inplace=True)
+
+    return df[["STUDY", "SITE#", "TA_ID", "ENTREGA_HORA_DESDE", "ENTREGA_HORA_HASTA"]]
 
 def completar_formulario_orden_envio(driver, url: str, referencia: str,
                                     recoleccion_fecha: str, recoleccion_hora_desde: str, recoleccion_hora_hasta: str,
@@ -111,70 +192,69 @@ def completar_formulario_orden_envio(driver, url: str, referencia: str,
     Returns:
         str: tracking number
     """
-    # Carga la página
-    driver.get(url)
+    try:
+        # Carga la página
+        driver.get(url)
+        
+        # Espera a que se cargue el formulario
+        wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[7]/td/div[2]/table/tbody/tr/td[1]/input")))
+        
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").send_keys(referencia)
+        
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[1]").send_keys(recoleccion_fecha)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[2]").send_keys(recoleccion_hora_desde)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[3]").send_keys(recoleccion_hora_hasta)
+
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[1]").send_keys(entrega_fecha)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[2]").send_keys(entrega_hora_desde)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[3]").send_keys(entrega_hora_hasta)
+
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[7]/td/div[2]/table/tbody/tr/td[1]/input").send_keys("FCS")
+        suggestions_container = wait.until(EC.presence_of_element_located((By.ID, "suggest_nomDomOri_list")))
+
+        wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[7]/td/div[2]/table/tbody/tr/td[1]/div/div/div[1]/table/tbody")))
+
+        # Encuentra todos los botones sugeridos dentro del contenedor de sugerencias
+        suggested_buttons = suggestions_container.find_elements(By.CLASS_NAME, "suggest")
+        # Itera a través de los botones sugeridos y encuentra el que contiene el texto "Fisher Clinical Services FCS"
+        for button in suggested_buttons:
+            button_text = button.text.strip()
+            if "Fisher Clinical Services FCS" in button_text:
+                button.click()
+                break
+        
+        # Selecciona el tipo de material
+        if tipo_material == "Medicacion": it_tipo_material = 3
+        elif tipo_material == "Material": it_tipo_material = 5
+        elif tipo_material == "Equipo": it_tipo_material = 7
+        else: it_tipo_material = 8
+
+        for i in range(0, it_tipo_material):
+            driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[10]/td/select[1]").send_keys(Keys.DOWN)
+        
+
+        # Selecciona la temperatura
+        if temperatura == "Ambiente": it_temperatura = 0
+        elif temperatura == "Ambiente Controlado": it_temperatura = 1
+        elif temperatura == "Refrigerado": it_temperatura = 2
+        elif temperatura == "Congelado": it_temperatura = 3
+        else: it_temperatura = 4
+
+        for i in range(0, it_temperatura):
+            driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[10]/td/select[2]").send_keys(Keys.DOWN)
+
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").clear()
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").send_keys(contactos)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[12]/td/input").send_keys(cantidad_bultos)
+        
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/button").click()
+
+        # Espera a que se cargue la página con el tracking number
+        wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))
     
-    # Espera a que se cargue el formulario
-    wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[7]/td/div[2]/table/tbody/tr/td[1]/input")))
-    
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").send_keys(referencia)
-    
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[1]").send_keys(recoleccion_fecha)
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[2]").send_keys(recoleccion_hora_desde)
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[3]").send_keys(recoleccion_hora_hasta)
-
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[1]").send_keys(entrega_fecha)
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[2]").send_keys(entrega_hora_desde)
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[3]").send_keys(entrega_hora_hasta)
-
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[7]/td/div[2]/table/tbody/tr/td[1]/input").send_keys("FCS")
-    suggestions_container = wait.until(EC.presence_of_element_located((By.ID, "suggest_nomDomOri_list")))
-
-    wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[7]/td/div[2]/table/tbody/tr/td[1]/div/div/div[1]/table/tbody")))
-
-    # Encuentra todos los botones sugeridos dentro del contenedor de sugerencias
-    suggested_buttons = suggestions_container.find_elements(By.CLASS_NAME, "suggest")
-    # Itera a través de los botones sugeridos y encuentra el que contiene el texto "Fisher Clinical Services FCS"
-    for button in suggested_buttons:
-        button_text = button.text.strip()
-        if "Fisher Clinical Services FCS" in button_text:
-            button.click()
-            break
-    
-    # Selecciona el tipo de material
-    if tipo_material == "Medicacion": it_tipo_material = 3
-    elif tipo_material == "Material": it_tipo_material = 5
-    elif tipo_material == "Equipo": it_tipo_material = 7
-    else: it_tipo_material = 8
-
-    for i in range(0, it_tipo_material):
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[10]/td/select[1]").send_keys(Keys.DOWN)
-    
-
-    # Selecciona la temperatura
-    if temperatura == "Ambiente": it_temperatura = 0
-    elif temperatura == "Ambiente Controlado": it_temperatura = 1
-    elif temperatura == "Refrigerado": it_temperatura = 2
-    elif temperatura == "Congelado": it_temperatura = 3
-    else: it_temperatura = 4
-
-    for i in range(0, it_temperatura):
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[10]/td/select[2]").send_keys(Keys.DOWN)
-
-
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").clear()
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").send_keys(contactos)
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[12]/td/input").send_keys(cantidad_bultos)
-    
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/button").click()
-
-    # Error, no se pudo crear el Job
-    time.sleep(1)
-    #if EC.presence_of_element_located((By.ID, "CtrlajaxErrorListItem")): return ""    
-
-    wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))
-    
-    return driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:15]
+        return driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:15]
+    except:
+        return ""
 
 def completar_formulario_retorno(driver, url: str, referencia: str,
                                     entrega_fecha: str, entrega_hora_desde: str, entrega_hora_hasta: str,
@@ -196,40 +276,40 @@ def completar_formulario_retorno(driver, url: str, referencia: str,
     Returns:
         str: tracking number de retorno de credo
     """
-    # Carga la página
-    driver.get(url)
+    try:
+        # Carga la página
+        driver.get(url)
 
-    # Espera a que se cargue el formulario
-    wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[9]/td/select")))
+        # Espera a que se cargue el formulario
+        wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[9]/td/select")))
+        
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").clear()
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").send_keys(referencia)
+        
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[1]").send_keys(entrega_fecha)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[2]").send_keys(entrega_hora_desde)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[3]").send_keys(entrega_hora_hasta)
 
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").clear()
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").send_keys(referencia)
-    
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[1]").send_keys(entrega_fecha)
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[2]").send_keys(entrega_hora_desde)
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[3]").send_keys(entrega_hora_hasta)
+        # Selecciona el tipo de retorno
+        if tipo_retorno == "CREDO": it_tipo_retorno = 1
+        elif tipo_retorno == "DATALOGGER": it_tipo_retorno = 2
+        else: it_tipo_retorno = 3
+        for i in range(0, it_tipo_retorno):
+            driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[9]/td/select").send_keys(Keys.DOWN)
 
-    # Selecciona el tipo de retorno
-    if tipo_retorno == "CREDO": it_tipo_retorno = 1
-    elif tipo_retorno == "DATALOGGER": it_tipo_retorno = 2
-    else: it_tipo_retorno = 3
-    for i in range(0, it_tipo_retorno):
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[9]/td/select").send_keys(Keys.DOWN)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[12]/td/input[1]").send_keys(contactos)
+        
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/input").clear()
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/input").send_keys(cantidad_bultos)
 
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[12]/td/input[1]").send_keys(contactos)
-    
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/input").clear()
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/input").send_keys(cantidad_bultos)
-
-    driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[14]/td/button").click()
-    
-    # Error, no se pudo crear el Job de retorno
-    time.sleep(1)
-    #if EC.presence_of_element_located((By.ID, "CtrlajaxErrorListItem")): return ""
-
-    wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))
-
-    return driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:15]
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[14]/td/button").click()
+        
+        # Espera a que se cargue la página con el tracking number
+        wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))
+        
+        return driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:15]
+    except:
+        return ""
 
 def imprimir_documentos_TA(driver, url: str):
     """
@@ -240,14 +320,8 @@ def imprimir_documentos_TA(driver, url: str):
         url (str): url de la página
     """
     driver.get(url)
-    time.sleep(1)
-    #driver.find_element(By.TAG_NAME, "body").send_keys(Keys.CONTROL + 'p')
-
-    # Espera un momento para que aparezca el diálogo de impresión (ajusta el tiempo si es necesario)
-    #driver.implicitly_wait(5)
-    #driver.find_element(By.TAG_NAME, "body").send_keys(Keys.RETURN)
-
-    #driver.print() 
+    driver.execute_script("window.print();")
+    driver.execute_script("window.print();")
 
 def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
                         recoleccion_fecha: str, recoleccion_hora_desde: str, recoleccion_hora_hasta: str,
@@ -339,14 +413,12 @@ def procesar_ordenes_envios(driver, df: pd.DataFrame):
 
         tracking_number, return_tracking_number = procesar_orden_envio(driver, 
                                                         row["TA_ID"], row["SYSTEM_NUMBER"], row["IVRS_NUMBER"],
-                                                        row["RECOLECCION_FECHA"], row["RECOLECCION_HORA_DESDE"], row["RECOLECCION_HORA_HASTA"],
+                                                        row["SHIP DATE"], row["RECOLECCION_HORA_DESDE"], row["RECOLECCION_HORA_HASTA"],
                                                         row["ENTREGA_FECHA"], row["ENTREGA_HORA_DESDE"], row["ENTREGA_HORA_HASTA"],
                                                         row["TIPO_MATERIAL"], row["TEMPERATURA"],
-                                                        row["CONTACTOS"], row["CANTIDAD_CAJAS"],
+                                                        row["CONTACTOS"], row["CANTIDAD_BULTOS"],
                                                         row["RETURN"], row["RETURN_TO_TA"], row["TIPO_RETORNO"] , row["RETURN_CANTIDAD"])
         
-        if tracking_number == "": continue
-
         df.loc[index, "TRACKING_NUMBER"] = tracking_number
         df.loc[index, "RETURN_TRACKING_NUMBER"] = return_tracking_number
 
@@ -362,6 +434,16 @@ def actualizar_tabla_ordenes_envio(df: pd.DataFrame, path: str, sheet: str):
 
     with pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
             df.to_excel(writer, sheet_name=sheet, index=False)
+
+def exportar_a_excel(df: pd.DataFrame, path: str):
+    """
+    Exporta la tabla de ordenes de envío a un archivo de excel
+
+    Args:
+        df (DataFrame): tabla de ordenes de envío
+        path (str): ruta del archivo de excel
+    """
+    df.to_excel(path, index=False)
 
 def main():
     """
@@ -383,20 +465,29 @@ def main():
     driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
     wait = WebDriverWait(driver, 10)
 
-    team = "Test_5_ordenes"
+    team = "Lilly"
 
-    df_path, sheet = cargar_rutas(team)
+    df_path, sheet, info_sites_sheet = cargar_rutas(team)
 
-    iniciar_sesion_TA(driver, "inaki.costa", "Alejan1961")
+    #if True: # Para ocultar el usuario y contraseña :)
+    #    iniciar_sesion_TA(driver, "inaki.costa", "Alejan1961")
 
-    df = cargar_tabla_ordenes_envio( dt.datetime(2023, 10, 19), team, df_path, sheet)
 
-    procesar_ordenes_envios(driver, df)
+    df_ordenes = cargar_tabla_ordenes_envio( dt.datetime(2023, 10, 27), team, df_path, sheet)
     
-    actualizar_tabla_ordenes_envio(df, df_path, sheet)
+    df_info_sites = cargar_tabla_info_sites(team, df_path, info_sites_sheet)
+
+    df = pd.merge(df_ordenes, df_info_sites, on=["STUDY", "SITE#"], how="inner")
+    
+    #procesar_ordenes_envios(driver, df)
 
     if not df.empty:
-        print(df[["SYSTEM_NUMBER", "IVRS_NUMBER", "TRACKING_NUMBER", "RETURN_TRACKING_NUMBER"]])
+        dataframe_name = "orders_" + dt.datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
+        exportar_a_excel(df, os.path.expanduser("~\\Downloads") + "\\" + dataframe_name)
+        
+        print(df[["SYSTEM_NUMBER", "STUDY", "SITE#", "IVRS_NUMBER", "SHIP DATE"]]) #, "TRACKING_NUMBER", "RETURN_TRACKING_NUMBER"]])
+        print("Total: " + str(len(df.index)))
+
     else:
         print("Empty DataFrame")
 
