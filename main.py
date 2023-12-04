@@ -9,6 +9,12 @@ import time
 import pandas as pd
 import datetime as dt
 import os
+import tkinter as tk
+from tkinter import ttk
+from tkinter import *
+from tkcalendar import Calendar
+import customtkinter as ctk
+import sys
 
 class PrintingBrowser(object):
     def __init__(self):
@@ -36,13 +42,71 @@ class PrintingBrowser(object):
         time.sleep(1)
         self.driver.execute_script("window.print = function(msg) {return false;}")
 
+class DatePicker(tk.Frame):
+    def __init__(self, master, *args, **kwargs):
+        super().__init__(master, *args, **kwargs)
+        self._last_click_event = None
+        
+        top = tk.Toplevel(master)
+        frame = ctk.CTkFrame(master)
+        frame.pack(fill="both", padx=10, pady=10, expand=True)
+
+        style = ttk.Style(master)
+        style.theme_use("default")
+
+        cal = Calendar(frame, selectmode='day', locale='en_US', disabledforeground='red',
+                cursor="hand2", background=ctk.ThemeManager.theme["CTkFrame"]["fg_color"][1],
+                selectbackground=ctk.ThemeManager.theme["CTkButton"]["fg_color"][1])
+        cal.pack(fill="both", expand=True, padx=10, pady=10)
+        cal.bind("<<DateEntrySelected>>", self._on_click_handler)
+
+        def print_sel():
+            date.config(text = "Selected Date is: " + cal.get_date())
+
+        #self.ok_button = tk.Button(master, text="Ok")
+        #ttk.Button(text="Ok", command=print_sel(cal)).pack()
+        Button(master, text = "Get Date",
+                command = print_sel).pack(pady = 20)
+        
+        date = Label(root, text = "")
+        date.pack(pady = 20)
+
+
+    def _on_click_handler(self, event):
+        if event is None and self._last_click_event is not None:
+            self._last_click_event = None
+            self.call_label_top(self._last_click_event)
+        elif self._last_click_event is None and event is not None:
+            self._last_click_event = event
+            self.after(300, self._on_click_handler, None)
+        elif event is not None:
+            self.call_label_top_double(event)
+            self._last_click_event = None
+
+    def call_label_top(self, event):
+        print("Intento1: Single click in TopLabel")
+
+    def call_label_top_double(self, event):
+        print("Intento1: Double click in TopLabel")
+
+if __name__ == "__main__":
+    print(sys.version)
+    ctk.set_appearance_mode("Dark")
+    ctk.set_default_color_theme("green")
+    root = ctk.CTk()
+    root.geometry("550x400")
+    app = DatePicker(root)
+    root.progID = sys.argv[0] + " --> "  # recoge nombre del programa
+    root.title(root.progID + 'Sample application')
+    root.mainloop()
+
 def init_driver() -> (webdriver, WebDriverWait):
     """
-    Inicia el driver de selenium y la espera de selenium
+    Starts selenium driver and selenium wait
 
     Returns:
-        webdriver: driver de selenium
-        WebDriverWait: espera de selenium
+        webdriver: selenium driver
+        WebDriverWait: selenium wait
     """
     global browser_that_prints
     browser_that_prints = PrintingBrowser()
@@ -52,15 +116,15 @@ def init_driver() -> (webdriver, WebDriverWait):
 
 def cargar_rutas(team: str) -> (str, str, str):
     """
-    Carga las rutas de los archivos de excel
+    Loads excel files paths
 
     Args:
-        team (str): equipo a procesar
+        team (str): team to process
 
     Returns:
-        str: ruta del archivo de excel
-        str: nombre de la hoja de excel
-        str: nombre de la hoja de excel de información de los sitios
+        str: excel file path
+        str: excel sheet name
+        str: excel sheet name with sites info
     """
     
     path, sheet, info_sites_sheet = "", "", ""
@@ -85,35 +149,37 @@ def cargar_rutas(team: str) -> (str, str, str):
     
     return path, sheet, info_sites_sheet
 
-def iniciar_sesion_TA(driver, username: str, password: str):
+def iniciar_sesion_TA(driver) -> bool:
     """
-    Inicia sesión en la página de TA
+    Logs in TA website
 
     Args:
-        driver (webdriver): driver de selenium
-        username (str): nombre de usuario
-        password (str): contraseña
+        driver (webdriver): selenium driver
     """
     driver.get("https://sgi.tanet.com.ar/sgi/index.php")
+    # Wait for the login webpage to load
+    wait = WebDriverWait(driver, 30)
 
-    wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/button")))
-
-    driver.find_element(By.XPATH, "/html/body/form/input[1]").send_keys(username)
-    driver.find_element(By.XPATH, "/html/body/form/input[2]").send_keys(password)
-    driver.find_element(By.XPATH, "/html/body/form/button").click()
+    try:
+        # Wait user input their credentials 
+        wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/div[2]/div[1]/table/tbody/tr[1]/td")))
+        wait = WebDriverWait(driver, 10)
+        return True
+    except:
+        return False
 
 def cargar_tabla_ordenes_envio(date : dt.datetime, team: str,  path: str, sheet: str ) -> pd.DataFrame:
     """
-    Carga la tabla de ordenes de envío segun la fecha y el equipo
+    Loads orders table according to date and team
 
     Args:
-        date (dt.datetime): fecha de las ordenes de envío
-        team (str): equipo a procesar
-        path (str): ruta del archivo de excel
-        sheet (str): nombre de la hoja de excel
+        date (dt.datetime): date to process
+        team (str): team to process
+        path (str): excel file path
+        sheet (str): excel sheet name
 
     Returns:
-        DataFrame: tabla de ordenes de envío
+        DataFrame: orders table
     """
     if team == "Lilly":
         columns_names = {"CT-WIN": "SYSTEM_NUMBER", "IVRS": "IVRS_NUMBER",
@@ -148,7 +214,7 @@ def cargar_tabla_ordenes_envio(date : dt.datetime, team: str,  path: str, sheet:
     df["SITE#"] = df["SITE#"].astype(object)
     df["CANTIDAD_BULTOS"] = df["CANTIDAD_BULTOS"].fillna(0).astype(int)
 
-    if team == "Lilly": # Casos especiales del equipo Lilly
+    if team == "Lilly": # Specific cases for Lilly team
         df["TIPO_MATERIAL"] = "Medicacion"
         
         temperaturas = {"L": "Ambiente",
@@ -175,10 +241,10 @@ def cargar_tabla_ordenes_envio(date : dt.datetime, team: str,  path: str, sheet:
         df["RETURN_CANTIDAD"] = df["RETURN_CANTIDAD"].astype(int)
         df["ENTREGA_FECHA"] = pd.to_datetime(df["ENTREGA_FECHA"], format='%d%m%Y', errors='coerce')
  
-    elif team == "GPM": # Casos especiales del equipo GPM
+    elif team == "GPM": # Specific cases for GPM team
         df = df #TODO
     
-    elif team == "Test" or team == "Test_5_ordenes": # Casos especiales de tests
+    elif team == "Test" or team == "Test_5_ordenes": # Specific cases for tests
         df["RECOLECCION_HORA_HASTA"] = ""
         df["RECOLECCION_HORA_DESDE"] = pd.to_datetime(df["RECOLECCION_HORA_DESDE"], format='%H:%M:%S', errors='coerce')
         df["RECOLECCION_HORA_HASTA"] = df["RECOLECCION_HORA_DESDE"] + dt.timedelta(minutes=30)
@@ -199,21 +265,24 @@ def cargar_tabla_ordenes_envio(date : dt.datetime, team: str,  path: str, sheet:
 
 def cargar_tabla_info_sites(team: str, path: str, sheet: str) -> pd.DataFrame:
     """
-    Carga la tabla de información de los sitios segun el equipo
+    Loads sites info table according to team
 
     Args:
-        team (str): equipo a procesar
-        path (str): ruta del archivo de excel
-        sheet (str): nombre de la hoja de excel
+        team (str): team to process
+        path (str): excel file path
+        sheet (str): excel sheet name
 
     Returns:
-        DataFrame: tabla de información de los sitios
+        DataFrame: sites info table
     """
-    if team == "Lilly":
+    if team == "Lilly": # Specific cases for Lilly team
         columns_names = {"Protocolo": "STUDY", "Codigo": "TA_ID", "Site": "SITE#",
                         "Horario inicio": "ENTREGA_HORA_DESDE", "Horario fin": "ENTREGA_HORA_HASTA"}
         columns_types = {"Protocolo": str, "Site": str, "Codigo": str, "Horario inicio": str, "Horario fin": str}
-    elif team == "Test" or team == "Test_5_ordenes":
+    elif team == "GPM": # Specific cases for GPM team
+        columns_names = {} #TODO
+        columns_types = {} #TODO
+    elif team == "Test" or team == "Test_5_ordenes": # Specific cases for tests
         columns_names = {}
         columns_types = {"STUDY": str, "SITE#": str, "TA_ID": str, "ENTREGA_HORA_DESDE": dt.datetime, "ENTREGA_HORA_HASTA": dt.datetime}
 
@@ -235,31 +304,30 @@ def completar_formulario_orden_envio(driver, url: str, referencia: str,
                                     tipo_material: str, temperatura: str,
                                     contactos: str, cantidad_bultos: int) -> str :
     """
-    Completa el formulario de orden de envío
+    Completes the order form
 
     Args:
-        driver (webdriver): driver de selenium
-        url (str): url de la página
-        referencia (str): referencia de la orden de envío
-        recoleccion_fecha (str): fecha de recolección
-        recoleccion_hora_desde (str): hora de recolección desde
-        recoleccion_hora_hasta (str): hora de recolección hasta
-        entrega_fecha (str): fecha de entrega
-        entrega_hora_desde (str): hora de entrega desde
-        entrega_hora_hasta (str): hora de entrega hasta
-        tipo_material (str): tipo de material
-        temperatura (str): temperatura
-        contactos (str): contactos
-        cantidad_bultos (int): cantidad de bultos
+        driver (webdriver): selenium driver
+        url (str): page url
+        referencia (str): order reference
+        recoleccion_fecha (str): ship date
+        recoleccion_hora_desde (str): ship time (from)
+        recoleccion_hora_hasta (str): ship time (to)
+        entrega_fecha (str): delivery date
+        entrega_hora_desde (str): delivery time (from)
+        entrega_hora_hasta (str): delivery time (to)
+        tipo_material (str): type of material
+        temperatura (str): temperature
+        contactos (str): contacts
+        cantidad_bultos (int): number of boxes
     
     Returns:
-        str: tracking number
+        str: tracking number // waybill number
     """
     try:
-        # Carga la página
         driver.get(url)
         
-        # Espera a que se cargue el formulario
+        # Wait for the webpage to load
         wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[7]/td/div[2]/table/tbody/tr/td[1]/input")))
         
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").send_keys(referencia)
@@ -277,16 +345,16 @@ def completar_formulario_orden_envio(driver, url: str, referencia: str,
 
         wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[7]/td/div[2]/table/tbody/tr/td[1]/div/div/div[1]/table/tbody")))
 
-        # Encuentra todos los botones sugeridos dentro del contenedor de sugerencias
+        # Finds all suggested buttons inside the suggestions container
         suggested_buttons = suggestions_container.find_elements(By.CLASS_NAME, "suggest")
-        # Itera a través de los botones sugeridos y encuentra el que contiene el texto "Fisher Clinical Services FCS"
+        # Loops through the suggested buttons and finds the one that contains the text "Fisher Clinical Services FCS"
         for button in suggested_buttons:
             button_text = button.text.strip()
             if "Fisher Clinical Services FCS" in button_text:
                 button.click()
                 break
         
-        # Selecciona el tipo de material
+        # Selects the material type
         if tipo_material == "Medicacion": it_tipo_material = 3
         elif tipo_material == "Material": it_tipo_material = 5
         elif tipo_material == "Equipo": it_tipo_material = 7
@@ -296,7 +364,7 @@ def completar_formulario_orden_envio(driver, url: str, referencia: str,
             driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[10]/td/select[1]").send_keys(Keys.DOWN)
         
 
-        # Selecciona la temperatura
+        # Selects the temperature
         if temperatura == "Ambiente": it_temperatura = 0
         elif temperatura == "Ambiente Controlado": it_temperatura = 1
         elif temperatura == "Refrigerado": it_temperatura = 2
@@ -315,8 +383,7 @@ def completar_formulario_orden_envio(driver, url: str, referencia: str,
         
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/button").click()
 
-        # Espera a que se cargue la página con el tracking number
-        time.sleep(1)
+        # Wait for the webpage to load and get the tracking number
         wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))
     
         return driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:15]
@@ -327,27 +394,27 @@ def completar_formulario_retorno(driver, url: str, referencia: str,
                                     entrega_fecha: str, entrega_hora_desde: str, entrega_hora_hasta: str,
                                     tipo_retorno: str, contactos: str, cantidad_bultos: int) -> str:
     """
-    Completa el formulario de retorno de credo
+    Completes the return form
 
     Args:
-        driver (webdriver): driver de selenium
-        url (str): url de la página
-        referencia (str): referencia de la orden de envío
-        entrega_fecha (str): fecha de entrega
-        entrega_hora_desde (str): hora de entrega desde
-        entrega_hora_hasta (str): hora de entrega hasta
-        tipo_retorno (str): tipo de retorno
-        contactos (str): contactos
-        cantidad_bultos (int): cantidad de bultos
+        driver (webdriver): selenium driver
+        url (str): page url
+        referencia (str): order reference
+        entrega_fecha (str): delivery date
+        entrega_hora_desde (str): delivery time (from)
+        entrega_hora_hasta (str): delivery time (to)
+        tipo_retorno (str): return type
+        contactos (str): contacts
+        cantidad_bultos (int): number of boxes
 
     Returns:
-        str: tracking number de retorno de credo
+        str: return tracking number // return waybill number
     """
     try:
-        # Carga la página
+        # Load the webpage
         driver.get(url)
 
-        # Espera a que se cargue el formulario
+        # Wait for the webpage to load
         wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[9]/td/select")))
         
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").clear()
@@ -357,7 +424,7 @@ def completar_formulario_retorno(driver, url: str, referencia: str,
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[2]").send_keys(entrega_hora_desde)
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[3]").send_keys(entrega_hora_hasta)
 
-        # Selecciona el tipo de retorno
+        # Selects the return type
         if tipo_retorno == "CREDO": it_tipo_retorno = 1
         elif tipo_retorno == "DATALOGGER": it_tipo_retorno = 2
         else: it_tipo_retorno = 3
@@ -374,7 +441,7 @@ def completar_formulario_retorno(driver, url: str, referencia: str,
 
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[14]/td/button").click()
         
-        # Espera a que se cargue la página con el tracking number
+        # Wait for the webpage to load and get the return tracking number
         wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))
         
         return driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:15]
@@ -383,11 +450,11 @@ def completar_formulario_retorno(driver, url: str, referencia: str,
 
 def imprimir_documentos_TA(driver, url: str):
     """
-    Imprime los documentos de la página
+    Prints order documents
 
     Args:
-        driver (webdriver): driver de selenium
-        url (str): url de la página
+        driver (webdriver): selenium driver
+        url (str): page url
     """
     
     time.sleep(2)
@@ -410,32 +477,32 @@ def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
                         contactos: str, cantidad_bultos: int,
                         return_: bool, return_to_TA: bool, tipo_retorno: str , return_cantidad: int) -> str:
     """
-    -Procesa una orden de envio completando el formulario de TA
-    -Le crea una orden de retorno de credo si es necesario
-    -Imprime los documentos de la orden de envío
+    - Process an order by completing the TA form
+    - Creates a return order if necessary
+    - Prints the order documents
 
     Args:
-        driver (webdriver): driver de selenium
-        TA_ID (int): id de ubicación de TA
-        system_number (int): número de sistema
-        ivrs_number (str): número de ivrs
-        recoleccion_fecha (str): fecha de recolección
-        recoleccion_hora_desde (str): hora de recolección desde
-        recoleccion_hora_hasta (str): hora de recolección hasta
-        entrega_fecha (str): fecha de entrega
-        entrega_hora_desde (str): hora de entrega desde
-        entrega_hora_hasta (str): hora de entrega hasta
-        tipo_material (str): tipo de material
-        temperatura (str): temperatura
-        contactos (str): contactos
-        cantidad_bultos (int): cantidad de bultos
-        return_ (bool): si es necesario crear una orden de retorno de credo
-        return_to_TA (bool): si es necesario, decide si la orden de retorno va a TA
-        return_cantidad (int): cantidad de cajas de la orden de retorno de credo
+        driver (webdriver): selenium driver
+        TA_ID (int): Site ID on TA website
+        system_number (int): order system number
+        ivrs_number (str): order ivrs number
+        recoleccion_fecha (str): ship date
+        recoleccion_hora_desde (str): ship time (from)
+        recoleccion_hora_hasta (str): ship time (to)
+        entrega_fecha (str): delivery date
+        entrega_hora_desde (str): delivery time (from)
+        entrega_hora_hasta (str): delivery time (to)
+        tipo_material (str): type of material
+        temperatura (str): temperature
+        contactos (str): contacts
+        cantidad_bultos (int): number of boxes
+        return_ (bool): if True, creates a return order
+        return_to_TA (bool): if True, the return order is sent to TA depot
+        return_cantidad (int): number of boxes to return
     
     Returns:
         str: tracking number
-        str: tracking number de retorno de credo
+        str: return tracking number
     """
 
     url = "https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarEnvio+idubicacion=" + str(TA_ID)
@@ -481,11 +548,11 @@ def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
 
 def procesar_ordenes_envios(driver, df: pd.DataFrame):
     """
-    Procesa todas las ordenes de envío de la tabla
+    Process all orders in the table
 
     Args:
-        driver (webdriver): driver de selenium
-        df (DataFrame): tabla de ordenes de envío
+        driver (webdriver): selenium driver
+        df (DataFrame): orders table
     """
     
     for index, row in df.iterrows():
@@ -504,12 +571,12 @@ def procesar_ordenes_envios(driver, df: pd.DataFrame):
 
 def actualizar_tabla_ordenes_envio(df: pd.DataFrame, path: str, sheet: str):
     """
-    Actualiza la tabla de ordenes de envío
+    Updates orders table
 
     Args:
-        df (DataFrame): tabla de ordenes de envío
-        path (str): ruta del archivo de excel
-        sheet (str): nombre de la hoja de excel
+        df (DataFrame): orders table
+        path (str): excel file path
+        sheet (str): excel sheet name
     """
 
     with pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
@@ -517,41 +584,41 @@ def actualizar_tabla_ordenes_envio(df: pd.DataFrame, path: str, sheet: str):
 
 def exportar_a_excel(df: pd.DataFrame, path: str):
     """
-    Exporta la tabla de ordenes de envío a un archivo de excel
+    Export orders table to an excel file
 
     Args:
-        df (DataFrame): tabla de ordenes de envío
-        path (str): ruta del archivo de excel
+        df (DataFrame): orders table
+        path (str): excel file path
     """
     df.to_excel(path, index=False)
 
 def main():
     """
-    Procesa todas las ordenes de envío de la tabla
+    Process all orders in the table
     
     Variables:
-        driver (webdriver): driver de selenium
-        wait (WebDriverWait): espera de selenium
-        team (str): equipo a procesar
-        df_path (str): ruta del archivo de excel
-        sheet (str): nombre de la hoja de excel
-        df (DataFrame): tabla de ordenes de envío
+        driver (webdriver): selenium driver
+        wait (WebDriverWait): selenium wait
+        team (str): team to process
+        df_path (str): excel file path
+        sheet (str): excel sheet name
+        df (DataFrame): orders table
     """
     global wait
 
     team = "Lilly"
-    shipdate = dt.datetime(2023, 11, 4) # Año, mes, día
+    shipdate = dt.datetime(2023, 11, 4) # Year, Month, Day
 
     driver, wait = init_driver()
 
     df_path, sheet, info_sites_sheet = cargar_rutas(team)
 
-    if True: # Para ocultar el usuario y contraseña :)
-        username = "inaki.costa"
-        password = "Alejan1961"
-    
-    iniciar_sesion_TA(driver, username, password)
-
+    if iniciar_sesion_TA(driver):
+        print("Logged in")
+    else:
+        print("Not logged in")
+        return
+        
     df_ordenes = cargar_tabla_ordenes_envio(shipdate, team, df_path, sheet)
     
     df_info_sites = cargar_tabla_info_sites(team, df_path, info_sites_sheet)
