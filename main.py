@@ -15,6 +15,7 @@ from tkinter import *
 from tkcalendar import Calendar
 import customtkinter as ctk
 import sys
+from PIL import Image, ImageTk
 
 class PrintingBrowser(object):
     def __init__(self):
@@ -47,35 +48,60 @@ class DatePicker(tk.Frame):
         super().__init__(master, *args, **kwargs)
         self._last_click_event = None
         
-        top = tk.Toplevel(master)
+        frame_banner = tk.Frame(master)
+        frame_banner.pack(side=tk.TOP, fill=tk.X)
+
+        # Cargar la imagen y mostrarla en un Label
+        imagen = Image.open("tu_imagen.jpg")  # Reemplaza "tu_imagen.jpg" con la ruta de tu propia imagen
+        imagen = imagen.resize((master.winfo_reqwidth(), 100))
+        imagen = ImageTk.PhotoImage(imagen)
+
+        label_banner = tk.Label(frame_banner, image=imagen)
+        label_banner.image = imagen  # Se requiere mantener una referencia a la imagen para que no sea eliminada por el recolector de basura
+        label_banner.pack(fill=tk.X)
+
         frame = ctk.CTkFrame(master)
         frame.pack(fill="both", padx=10, pady=10, expand=True)
+        frame_calendario = tk.Frame(frame)
+        frame_calendario.pack(side=tk.LEFT, padx=10, pady=10, expand=True, fill=tk.BOTH)
 
         style = ttk.Style(master)
         style.theme_use("default")
 
-        cal = Calendar(frame, selectmode='day', locale='en_US', disabledforeground='red',
+        self.selected_date = dt.datetime.now()
+
+        cal = Calendar(frame_calendario, selectmode='day', locale='en_US', disabledforeground='red',
                 cursor="hand2", background=ctk.ThemeManager.theme["CTkFrame"]["fg_color"][1],
                 selectbackground=ctk.ThemeManager.theme["CTkButton"]["fg_color"][1])
         cal.pack(fill="both", expand=True, padx=10, pady=10)
         cal.bind("<<DateEntrySelected>>", self._on_click_handler)
+        
+        self.opcion_var = tk.StringVar(None, "Lilly")
+        radio1 = tk.Radiobutton(frame, text="Team Lilly", variable=self.opcion_var, value="Lilly")
+        radio2 = tk.Radiobutton(frame, text="Team GPM", variable=self.opcion_var, value="GPM")
+        radio3 = tk.Radiobutton(frame, text="Test", variable=self.opcion_var, value="Test")
+        radio4 = tk.Radiobutton(frame, text="Test_5_ordenes", variable=self.opcion_var, value="Test_5_ordenes")
+
+        radio1.pack(pady=5, anchor="n")
+        radio2.pack(pady=5, anchor="n")
+        radio3.pack(pady=5, anchor="n")
+        radio4.pack(pady=5, anchor="n")
 
         def print_sel():
-            date.config(text = "Selected Date is: " + cal.get_date())
+            date.config(text = "Click here to process orders for " + cal.get_date() + " for " + self.opcion_var.get() + " team" )
+            self.selected_date = dt.datetime.strptime(cal.get_date(), "%m/%d/%y")
 
-        #self.ok_button = tk.Button(master, text="Ok")
-        #ttk.Button(text="Ok", command=print_sel(cal)).pack()
         Button(master, text = "Get Date",
                 command = print_sel).pack(pady = 20)
         
-        date = Label(root, text = "")
+        date = Label(master, text = "")
         date.pack(pady = 20)
-
+        date.bind("<Button-1>", self._on_click_handler)
 
     def _on_click_handler(self, event):
         if event is None and self._last_click_event is not None:
             self._last_click_event = None
-            self.call_label_top(self._last_click_event)
+            #self.call_label_top(self._last_click_event)
         elif self._last_click_event is None and event is not None:
             self._last_click_event = event
             self.after(300, self._on_click_handler, None)
@@ -83,22 +109,9 @@ class DatePicker(tk.Frame):
             self.call_label_top_double(event)
             self._last_click_event = None
 
-    def call_label_top(self, event):
-        print("Intento1: Single click in TopLabel")
-
     def call_label_top_double(self, event):
-        print("Intento1: Double click in TopLabel")
-
-if __name__ == "__main__":
-    print(sys.version)
-    ctk.set_appearance_mode("Dark")
-    ctk.set_default_color_theme("green")
-    root = ctk.CTk()
-    root.geometry("550x400")
-    app = DatePicker(root)
-    root.progID = sys.argv[0] + " --> "  # recoge nombre del programa
-    root.title(root.progID + 'Sample application')
-    root.mainloop()
+        print("Double click in label")
+        generate_shipping_report(self.selected_date, self.opcion_var.get())
 
 def init_driver() -> (webdriver, WebDriverWait):
     """
@@ -114,7 +127,7 @@ def init_driver() -> (webdriver, WebDriverWait):
     wait = WebDriverWait(driver, 10)
     return driver, wait
 
-def cargar_rutas(team: str) -> (str, str, str):
+def load_paths(team: str) -> (str, str, str):
     """
     Loads excel files paths
 
@@ -149,7 +162,7 @@ def cargar_rutas(team: str) -> (str, str, str):
     
     return path, sheet, info_sites_sheet
 
-def iniciar_sesion_TA(driver) -> bool:
+def log_in_TA_website(driver) -> bool:
     """
     Logs in TA website
 
@@ -168,7 +181,7 @@ def iniciar_sesion_TA(driver) -> bool:
     except:
         return False
 
-def cargar_tabla_ordenes_envio(date : dt.datetime, team: str,  path: str, sheet: str ) -> pd.DataFrame:
+def load_shipping_order_table(date : dt.datetime, team: str,  path: str, sheet: str ) -> pd.DataFrame:
     """
     Loads orders table according to date and team
 
@@ -184,10 +197,10 @@ def cargar_tabla_ordenes_envio(date : dt.datetime, team: str,  path: str, sheet:
     if team == "Lilly":
         columns_names = {"CT-WIN": "SYSTEM_NUMBER", "IVRS": "IVRS_NUMBER",
                         "Trial Alias": "STUDY", "Site ": "SITE#",
-                        "Order received": "ENTER DATE", "Ship date": "SHIP DATE",
-                        "Horario de Despacho": "RECOLECCION_HORA_DESDE",  
-                        "Dia de entrega": "ENTREGA_FECHA", "Destination": "DESTINATION",
-                        "CONDICION": "TEMPERATURA", "TT4": "CANTIDAD_BULTOS",  
+                        "Order received": "ENTER DATE", "Ship date": "SHIP_DATE",
+                        "Horario de Despacho": "SHIP_TIME_FROM",  
+                        "Dia de entrega": "DELIVERY_DATE", "Destination": "DESTINATION",
+                        "CONDICION": "TEMPERATURE", "TT4": "AMOUNT_OF_BOXES",  
                         "AWB": "TRACKING_NUMBER", "Shipper return AWB": "RETURN_TRACKING_NUMBER"}
         
         columns_types = {"CT-WIN": int, "IVRS": str, 
@@ -204,18 +217,18 @@ def cargar_tabla_ordenes_envio(date : dt.datetime, team: str,  path: str, sheet:
 
     elif team == "Test" or team == "Test_5_ordenes":
         columns_names = {}
-        columns_types = {"SITE#": str, "RETURN_TO_TA": bool, "RECOLECCION_HORA_HASTA": str}
+        columns_types = {"SITE#": str, "RETURN_TO_TA": bool, "SHIP_TIME_TO": str}
 
     df = pd.read_excel(path, sheet_name=sheet, header=0, dtype=columns_types)
     df.rename(columns=columns_names, inplace=True)
-    df = df[df["SHIP DATE"] == date]
+    df = df[df["SHIP_DATE"] == date]
     
-    df["SHIP DATE"] = df["SHIP DATE"].dt.strftime('%d%m%y')
+    df["SHIP_DATE"] = df["SHIP_DATE"].dt.strftime('%d%m%y')
     df["SITE#"] = df["SITE#"].astype(object)
-    df["CANTIDAD_BULTOS"] = df["CANTIDAD_BULTOS"].fillna(0).astype(int)
+    df["AMOUNT_OF_BOXES"] = df["AMOUNT_OF_BOXES"].fillna(0).astype(int)
 
     if team == "Lilly": # Specific cases for Lilly team
-        df["TIPO_MATERIAL"] = "Medicacion"
+        df["TYPE_OF_MATERIAL"] = "Medicacion"
         
         temperaturas = {"L": "Ambiente",
                         "M": "Ambiente Controlado", "M + L": "Ambiente Controlado",
@@ -223,47 +236,47 @@ def cargar_tabla_ordenes_envio(date : dt.datetime, team: str,  path: str, sheet:
                         "REF": "Refrigerado", "REF + H": "Refrigerado", "REF + M": "Refrigerado", "REF + L": "Refrigerado",
                         "REF + H + M": "Refrigerado", "REF + H + L": "Refrigerado", "REF + M + L": "Refrigerado",
                         "REF + H + M + L": "Refrigerado"}
-        df["TEMPERATURA"] = df["TEMPERATURA"].replace(temperaturas)
-        df[(df["TEMPERATURA"] == "Ambiente") & (df["RETURN_TRACKING_NUMBER"] != "NA")]["TEMPERATURA"] = "Ambiente Controlado"
+        df["TEMPERATURE"] = df["TEMPERATURE"].replace(temperaturas)
+        df[(df["TEMPERATURE"] == "Ambiente") & (df["RETURN_TRACKING_NUMBER"] != "NA")]["TEMPERATURE"] = "Ambiente Controlado"
         df["Cajas (Carton)"] = df["Cajas (Carton)"].fillna(0).astype(int)
-        df["RETURN_CANTIDAD"] = df["CANTIDAD_BULTOS"] - df["Cajas (Carton)"]
-        df["RETURN"] = (df["RETURN_CANTIDAD"] > 0) & (df["TEMPERATURA"] != "Ambiente")
+        df["RETURN_CANTIDAD"] = df["AMOUNT_OF_BOXES"] - df["Cajas (Carton)"]
+        df["RETURN"] = (df["RETURN_CANTIDAD"] > 0) & (df["TEMPERATURE"] != "Ambiente")
         df["RETURN_TO_TA"] = False
-        df["TIPO_RETORNO"] = "CREDO"
+        df["RETURN_TYPE"] = "CREDO"
 
         horariosDeDespacho = {"8": "08:00:00", "16.3": "16:30:00", "19": "19:00:00"} 
-        df["RECOLECCION_HORA_DESDE"] = df["RECOLECCION_HORA_DESDE"].replace(horariosDeDespacho)
-        df["RECOLECCION_HORA_DESDE"] = pd.to_datetime(df["RECOLECCION_HORA_DESDE"], format='%H:%M:%S', errors='coerce')
-        df["RECOLECCION_HORA_HASTA"] = df["RECOLECCION_HORA_DESDE"] + dt.timedelta(minutes=30)
-        df["RECOLECCION_HORA_DESDE"] = df["RECOLECCION_HORA_DESDE"].dt.strftime('%H:%M')
-        df["RECOLECCION_HORA_HASTA"] = df["RECOLECCION_HORA_HASTA"].dt.strftime('%H:%M')
+        df["SHIP_TIME_FROM"] = df["SHIP_TIME_FROM"].replace(horariosDeDespacho)
+        df["SHIP_TIME_FROM"] = pd.to_datetime(df["SHIP_TIME_FROM"], format='%H:%M:%S', errors='coerce')
+        df["SHIP_TIME_TO"] = df["SHIP_TIME_FROM"] + dt.timedelta(minutes=30)
+        df["SHIP_TIME_FROM"] = df["SHIP_TIME_FROM"].dt.strftime('%H:%M')
+        df["SHIP_TIME_TO"] = df["SHIP_TIME_TO"].dt.strftime('%H:%M')
 
         df["RETURN_CANTIDAD"] = df["RETURN_CANTIDAD"].astype(int)
-        df["ENTREGA_FECHA"] = pd.to_datetime(df["ENTREGA_FECHA"], format='%d%m%Y', errors='coerce')
+        df["DELIVERY_DATE"] = pd.to_datetime(df["DELIVERY_DATE"], format='%d%m%Y', errors='coerce')
  
     elif team == "GPM": # Specific cases for GPM team
         df = df #TODO
     
     elif team == "Test" or team == "Test_5_ordenes": # Specific cases for tests
-        df["RECOLECCION_HORA_HASTA"] = ""
-        df["RECOLECCION_HORA_DESDE"] = pd.to_datetime(df["RECOLECCION_HORA_DESDE"], format='%H:%M:%S', errors='coerce')
-        df["RECOLECCION_HORA_HASTA"] = df["RECOLECCION_HORA_DESDE"] + dt.timedelta(minutes=30)
+        df["SHIP_TIME_TO"] = ""
+        df["SHIP_TIME_FROM"] = pd.to_datetime(df["SHIP_TIME_FROM"], format='%H:%M:%S', errors='coerce')
+        df["SHIP_TIME_TO"] = df["SHIP_TIME_FROM"] + dt.timedelta(minutes=30)
 
-        df["RECOLECCION_HORA_DESDE"] = df["RECOLECCION_HORA_DESDE"].dt.strftime('%H:%M')
-        df["RECOLECCION_HORA_HASTA"] = df["RECOLECCION_HORA_HASTA"].dt.strftime('%H:%M')
+        df["SHIP_TIME_FROM"] = df["SHIP_TIME_FROM"].dt.strftime('%H:%M')
+        df["SHIP_TIME_TO"] = df["SHIP_TIME_TO"].dt.strftime('%H:%M')
 
-        df["RETURN_CANTIDAD"] = df["CANTIDAD_BULTOS"]
+        df["RETURN_CANTIDAD"] = df["AMOUNT_OF_BOXES"]
 
     df.fillna('', inplace=True)
     
     return df[['SYSTEM_NUMBER', 'IVRS_NUMBER', 'STUDY', 'SITE#',
-               'SHIP DATE', 'RECOLECCION_HORA_DESDE', 'RECOLECCION_HORA_HASTA', 
-               'ENTREGA_FECHA', 'TIPO_MATERIAL', 
-               'TEMPERATURA', 'CANTIDAD_BULTOS', 'RETURN', 
-               'RETURN_TO_TA', 'TIPO_RETORNO', 'RETURN_CANTIDAD',
+               'SHIP_DATE', 'SHIP_TIME_FROM', 'SHIP_TIME_TO', 
+               'DELIVERY_DATE', 'TYPE_OF_MATERIAL', 
+               'TEMPERATURE', 'AMOUNT_OF_BOXES', 'RETURN', 
+               'RETURN_TO_TA', 'RETURN_TYPE', 'RETURN_CANTIDAD',
                'TRACKING_NUMBER', 'RETURN_TRACKING_NUMBER']]
 
-def cargar_tabla_info_sites(team: str, path: str, sheet: str) -> pd.DataFrame:
+def load_table_info_sites(team: str, path: str, sheet: str) -> pd.DataFrame:
     """
     Loads sites info table according to team
 
@@ -277,30 +290,36 @@ def cargar_tabla_info_sites(team: str, path: str, sheet: str) -> pd.DataFrame:
     """
     if team == "Lilly": # Specific cases for Lilly team
         columns_names = {"Protocolo": "STUDY", "Codigo": "TA_ID", "Site": "SITE#",
-                        "Horario inicio": "ENTREGA_HORA_DESDE", "Horario fin": "ENTREGA_HORA_HASTA"}
+                        "Horario inicio": "DELIVERY_TIME_FROM", "Horario fin": "DELIVERY_TIME_TO"}
         columns_types = {"Protocolo": str, "Site": str, "Codigo": str, "Horario inicio": str, "Horario fin": str}
     elif team == "GPM": # Specific cases for GPM team
         columns_names = {} #TODO
         columns_types = {} #TODO
     elif team == "Test" or team == "Test_5_ordenes": # Specific cases for tests
         columns_names = {}
-        columns_types = {"STUDY": str, "SITE#": str, "TA_ID": str, "ENTREGA_HORA_DESDE": dt.datetime, "ENTREGA_HORA_HASTA": dt.datetime}
+        columns_types = {"STUDY": str, "SITE#": str, "TA_ID": str, "DELIVERY_TIME_FROM": dt.datetime, "DELIVERY_TIME_TO": dt.datetime}
 
     df = pd.read_excel(path, sheet_name=sheet, header=0, dtype=columns_types)
     df.rename(columns=columns_names, inplace=True)
     df.fillna('', inplace=True)
 
-    df["CONTACTOS"] = ""
-    df["ENTREGA_HORA_DESDE"] = pd.to_datetime(df["ENTREGA_HORA_DESDE"], format='%H:%M:%S', errors='coerce')
-    df["ENTREGA_HORA_HASTA"] = pd.to_datetime(df["ENTREGA_HORA_HASTA"], format='%H:%M:%S', errors='coerce')
-    df["ENTREGA_HORA_DESDE"] = df["ENTREGA_HORA_DESDE"].dt.strftime('%H:%M')
-    df["ENTREGA_HORA_HASTA"] = df["ENTREGA_HORA_HASTA"].dt.strftime('%H:%M')
+    if team == "Lilly": # Specific cases for Lilly team
+        df["CONTACTS"] = "NA"
+    elif team == "GPM": # Specific cases for GPM team
+        df = df #TODO
+    elif team == "Test" or team == "Test_5_ordenes": # Specific cases for tests
+        df = df #TODO
 
-    return df[["STUDY", "SITE#", "TA_ID", "ENTREGA_HORA_DESDE", "ENTREGA_HORA_HASTA", "CONTACTOS"]]
+    df["DELIVERY_TIME_FROM"] = pd.to_datetime(df["DELIVERY_TIME_FROM"], format='%H:%M:%S', errors='coerce')
+    df["DELIVERY_TIME_TO"] = pd.to_datetime(df["DELIVERY_TIME_TO"], format='%H:%M:%S', errors='coerce')
+    df["DELIVERY_TIME_FROM"] = df["DELIVERY_TIME_FROM"].dt.strftime('%H:%M')
+    df["DELIVERY_TIME_TO"] = df["DELIVERY_TIME_TO"].dt.strftime('%H:%M')
 
-def completar_formulario_orden_envio(driver, url: str, referencia: str,
-                                    recoleccion_fecha: str, recoleccion_hora_desde: str, recoleccion_hora_hasta: str,
-                                    entrega_fecha: str, entrega_hora_desde: str, entrega_hora_hasta: str,
+    return df[["STUDY", "SITE#", "TA_ID", "DELIVERY_TIME_FROM", "DELIVERY_TIME_TO", "CONTACTS"]]
+
+def complete_shipping_order_form(driver, url: str, referencia: str,
+                                    recoleccion_fecha: str, SHIP_TIME_FROM: str, SHIP_TIME_TO: str,
+                                    DELIVERY_DATE: str, entrega_hora_desde: str, entrega_hora_hasta: str,
                                     tipo_material: str, temperatura: str,
                                     contactos: str, cantidad_bultos: int) -> str :
     """
@@ -311,9 +330,9 @@ def completar_formulario_orden_envio(driver, url: str, referencia: str,
         url (str): page url
         referencia (str): order reference
         recoleccion_fecha (str): ship date
-        recoleccion_hora_desde (str): ship time (from)
-        recoleccion_hora_hasta (str): ship time (to)
-        entrega_fecha (str): delivery date
+        SHIP_TIME_FROM (str): ship time (from)
+        SHIP_TIME_TO (str): ship time (to)
+        DELIVERY_DATE (str): delivery date
         entrega_hora_desde (str): delivery time (from)
         entrega_hora_hasta (str): delivery time (to)
         tipo_material (str): type of material
@@ -333,10 +352,10 @@ def completar_formulario_orden_envio(driver, url: str, referencia: str,
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").send_keys(referencia)
         
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[1]").send_keys(recoleccion_fecha)
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[2]").send_keys(recoleccion_hora_desde)
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[3]").send_keys(recoleccion_hora_hasta)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[2]").send_keys(SHIP_TIME_FROM)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[3]").send_keys(SHIP_TIME_TO)
 
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[1]").send_keys(entrega_fecha)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[1]").send_keys(DELIVERY_DATE)
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[2]").send_keys(entrega_hora_desde)
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[3]").send_keys(entrega_hora_hasta)
 
@@ -375,7 +394,7 @@ def completar_formulario_orden_envio(driver, url: str, referencia: str,
             driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[10]/td/select[2]").send_keys(Keys.DOWN)
 
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").clear()
-        if contactos != "" or contactos != "NA":
+        if contactos != "" and contactos != "NA":
             driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").clear()
             driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").send_keys(contactos)
         
@@ -390,8 +409,8 @@ def completar_formulario_orden_envio(driver, url: str, referencia: str,
     except:
         return ""
 
-def completar_formulario_retorno(driver, url: str, referencia: str,
-                                    entrega_fecha: str, entrega_hora_desde: str, entrega_hora_hasta: str,
+def complete_shipping_order_return_form(driver, url: str, referencia: str,
+                                    DELIVERY_DATE: str, entrega_hora_desde: str, entrega_hora_hasta: str,
                                     tipo_retorno: str, contactos: str, cantidad_bultos: int) -> str:
     """
     Completes the return form
@@ -400,7 +419,7 @@ def completar_formulario_retorno(driver, url: str, referencia: str,
         driver (webdriver): selenium driver
         url (str): page url
         referencia (str): order reference
-        entrega_fecha (str): delivery date
+        DELIVERY_DATE (str): delivery date
         entrega_hora_desde (str): delivery time (from)
         entrega_hora_hasta (str): delivery time (to)
         tipo_retorno (str): return type
@@ -420,7 +439,7 @@ def completar_formulario_retorno(driver, url: str, referencia: str,
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").clear()
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").send_keys(referencia)
         
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[1]").send_keys(entrega_fecha)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[1]").send_keys(DELIVERY_DATE)
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[2]").send_keys(entrega_hora_desde)
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[3]").send_keys(entrega_hora_hasta)
 
@@ -448,7 +467,7 @@ def completar_formulario_retorno(driver, url: str, referencia: str,
     except:
         return ""
 
-def imprimir_documentos_TA(driver, url: str):
+def print_TA_documents(driver, url: str):
     """
     Prints order documents
 
@@ -470,9 +489,9 @@ def imprimir_documentos_TA(driver, url: str):
     #driver.executeScript("window.confirm = function(msg){return false;};");
     #driver.find_element(By.XPATH, "/html/body/div/div[1]/div[1]/div/div[3]/div/button[1]").click()
 
-def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
-                        recoleccion_fecha: str, recoleccion_hora_desde: str, recoleccion_hora_hasta: str,
-                        entrega_fecha: dt.datetime, entrega_hora_desde: str, entrega_hora_hasta: str,
+def process_shipping_order(driver, TA_ID:int, system_number:int, ivrs_number:str,
+                        recoleccion_fecha: str, SHIP_TIME_FROM: str, SHIP_TIME_TO: str,
+                        DELIVERY_DATE: dt.datetime, entrega_hora_desde: str, entrega_hora_hasta: str,
                         tipo_material: str, temperatura: str,
                         contactos: str, cantidad_bultos: int,
                         return_: bool, return_to_TA: bool, tipo_retorno: str , return_cantidad: int) -> str:
@@ -487,9 +506,9 @@ def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
         system_number (int): order system number
         ivrs_number (str): order ivrs number
         recoleccion_fecha (str): ship date
-        recoleccion_hora_desde (str): ship time (from)
-        recoleccion_hora_hasta (str): ship time (to)
-        entrega_fecha (str): delivery date
+        SHIP_TIME_FROM (str): ship time (from)
+        SHIP_TIME_TO (str): ship time (to)
+        DELIVERY_DATE (str): delivery date
         entrega_hora_desde (str): delivery time (from)
         entrega_hora_hasta (str): delivery time (to)
         tipo_material (str): type of material
@@ -510,11 +529,11 @@ def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
     referencia = referencia[:50]
 
     driver.get(url)
-    entrega_fecha = entrega_fecha.strftime('%d%m%Y')
-    tracking_number = completar_formulario_orden_envio(driver,
+    DELIVERY_DATE = DELIVERY_DATE.strftime('%d%m%Y')
+    tracking_number = complete_shipping_order_form(driver,
                                 url, referencia, 
-                                recoleccion_fecha, recoleccion_hora_desde, recoleccion_hora_hasta,
-                                str(entrega_fecha) , entrega_hora_desde, entrega_hora_hasta,
+                                recoleccion_fecha, SHIP_TIME_FROM, SHIP_TIME_TO,
+                                str(DELIVERY_DATE) , entrega_hora_desde, entrega_hora_hasta,
                                 tipo_material, temperatura,
                                 contactos, cantidad_bultos)
     
@@ -528,9 +547,9 @@ def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
         referencia_return = referencia_return[:50]
 
         driver.get(url_return)
-        return_tracking_number = completar_formulario_retorno(driver, url_return, 
+        return_tracking_number = complete_shipping_order_return_form(driver, url_return, 
                                                                         referencia_return,
-                                                                        str(entrega_fecha + dt.timedelta(days=1)), "9", "16",
+                                                                        str(DELIVERY_DATE + dt.timedelta(days=1)), "9", "16",
                                                                         tipo_retorno, "Personal de FCS", 
                                                                         return_cantidad)
     else:
@@ -538,15 +557,15 @@ def procesar_orden_envio(driver, TA_ID:int, system_number:int, ivrs_number:str,
 
     url_guias = "https://sgi.tanet.com.ar/sgi/srv.SrvPdf.emitirOde+id=" + str(tracking_number)[:7] + "&idservicio=" + str(tracking_number)[:7] + "&copies=4"
     driver.get(url_guias)
-    imprimir_documentos_TA(driver, url_guias)
+    print_TA_documents(driver, url_guias)
 
     url_rotulo = "https://sgi.tanet.com.ar/sgi/srv.RotuloPdf.emitir+id=" + str(tracking_number)[:7] + "&idservicio=" + str(tracking_number)[:7] + "&copies=1"
     driver.get(url_rotulo)
-    imprimir_documentos_TA(driver, url_rotulo)
+    print_TA_documents(driver, url_rotulo)
 
     return tracking_number, return_tracking_number
 
-def procesar_ordenes_envios(driver, df: pd.DataFrame):
+def process_all_shipping_orders(driver, df: pd.DataFrame):
     """
     Process all orders in the table
 
@@ -558,18 +577,18 @@ def procesar_ordenes_envios(driver, df: pd.DataFrame):
     for index, row in df.iterrows():
         if df.loc[index, "TRACKING_NUMBER"] != "": continue
 
-        tracking_number, return_tracking_number = procesar_orden_envio(driver, 
+        tracking_number, return_tracking_number = process_shipping_order(driver, 
                                                         row["TA_ID"], row["SYSTEM_NUMBER"], row["IVRS_NUMBER"],
-                                                        row["SHIP DATE"], row["RECOLECCION_HORA_DESDE"], row["RECOLECCION_HORA_HASTA"],
-                                                        row["ENTREGA_FECHA"], row["ENTREGA_HORA_DESDE"], row["ENTREGA_HORA_HASTA"],
-                                                        row["TIPO_MATERIAL"], row["TEMPERATURA"],
-                                                        row["CONTACTOS"], row["CANTIDAD_BULTOS"],
-                                                        row["RETURN"], row["RETURN_TO_TA"], row["TIPO_RETORNO"], row["RETURN_CANTIDAD"])
+                                                        row["SHIP_DATE"], row["SHIP_TIME_FROM"], row["SHIP_TIME_TO"],
+                                                        row["DELIVERY_DATE"], row["DELIVERY_TIME_FROM"], row["DELIVERY_TIME_TO"],
+                                                        row["TYPE_OF_MATERIAL"], row["TEMPERATURE"],
+                                                        row["CONTACTS"], row["AMOUNT_OF_BOXES"],
+                                                        row["RETURN"], row["RETURN_TO_TA"], row["RETURN_TYPE"], row["RETURN_CANTIDAD"])
         
         df.loc[index, "TRACKING_NUMBER"] = tracking_number
         df.loc[index, "RETURN_TRACKING_NUMBER"] = return_tracking_number
 
-def actualizar_tabla_ordenes_envio(df: pd.DataFrame, path: str, sheet: str):
+def update_shipping_order_table(df: pd.DataFrame, path: str, sheet: str):
     """
     Updates orders table
 
@@ -582,17 +601,7 @@ def actualizar_tabla_ordenes_envio(df: pd.DataFrame, path: str, sheet: str):
     with pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
             df.to_excel(writer, sheet_name=sheet, index=False)
 
-def exportar_a_excel(df: pd.DataFrame, path: str):
-    """
-    Export orders table to an excel file
-
-    Args:
-        df (DataFrame): orders table
-        path (str): excel file path
-    """
-    df.to_excel(path, index=False)
-
-def main():
+def generate_shipping_report(shipdate, team):
     """
     Process all orders in the table
     
@@ -606,32 +615,29 @@ def main():
     """
     global wait
 
-    team = "Lilly"
-    shipdate = dt.datetime(2023, 11, 4) # Year, Month, Day
-
     driver, wait = init_driver()
 
-    df_path, sheet, info_sites_sheet = cargar_rutas(team)
+    df_path, sheet, info_sites_sheet = load_paths(team)
 
-    if iniciar_sesion_TA(driver):
+    if log_in_TA_website(driver):
         print("Logged in")
     else:
         print("Not logged in")
         return
         
-    df_ordenes = cargar_tabla_ordenes_envio(shipdate, team, df_path, sheet)
+    df_orders = load_shipping_order_table(shipdate, team, df_path, sheet)
     
-    df_info_sites = cargar_tabla_info_sites(team, df_path, info_sites_sheet)
+    df_info_sites = load_table_info_sites(team, df_path, info_sites_sheet)
     
-    df = pd.merge(df_ordenes, df_info_sites, on=["STUDY", "SITE#"], how="inner")
+    df = pd.merge(df_orders, df_info_sites, on=["STUDY", "SITE#"], how="inner")
 
-    procesar_ordenes_envios(driver, df)
+    #process_all_shipping_orders(driver, df)
     
     if not df.empty:
         dataframe_name = "orders_" + dt.datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
-        exportar_a_excel(df, os.path.expanduser("~\\Downloads") + "\\" + dataframe_name)
+        df.to_excel(os.path.expanduser("~\\Downloads") + "\\" + dataframe_name, index=False)
         
-        print(df[["SYSTEM_NUMBER", "STUDY", "SITE#", "IVRS_NUMBER", "SHIP DATE", "RECOLECCION_HORA_DESDE", "RECOLECCION_HORA_HASTA"]]) #, "TRACKING_NUMBER", "RETURN_TRACKING_NUMBER"]])
+        print(df[["SYSTEM_NUMBER", "STUDY", "SITE#", "IVRS_NUMBER", "SHIP_DATE", "SHIP_TIME_FROM", "SHIP_TIME_TO"]]) #, "TRACKING_NUMBER", "RETURN_TRACKING_NUMBER"]])
         print("Total: " + str(len(df.index)))
     else:
         print("Empty DataFrame")
@@ -639,4 +645,12 @@ def main():
     time.sleep(1)
     driver.quit()
 
-main()
+if __name__ == "__main__":
+    print(sys.version)
+    ctk.set_appearance_mode("Dark")
+    ctk.set_default_color_theme("green")
+    root = ctk.CTk()
+    root.geometry("550x400")
+    app = DatePicker(root)
+    root.title('App Title')
+    root.mainloop()
