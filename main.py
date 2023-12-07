@@ -57,7 +57,7 @@ class DatePicker(tk.Frame):
         imagen = ImageTk.PhotoImage(imagen)
 
         label_banner = tk.Label(frame_banner, image=imagen)
-        label_banner.image = imagen  # Se requiere mantener una referencia a la imagen para que no sea eliminada por el recolector de basura
+        label_banner.image = imagen  # Se requiere mantener una reference a la imagen para que no sea eliminada por el recolector de basura
         label_banner.pack(fill=tk.X)
 
         frame = ctk.CTkFrame(master)
@@ -91,10 +91,10 @@ class DatePicker(tk.Frame):
             date.config(text = "Click here to process orders for " + cal.get_date() + " for " + self.opcion_var.get() + " team" )
             self.selected_date = dt.datetime.strptime(cal.get_date(), "%m/%d/%y")
 
-        Button(master, text = "Get Date",
-                command = print_sel).pack(pady = 20)
+        Button(master, text = "Process orders",
+                command = print_sel, font=30).pack(pady = 10, padx=10, side=tk.BOTTOM)
         
-        date = Label(master, text = "")
+        date = Label(master, text = "", font=30)
         date.pack(pady = 20)
         date.bind("<Button-1>", self._on_click_handler)
 
@@ -317,28 +317,28 @@ def load_table_info_sites(team: str, path: str, sheet: str) -> pd.DataFrame:
 
     return df[["STUDY", "SITE#", "TA_ID", "DELIVERY_TIME_FROM", "DELIVERY_TIME_TO", "CONTACTS"]]
 
-def complete_shipping_order_form(driver, url: str, referencia: str,
-                                    recoleccion_fecha: str, SHIP_TIME_FROM: str, SHIP_TIME_TO: str,
-                                    DELIVERY_DATE: str, entrega_hora_desde: str, entrega_hora_hasta: str,
-                                    tipo_material: str, temperatura: str,
-                                    contactos: str, cantidad_bultos: int) -> str :
+def complete_shipping_order_form(driver, url: str, reference: str,
+                                    ship_date: str, ship_time_from: str, ship_time_to: str,
+                                    delivery_date: str, delivery_time_from: str, delivery_time_to: str,
+                                    type_of_material: str, temperature: str,
+                                    contacts: str, amount_of_boxes: int) -> str :
     """
     Completes the order form
 
     Args:
         driver (webdriver): selenium driver
         url (str): page url
-        referencia (str): order reference
-        recoleccion_fecha (str): ship date
-        SHIP_TIME_FROM (str): ship time (from)
-        SHIP_TIME_TO (str): ship time (to)
-        DELIVERY_DATE (str): delivery date
-        entrega_hora_desde (str): delivery time (from)
-        entrega_hora_hasta (str): delivery time (to)
-        tipo_material (str): type of material
-        temperatura (str): temperature
-        contactos (str): contacts
-        cantidad_bultos (int): number of boxes
+        reference (str): order reference
+        ship_date (str): ship date
+        ship_time_from (str): ship time (from)
+        ship_time_to (str): ship time (to)
+        delivery_date (str): delivery date
+        delivery_time_from (str): delivery time (from)
+        delivery_time_to (str): delivery time (to)
+        type_of_material (str): type of material
+        temperature (str): temperature
+        contacts (str): contacts
+        amount_of_boxes (int): number of boxes
     
     Returns:
         str: tracking number // waybill number
@@ -349,15 +349,15 @@ def complete_shipping_order_form(driver, url: str, referencia: str,
         # Wait for the webpage to load
         wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[7]/td/div[2]/table/tbody/tr/td[1]/input")))
         
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").send_keys(referencia)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").send_keys(reference)
         
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[1]").send_keys(recoleccion_fecha)
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[2]").send_keys(SHIP_TIME_FROM)
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[3]").send_keys(SHIP_TIME_TO)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[1]").send_keys(ship_date)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[2]").send_keys(ship_time_from)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[3]").send_keys(ship_time_to)
 
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[1]").send_keys(DELIVERY_DATE)
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[2]").send_keys(entrega_hora_desde)
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[3]").send_keys(entrega_hora_hasta)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[1]").send_keys(delivery_date)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[2]").send_keys(delivery_time_from)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[3]").send_keys(delivery_time_to)
 
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[7]/td/div[2]/table/tbody/tr/td[1]/input").send_keys("FCS")
         suggestions_container = wait.until(EC.presence_of_element_located((By.ID, "suggest_nomDomOri_list")))
@@ -374,9 +374,9 @@ def complete_shipping_order_form(driver, url: str, referencia: str,
                 break
         
         # Selects the material type
-        if tipo_material == "Medicacion": it_tipo_material = 3
-        elif tipo_material == "Material": it_tipo_material = 5
-        elif tipo_material == "Equipo": it_tipo_material = 7
+        if type_of_material == "Medicacion": it_tipo_material = 3
+        elif type_of_material == "Material": it_tipo_material = 5
+        elif type_of_material == "Equipo": it_tipo_material = 7
         else: it_tipo_material = 8
 
         for i in range(0, it_tipo_material):
@@ -384,21 +384,24 @@ def complete_shipping_order_form(driver, url: str, referencia: str,
         
 
         # Selects the temperature
-        if temperatura == "Ambiente": it_temperatura = 0
-        elif temperatura == "Ambiente Controlado": it_temperatura = 1
-        elif temperatura == "Refrigerado": it_temperatura = 2
-        elif temperatura == "Congelado": it_temperatura = 3
+        if temperature == "Ambiente": it_temperatura = 0
+        elif temperature == "Ambiente Controlado": it_temperatura = 1
+        elif temperature == "Refrigerado": it_temperatura = 2
+        elif temperature == "Congelado": it_temperatura = 3
         else: it_temperatura = 4
 
         for i in range(0, it_temperatura):
             driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[10]/td/select[2]").send_keys(Keys.DOWN)
 
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").clear()
-        if contactos != "" and contactos != "NA":
-            driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").clear()
-            driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").send_keys(contactos)
+        if temperature != "Ambiente":
+            leyenda = "\n ***ENVÍO CON CAJA CREDO. EL COURIER AGUARDARÁ QUE EL CENTRO ALMACENE LA MEDICACIÓN Y RETORNE EL EMBALAJE***"
+            driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[9]/td/textarea").send_keys(leyenda)
         
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[12]/td/input").send_keys(cantidad_bultos)
+        if contacts != "" and contacts != "NA":
+            driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").clear()
+            driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").send_keys(contacts)
+        
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[12]/td/input").send_keys(amount_of_boxes)
         
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/button").click()
 
@@ -409,22 +412,22 @@ def complete_shipping_order_form(driver, url: str, referencia: str,
     except:
         return ""
 
-def complete_shipping_order_return_form(driver, url: str, referencia: str,
-                                    DELIVERY_DATE: str, entrega_hora_desde: str, entrega_hora_hasta: str,
-                                    tipo_retorno: str, contactos: str, cantidad_bultos: int) -> str:
+def complete_shipping_order_return_form(driver, url: str, reference: str,
+                                    delivery_date: str, delivery_time_from: str, delivery_time_to: str,
+                                    type_of_return: str, contacts: str, amount_of_boxes: int) -> str:
     """
     Completes the return form
 
     Args:
         driver (webdriver): selenium driver
         url (str): page url
-        referencia (str): order reference
-        DELIVERY_DATE (str): delivery date
-        entrega_hora_desde (str): delivery time (from)
-        entrega_hora_hasta (str): delivery time (to)
-        tipo_retorno (str): return type
-        contactos (str): contacts
-        cantidad_bultos (int): number of boxes
+        reference (str): order reference
+        delivery_date (str): delivery date
+        delivery_time_from (str): delivery time (from)
+        delivery_time_to (str): delivery time (to)
+        type_of_return (str): return type
+        contacts (str): contacts
+        amount_of_boxes (int): number of boxes
 
     Returns:
         str: return tracking number // return waybill number
@@ -437,26 +440,23 @@ def complete_shipping_order_return_form(driver, url: str, referencia: str,
         wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[9]/td/select")))
         
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").clear()
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").send_keys(referencia)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").send_keys(reference)
         
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[1]").send_keys(DELIVERY_DATE)
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[2]").send_keys(entrega_hora_desde)
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[3]").send_keys(entrega_hora_hasta)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[1]").send_keys(delivery_date)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[2]").send_keys(delivery_time_from)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[3]").send_keys(delivery_time_to)
 
         # Selects the return type
-        if tipo_retorno == "CREDO": it_tipo_retorno = 1
-        elif tipo_retorno == "DATALOGGER": it_tipo_retorno = 2
+        if type_of_return == "CREDO": it_tipo_retorno = 1
+        elif type_of_return == "DATALOGGER": it_tipo_retorno = 2
         else: it_tipo_retorno = 3
         for i in range(0, it_tipo_retorno):
             driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[9]/td/select").send_keys(Keys.DOWN)
 
-        leyenda = "\n ***ENVÍO CON CAJA CREDO. EL COURIER AGUARDARÁ QUE EL CENTRO ALMACENE LA MEDICACIÓN Y RETORNE EL EMBALAJE***"
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[9]/td/textarea").send_keys(leyenda)
-
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[12]/td/input[1]").send_keys(contactos)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[12]/td/input[1]").send_keys(contacts)
         
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/input").clear()
-        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/input").send_keys(cantidad_bultos)
+        driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/input").send_keys(amount_of_boxes)
 
         driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[14]/td/button").click()
         
@@ -490,11 +490,11 @@ def print_TA_documents(driver, url: str):
     #driver.find_element(By.XPATH, "/html/body/div/div[1]/div[1]/div/div[3]/div/button[1]").click()
 
 def process_shipping_order(driver, TA_ID:int, system_number:int, ivrs_number:str,
-                        recoleccion_fecha: str, SHIP_TIME_FROM: str, SHIP_TIME_TO: str,
-                        DELIVERY_DATE: dt.datetime, entrega_hora_desde: str, entrega_hora_hasta: str,
-                        tipo_material: str, temperatura: str,
-                        contactos: str, cantidad_bultos: int,
-                        return_: bool, return_to_TA: bool, tipo_retorno: str , return_cantidad: int) -> str:
+                        ship_date: str, ship_time_from: str, ship_time_to: str,
+                        delivery_date: dt.datetime, delivery_time_from: str, delivery_time_to: str,
+                        type_of_material: str, temperature: str,
+                        contacts: str, amount_of_boxes: int,
+                        return_: bool, return_to_TA: bool, type_of_return: str , amount_of_boxes_to_return: int) -> str:
     """
     - Process an order by completing the TA form
     - Creates a return order if necessary
@@ -505,63 +505,72 @@ def process_shipping_order(driver, TA_ID:int, system_number:int, ivrs_number:str
         TA_ID (int): Site ID on TA website
         system_number (int): order system number
         ivrs_number (str): order ivrs number
-        recoleccion_fecha (str): ship date
-        SHIP_TIME_FROM (str): ship time (from)
-        SHIP_TIME_TO (str): ship time (to)
-        DELIVERY_DATE (str): delivery date
-        entrega_hora_desde (str): delivery time (from)
-        entrega_hora_hasta (str): delivery time (to)
-        tipo_material (str): type of material
-        temperatura (str): temperature
-        contactos (str): contacts
-        cantidad_bultos (int): number of boxes
+        ship_date (str): ship date
+        ship_time_from (str): ship time (from)
+        ship_time_to (str): ship time (to)
+        delivery_date (str): delivery date
+        delivery_time_from (str): delivery time (from)
+        delivery_time_to (str): delivery time (to)
+        type_of_material (str): type of material
+        temperature (str): temperature
+        contacts (str): contacts
+        amount_of_boxes (int): number of boxes
         return_ (bool): if True, creates a return order
         return_to_TA (bool): if True, the return order is sent to TA depot
-        return_cantidad (int): number of boxes to return
+        amount_of_boxes_to_return (int): number of boxes to return
     
     Returns:
         str: tracking number
         str: return tracking number
     """
+    tracking_number, return_tracking_number = "", ""
 
-    url = "https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarEnvio+idubicacion=" + str(TA_ID)
-    referencia = str(system_number) + " " + ivrs_number
-    referencia = referencia[:50]
+    try:
+        url = "https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarEnvio+idubicacion=" + str(TA_ID)
+        reference = str(system_number) + " " + ivrs_number
+        reference = reference[:50]
 
-    driver.get(url)
-    DELIVERY_DATE = DELIVERY_DATE.strftime('%d%m%Y')
-    tracking_number = complete_shipping_order_form(driver,
-                                url, referencia, 
-                                recoleccion_fecha, SHIP_TIME_FROM, SHIP_TIME_TO,
-                                str(DELIVERY_DATE) , entrega_hora_desde, entrega_hora_hasta,
-                                tipo_material, temperatura,
-                                contactos, cantidad_bultos)
+        driver.get(url)
+        return_delivery_date = delivery_date + dt.timedelta(days=1)
+        
+        delivery_date = delivery_date.strftime('%d%m%Y')
+        return_delivery_date = return_delivery_date.strftime('%d%m%Y')
+
+        tracking_number = complete_shipping_order_form(driver,
+                                    url, reference, 
+                                    ship_date, ship_time_from, ship_time_to,
+                                    str(delivery_date) , delivery_time_from, delivery_time_to,
+                                    type_of_material, temperature,
+                                    contacts, amount_of_boxes)
+        
+        if tracking_number == "": return "", ""
+
+        if return_:
+            url_return = "https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarRetorno+idsp=" + tracking_number[:7] + "&idubicacion=" + str(TA_ID)
+            url_return += "&returnToTa=true" if return_to_TA else ""
+
+            reference_return = reference + " RET " + tracking_number
+            reference_return = reference_return[:50]
+
+            driver.get(url_return)
+            return_tracking_number = complete_shipping_order_return_form(driver, url_return, 
+                                                                            reference_return,
+                                                                            str(return_delivery_date), "9", "16",
+                                                                            type_of_return, "Personal de FCS", 
+                                                                            amount_of_boxes_to_return)
+        else:
+            return_tracking_number = ""
+
+        url_guias = "https://sgi.tanet.com.ar/sgi/srv.SrvPdf.emitirOde+id=" + str(tracking_number)[:7] + "&idservicio=" + str(tracking_number)[:7] + "&copies=4"
+        driver.get(url_guias)
+        print_TA_documents(driver, url_guias)
+
+        url_rotulo = "https://sgi.tanet.com.ar/sgi/srv.RotuloPdf.emitir+id=" + str(tracking_number)[:7] + "&idservicio=" + str(tracking_number)[:7] + "&copies=1"
+        driver.get(url_rotulo)
+        print_TA_documents(driver, url_rotulo)
     
-    if tracking_number == "": return "", ""
-
-    if return_:
-        url_return = "https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarRetorno+idsp=" + tracking_number[:7] + "&idubicacion=" + str(TA_ID)
-        url_return += "&returnToTa=true" if return_to_TA else ""
-
-        referencia_return = referencia + " RET " + tracking_number
-        referencia_return = referencia_return[:50]
-
-        driver.get(url_return)
-        return_tracking_number = complete_shipping_order_return_form(driver, url_return, 
-                                                                        referencia_return,
-                                                                        str(DELIVERY_DATE + dt.timedelta(days=1)), "9", "16",
-                                                                        tipo_retorno, "Personal de FCS", 
-                                                                        return_cantidad)
-    else:
-        return_tracking_number = ""
-
-    url_guias = "https://sgi.tanet.com.ar/sgi/srv.SrvPdf.emitirOde+id=" + str(tracking_number)[:7] + "&idservicio=" + str(tracking_number)[:7] + "&copies=4"
-    driver.get(url_guias)
-    print_TA_documents(driver, url_guias)
-
-    url_rotulo = "https://sgi.tanet.com.ar/sgi/srv.RotuloPdf.emitir+id=" + str(tracking_number)[:7] + "&idservicio=" + str(tracking_number)[:7] + "&copies=1"
-    driver.get(url_rotulo)
-    print_TA_documents(driver, url_rotulo)
+    except:
+        return "", ""
 
     return tracking_number, return_tracking_number
 
@@ -631,13 +640,13 @@ def generate_shipping_report(shipdate, team):
     
     df = pd.merge(df_orders, df_info_sites, on=["STUDY", "SITE#"], how="inner")
 
-    #process_all_shipping_orders(driver, df)
+    process_all_shipping_orders(driver, df)
     
     if not df.empty:
         dataframe_name = "orders_" + dt.datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
         df.to_excel(os.path.expanduser("~\\Downloads") + "\\" + dataframe_name, index=False)
         
-        print(df[["SYSTEM_NUMBER", "STUDY", "SITE#", "IVRS_NUMBER", "SHIP_DATE", "SHIP_TIME_FROM", "SHIP_TIME_TO"]]) #, "TRACKING_NUMBER", "RETURN_TRACKING_NUMBER"]])
+        print(df[["SYSTEM_NUMBER", "STUDY", "SITE#", "IVRS_NUMBER", "SHIP_DATE", "TRACKING_NUMBER", "RETURN_TRACKING_NUMBER"]])
         print("Total: " + str(len(df.index)))
     else:
         print("Empty DataFrame")
