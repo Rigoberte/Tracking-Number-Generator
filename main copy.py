@@ -18,7 +18,7 @@ import sys
 from PIL import Image, ImageTk
 import win32print
 
-class PrintingBrowser(object):
+class Browser(object):
     def __init__(self):
         chrome_options = Options()
         #chrome_options.add_argument('--headless') # Disable headless mode
@@ -57,7 +57,7 @@ class OrderProcessor:
             self.driver (webdriver): selenium self.driver
             wait (WebDriverWait): selenium wait
         """
-        self.driver = PrintingBrowser().driver
+        self.driver = Browser().driver
         self.wait = WebDriverWait(self.driver, 10)
 
     def load_paths(self, team: str) -> (str, str, str):
@@ -159,15 +159,15 @@ class OrderProcessor:
         df["AMOUNT_OF_BOXES"] = df["AMOUNT_OF_BOXES"].fillna(0).astype(int)
 
         if team == "Lilly": # Specific cases for Lilly team
-            df["TYPE_OF_MATERIAL"] = "Medicacion"
+            df["TYPE_OF_MATERIAL"] = "Medicine"
             
-            temperaturas = {"L": "Ambiente",
+            temperatures = {"L": "Ambiente",
                             "M": "Ambiente Controlado", "M + L": "Ambiente Controlado",
                             "H": "Ambiente Controlado", "H + M": "Ambiente Controlado", "H + L": "Ambiente Controlado", "H + M + L": "Ambiente Controlado",
                             "REF": "Refrigerado", "REF + H": "Refrigerado", "REF + M": "Refrigerado", "REF + L": "Refrigerado",
                             "REF + H + M": "Refrigerado", "REF + H + L": "Refrigerado", "REF + M + L": "Refrigerado",
                             "REF + H + M + L": "Refrigerado"}
-            df["TEMPERATURE"] = df["TEMPERATURE"].replace(temperaturas)
+            df["TEMPERATURE"] = df["TEMPERATURE"].replace(temperatures)
             df[(df["TEMPERATURE"] == "Ambiente") & (df["RETURN_TRACKING_NUMBER"] != "NA")]["TEMPERATURE"] = "Ambiente Controlado"
             df["Cajas (Carton)"] = df["Cajas (Carton)"].fillna(0).astype(int)
             df["RETURN_CANTIDAD"] = df["AMOUNT_OF_BOXES"] - df["Cajas (Carton)"]
@@ -175,8 +175,8 @@ class OrderProcessor:
             df["RETURN_TO_TA"] = False
             df["RETURN_TYPE"] = "CREDO"
 
-            horariosDeDespacho = {"8": "08:00:00", "16.3": "16:30:00", "19": "19:00:00"} 
-            df["SHIP_TIME_FROM"] = df["SHIP_TIME_FROM"].replace(horariosDeDespacho)
+            shipSchedules = {"8": "08:00:00", "16.3": "16:30:00", "19": "19:00:00"} 
+            df["SHIP_TIME_FROM"] = df["SHIP_TIME_FROM"].replace(shipSchedules)
             df["SHIP_TIME_FROM"] = pd.to_datetime(df["SHIP_TIME_FROM"], format='%H:%M:%S', errors='coerce')
             df["SHIP_TIME_TO"] = df["SHIP_TIME_FROM"] + dt.timedelta(minutes=30)
             df["SHIP_TIME_FROM"] = df["SHIP_TIME_FROM"].dt.strftime('%H:%M')
@@ -416,28 +416,28 @@ class OrderProcessor:
                     break
             
             # Selects the material type
-            if type_of_material == "Medicacion": it_tipo_material = 3
-            elif type_of_material == "Material": it_tipo_material = 5
-            elif type_of_material == "Equipo": it_tipo_material = 7
-            else: it_tipo_material = 8
+            if type_of_material == "Medicine": it_type_of_material = 3
+            elif type_of_material == "Ancillary": it_type_of_material = 5
+            elif type_of_material == "Equipment": it_type_of_material = 7
+            else: it_type_of_material = 8
 
-            for i in range(0, it_tipo_material):
+            for i in range(0, it_type_of_material):
                 self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[10]/td/select[1]").send_keys(Keys.DOWN)
             
 
             # Selects the temperature
-            if temperature == "Ambiente": it_temperatura = 0
-            elif temperature == "Ambiente Controlado": it_temperatura = 1
-            elif temperature == "Refrigerado": it_temperatura = 2
-            elif temperature == "Congelado": it_temperatura = 3
-            else: it_temperatura = 4
+            if temperature == "Ambiente": it_temperature = 0
+            elif temperature == "Ambiente Controlado": it_temperature = 1
+            elif temperature == "Refrigerado": it_temperature = 2
+            elif temperature == "Congelado": it_temperature = 3
+            else: it_temperature = 4
 
-            for i in range(0, it_temperatura):
+            for i in range(0, it_temperature):
                 self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[10]/td/select[2]").send_keys(Keys.DOWN)
 
             if temperature != "Ambiente":
-                leyenda = "\n ***ENVÍO CON CAJA CREDO. EL COURIER AGUARDARÁ QUE EL CENTRO ALMACENE LA MEDICACIÓN Y RETORNE EL EMBALAJE***"
-                self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[9]/td/textarea").send_keys(leyenda)
+                comments = "\n ***ENVÍO CON CAJA CREDO. EL COURIER AGUARDARÁ QUE EL CENTRO ALMACENE LA MEDICACIÓN Y RETORNE EL EMBALAJE***"
+                self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[9]/td/textarea").send_keys(comments)
             
             if contacts != "" and contacts != "NA":
                 self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").clear()
@@ -609,22 +609,51 @@ class table_previewer(tk.Frame):
         super().__init__(master, *args, **kwargs)
         self._last_click_event = None
 
-        table_frame = tk.Frame(master)
-        table_frame.pack(side=tk.BOTTOM, fill=tk.X)
+        #master.attributes('-fullscreen', True)
 
-        self.tree = ttk.Treeview(table_frame, columns=list(df.columns), show='headings')
+        # Crear un UserForm
+        self.userform = tk.Toplevel(master)
+        self.userform.title("UserForm con Tabla")
+
+        # Maximizar el UserForm
+        self.userform.wm_state('zoomed')
+
+        # Crear un Canvas para agregar barras de desplazamiento
+        canvas = tk.Canvas(self.userform)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Crear un Frame dentro del Canvas
+        frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=frame, anchor=tk.NW)
+
+        # Crear barras de desplazamiento vertical y horizontal específicamente para la tabla
+        #y_scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=self.y_scroll)
+        #y_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        #x_scrollbar = ttk.Scrollbar(frame, orient=tk.HORIZONTAL, command=self.x_scroll)
+        #x_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        self.tree = ttk.Treeview(frame, columns=list(df.columns), show='headings')
 
         # Configurar encabezados de columna
         for col in df.columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=100)  # Puedes ajustar el ancho de las columnas según sea necesario
+            self.tree.column(col, width=100, stretch=True)  # Puedes ajustar el ancho de las columnas según sea necesario
 
         # Llenar la tabla con los datos del DataFrame
         for index, row in df.iterrows():
             self.tree.insert("", "end", values=list(row))
 
         # Empaquetar la tabla
-        self.tree.pack()
+        self.tree.pack(fill=tk.BOTH, expand=True)
+
+        canvas.config(scrollregion=canvas.bbox("all"))
+
+    def y_scroll(self, *args):
+        self.tree.yview(*args)
+
+    def x_scroll(self, *args):
+        self.tree.xview(*args)
 
 class DatePicker(tk.Frame):
     def __init__(self, master, *args, **kwargs):
@@ -687,10 +716,22 @@ class DatePicker(tk.Frame):
         self.df = pd.DataFrame(columns=["SYSTEM_NUMBER", "IVRS_NUMBER", "STUDY", "SITE#", "SHIP_DATE", "TRACKING_NUMBER", "RETURN_TRACKING_NUMBER"])
 
         def show_table_previewer():
-            table_previewer(self.df).pack(pady=20)
+            team = self.opcion_var.get()
+            
+            orderPro = OrderProcessor()
+
+            df_path, sheet, info_sites_sheet = orderPro.load_paths(team)
+
+            df_orders = orderPro.load_shipping_order_table(self.selected_date, team, df_path, sheet)
+        
+            df_info_sites = orderPro.load_table_info_sites(team, df_path, info_sites_sheet)
+            
+            orders_df = pd.merge(df_orders, df_info_sites, on=["STUDY", "SITE#"], how="inner")
+
+            table_previewer(orders_df).pack(pady=20)
 
         Button(master, text="Preview orders table",
-                font=30, command=show_table_previewer).pack(pady=20)
+                command=show_table_previewer, font=30).pack(pady=20)
 
     def _on_click_handler(self, event):
         if event is None and self._last_click_event is not None:
@@ -710,8 +751,61 @@ class DatePicker(tk.Frame):
 def main():
     print(sys.version)
     print("Starting...")
-    root = tk.Tk()
-    app = DatePicker(root)
+    #root = tk.Tk()
+    #app = DatePicker(root)
+    #app.mainloop()
+    app = ctk.CTk()
+    app.geometry("1400x800")
+    app.title("Todo")
+    app.wm_state('zoomed')
+
+    ctk.set_appearance_mode("dark")
+    style = ttk.Style()
+    style.configure("mystyle.Treeview", highlightthickness=0, bd=0, font=('Calibri', 13)) # Modify the font of the body
+    style.configure("mystyle.Treeview.Heading", font=('Calibri', 13,'bold')) # Modify the font of the headings
+    style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})]) # Remove the borders
+
+    titleLabel = ctk.CTkLabel(app, text="Title")
+    titleLabel.pack(padx=10, pady=(40, 20))
+
+    team = "Lilly"
+    orderPro = OrderProcessor()
+
+    df_path, sheet, info_sites_sheet = orderPro.load_paths(team)
+
+    df_orders = orderPro.load_shipping_order_table(dt.datetime(2023, 12, 11), team, df_path, sheet)
+
+    df_info_sites = orderPro.load_table_info_sites(team, df_path, info_sites_sheet)
+    
+    orders_df = pd.merge(df_orders, df_info_sites, on=["STUDY", "SITE#"], how="inner")
+
+    tree = ttk.Treeview(app, columns=list(orders_df.columns), show='headings', style="mystyle.Treeview")
+    tree.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
+    tree.tag_configure('odd', background='#E8E8E8')
+    tree.tag_configure('even', background='#DFDFDF')
+    
+    vsb = ttk.Scrollbar(app, orient="vertical", command=tree.yview)
+    vsb.place(x= 1400 + 500 , y=150, height=800)
+    tree.configure(yscrollcommand=vsb.set)
+    
+    hsb = ttk.Scrollbar(app, orient="horizontal", command=tree.xview)
+    hsb.place(x=tree.winfo_x(), y=tree.winfo_y() + tree.winfo_height(), width=tree.winfo_width())
+    tree.configure(xscrollcommand=hsb.set)
+    hsb.pack(side="bottom", fill="x")
+
+    for col in orders_df.columns:
+        tree.heading(col, text=col)
+        tree.column(col, width=100, stretch=True)  # Puedes ajustar el ancho de las columnas según sea necesario
+
+    parity = False
+    # Llenar la tabla con los datos del DataFrame
+    for index, row in orders_df.iterrows():
+        tree.insert("", "end", values=list(row), tags=('odd',) if parity else ('even',))
+        parity = not parity
+
+    processOrders_btn = ctk.CTkButton(master=app, text="Process Orders")
+    processOrders_btn.place(relx=0.8, rely=0.05)
+    
     app.mainloop()
 
 if __name__ == "__main__":
