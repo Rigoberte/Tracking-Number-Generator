@@ -4,19 +4,14 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
-import time
 import pandas as pd
 import datetime as dt
-import os
 import tkinter as tk
-from tkinter import *
-from tkinter import ttk
-from tkcalendar import Calendar
 import customtkinter as ctk
-import sys
+from tkcalendar import Calendar
 from PIL import Image, ImageTk
 import win32print
-from customtkinter import *
+import os, time
 
 class Browser(object):
     def __init__(self):
@@ -421,12 +416,12 @@ class OrderProcessor:
 
         return df
 
-class MyUserForm(Tk):
+class MyUserForm(tk.Tk):
     def __init__(self):
         super().__init__()
 
         # UserForm
-        self.title("UserForm con customtkinter")
+        self.title("Carrier Form AutoLoad")
         self.state("zoomed")
 
         # Top Frame
@@ -450,7 +445,7 @@ class MyUserForm(Tk):
         
         # Teams Combobox
         teams_options = ["Lilly", "GPM", "Test", "Test_5_ordenes"]
-        self.team_combobox = ttk.Combobox(frame_top, values=teams_options, width=20, height=15, font=30)
+        self.team_combobox = tk.ttk.Combobox(frame_top, values=teams_options, width=20, height=15, font=30)
         self.team_combobox.pack(side=tk.LEFT, padx=10)
         self.team_combobox.current(0)
 
@@ -459,7 +454,7 @@ class MyUserForm(Tk):
         frame_bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, pady=0)
 
         # Orders self.treeview (table)
-        style = ttk.Style()
+        style = tk.ttk.Style()
         style.configure("mystyle.Treeview", highlightthickness=0, bd=0, font=('Calibri', 13)) # Font of the body
         style.configure("mystyle.Treeview.Heading", font=('Calibri', 13,'bold')) # Font of the headings
         style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})]) # Remove the borders
@@ -470,7 +465,7 @@ class MyUserForm(Tk):
                 'TYPE_OF_MATERIAL', 'TEMPERATURE', 'AMOUNT_OF_BOXES',
                 'RETURN', 'RETURN_TO_TA', 'RETURN_TYPE', 'RETURN_CANTIDAD',
                 'TRACKING_NUMBER', 'RETURN_TRACKING_NUMBER', 'CONTACTS', 'TA_ID']
-        self.treeview = ttk.Treeview(frame_bottom, columns=columns_df, show='headings', style="mystyle.Treeview")
+        self.treeview = tk.ttk.Treeview(frame_bottom, columns=columns_df, show='headings', style="mystyle.Treeview")
         self.treeview.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         self.treeview.tag_configure('odd', background='#E8E8E8')
@@ -485,27 +480,28 @@ class MyUserForm(Tk):
 
         # Scrollbars ###################
         # Vertical scrollbar
-        y_scrollbar = ttk.Scrollbar(frame_bottom, orient=tk.VERTICAL, command=self.treeview.yview)
+        #y_scrollbar = tk.ttk.Scrollbar(frame_bottom, orient=tk.VERTICAL, command=self.treeview.yview)
         #y_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         #self.treeview.configure(command=self.treeview.yview)
         #y_scrollbar.grid(row=0, column=1, rowspan=10, sticky=NS)
         #y_scrollbar.place(x=self.treeview.winfo_x() + self.treeview.winfo_width(), y=self.treeview.winfo_y(), height=self.treeview.winfo_height())
 
         # Horizontal scrollbar
-        x_scrollbar = ttk.Scrollbar(frame_bottom, orient=tk.HORIZONTAL, command=self.treeview.xview)
+        x_scrollbar = tk.ttk.Scrollbar(frame_bottom, orient=tk.HORIZONTAL, command=self.treeview.xview)
         x_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
         self.treeview.configure(xscrollcommand=x_scrollbar.set)
 
         # Buttons ###################
+        # Process orders button
+        processOrders_btn = ctk.CTkButton(master=frame_top, text="Process Orders", command=self.on_processOrders_btn_click,
+                                        width=150, height=50, font=('Calibri', 22, 'bold'))
+        processOrders_btn.pack(side=tk.RIGHT, padx=10)
+
         # Load orders button
         loadOrders_btn = ctk.CTkButton(master=frame_top, text="Load Orders", command=self.on_loadOrders_btn_click,
                                        width=150, height=50, font=('Calibri', 22, 'bold'))
         loadOrders_btn.pack(side=tk.RIGHT, padx=10)
         
-        # Process orders button
-        processOrders_btn = ctk.CTkButton(master=frame_top, text="Process Orders", command=self.on_processOrders_btn_click,
-                                        width=150, height=50, font=('Calibri', 22, 'bold'))
-        processOrders_btn.pack(side=tk.RIGHT, padx=10)
 
     def on_loadOrders_btn_click(self):
         """
@@ -515,12 +511,11 @@ class MyUserForm(Tk):
             date (dt.datetime): date to process
             team (str): team to process
             shipdate (dt.datetime): ship date
-            self.treeview (ttk.Treeview): self.treeview to show orders table
+            self.treeview (tk.ttk.Treeview): self.treeview to show orders table
         
         Returns:
             DataFrame: orders table
         """
-        print("Loading orders table...")
         selected_date = self.cal.get_date()
         selected_team = self.team_combobox.get()
 
@@ -562,15 +557,15 @@ class MyUserForm(Tk):
             sheet = "Shipments"
             info_sites_sheet = "Dias y Destinos"
         elif team == "GPM": # Specific cases for GPM team
-            path = r"C:/Users/inaki.costa/OneDrive - Thermo Fisher Scientific/Desktop/Automatizacion_Ordenes.xlsx"
+            path = os.path.expanduser("~\\Desktop\Automatizacion_Ordenes.xlsx")
             sheet = "Vacio"
             info_sites_sheet = ""
         elif team == "Test": # Specific cases for tests
-            path = r"C:/Users/inaki.costa/OneDrive - Thermo Fisher Scientific/Desktop/Automatizacion_Ordenes.xlsx"
+            path = os.path.expanduser("~\\OneDrive - Thermo Fisher Scientific\Desktop\Automatizacion_Ordenes.xlsx")
             sheet = "Test"
             info_sites_sheet = "SiteInfo"
         elif team == "Test_5_ordenes": # Specific cases for tests_5_ordenes
-            path = r"C:/Users/inaki.costa/OneDrive - Thermo Fisher Scientific/Desktop/Automatizacion_Ordenes.xlsx"
+            path = os.path.expanduser("~\\OneDrive - Thermo Fisher Scientific\Desktop\Automatizacion_Ordenes.xlsx")
             sheet = "Test_5_ordenes"
             info_sites_sheet = "SiteInfo"
         
@@ -738,8 +733,6 @@ class MyUserForm(Tk):
                 'TRACKING_NUMBER', 'RETURN_TRACKING_NUMBER', 'CONTACTS', 'TA_ID']]
 
 def main():
-    print(sys.version)
-    print("Starting...")
     ctk.set_appearance_mode("dark")
     app = MyUserForm()
     app.mainloop()
