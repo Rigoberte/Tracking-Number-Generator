@@ -12,10 +12,11 @@ from tkcalendar import Calendar
 from PIL import Image, ImageTk
 import win32print
 import os, time
+from PyPDF2 import PdfReader
 
 class Browser(object):
-    def __init__(self):
-        chrome_options = Options()
+    def __init__(self, folder_path: str):
+        chrome_options = webdriver.ChromeOptions() #Options()
         #chrome_options.add_argument('--headless') # Disable headless mode
         chrome_options.add_argument('--disable-gpu') # Disable GPU acceleration
         chrome_options.add_argument('--disable-software-rasterizer')  # Disable software rasterizer
@@ -32,23 +33,44 @@ class Browser(object):
         chrome_options.add_argument('--disk-cache-size=1') # Set disk cache size to 1
         chrome_options.add_argument('--media-cache-size=1') # Set media cache size to 1
         chrome_options.add_argument('--kiosk-printing') # Enable kiosk printing
-        
+        chrome_options.add_argument('--kiosk-pdf-printing')
+
+        chrome_prefs = {
+            "download.prompt_for_download": False,
+            "plugins.always_open_pdf_externally": True,
+            "download.open_pdf_in_system_reader": False,
+            "profile.default_content_settings.popups": 0,
+            #"download.prompt_for_download": False, #To auto download the file
+            "printing.print_to_pdf": True,
+            "download.default_directory": folder_path,
+            "savefile.default_directory": folder_path
+        }
+
+        chrome_options.add_experimental_option("prefs", chrome_prefs)
+
         self.driver = webdriver.Chrome(options=chrome_options)
-
-    def get_page_and_print(self, url: str):
-        self.driver.get(url)
-        #self.driver.execute_script("window.print = function(msg) {return false;}")
-        time.sleep(1)
-        self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.CONTROL + "p")
-        time.sleep(1)
-        printer_name = win32print.GetDefaultPrinter()
-        self.driver.execute_script(f"document.querySelector('#destinationSelect').value = '{printer_name}';")
-        self.driver.find_element(By.CSS_SELECTOR, '.dialog-buttons > .primary').click()
-
-        self.driver.implicitly_wait(2)
+    
+    def imprimir_pdf(archivo_pdf, nombre_impresora=None):
+        # Seleccionar la impresora por nombre (si se proporciona) o utilizar la impresora predeterminada
+        if nombre_impresora is None:
+            nombre_impresora = win32print.GetDefaultPrinter() #Abrir la impresora
+            hprinter = win32print.OpenPrinter(nombre_impresora) #Iniciar un nuevo documento de impresión
+        try:
+            hjob = win32print.StartDocPrinter(hprinter, 1, ("test of raw data", None, "RAW")) # Iniciar un nuevo documento de impresión
+            win32print.StartPagePrinter(hprinter) # Iniciar una nueva página
+            with open(archivo_pdf, "rb") as pdf_file:
+                pdf_reader = PdfReader(pdf_file) # Imprimir cada página del PDF
+                for page_num in range(len(pdf_reader.pages)):
+                    page_data = pdf_reader.getPage(page_num).extractText().encode("utf-8")
+                    win32print.WritePrinter(hprinter, page_data) 
+        finally: 
+            # Finalizar el documento de impresión
+            win32print.EndPagePrinter(hprinter) # Finalizar la página
+            win32print.EndDocPrinter(hprinter) # Finalizar el documento
+            win32print.ClosePrinter(hprinter) # Cerrar la impresora
 
 class OrderProcessor:
-    def __init__(self):
+    def __init__(self, folder_path : str):
         """
         Class constructor
 
@@ -59,7 +81,8 @@ class OrderProcessor:
             self.driver (webdriver): selenium self.driver
             wait (WebDriverWait): selenium wait
         """
-        self.browser = Browser()
+        self.folder_path = folder_path
+        self.browser = Browser(folder_path)
         self.driver = self.browser.driver
         self.wait = WebDriverWait(self.driver, 10)
 
@@ -80,6 +103,7 @@ class OrderProcessor:
             self.wait = WebDriverWait(self.driver, 10)
             return True
         except:
+            self.wait = WebDriverWait(self.driver, 10)
             return False
 
     def process_all_shipping_orders(self, df: pd.DataFrame):
@@ -94,13 +118,20 @@ class OrderProcessor:
             if df.loc[index, "TRACKING_NUMBER"] != "":
                 continue
 
+            error = row['SHIP_DATE'] == "" or row['SHIP_TIME_FROM'] == "" or row['SHIP_TIME_TO'] == ""
+            error = error or row['DELIVERY_DATE'] == "" or row['DELIVERY_TIME_FROM'] == "" or row['DELIVERY_TIME_TO'] == ""
+            error = error or row['AMOUNT_OF_BOXES'] == 0 or row['TA_ID'] == ""
+
+            if error:
+                continue
+            
             tracking_number, return_tracking_number = self.process_shipping_order(
                 row["TA_ID"], row["SYSTEM_NUMBER"], row["IVRS_NUMBER"],
                 row["SHIP_DATE"], row["SHIP_TIME_FROM"], row["SHIP_TIME_TO"],
                 row["DELIVERY_DATE"], row["DELIVERY_TIME_FROM"], row["DELIVERY_TIME_TO"],
                 row["TYPE_OF_MATERIAL"], row["TEMPERATURE"],
                 row["CONTACTS"], row["AMOUNT_OF_BOXES"],
-                return_=False, return_to_TA=False, type_of_return="", amount_of_boxes_to_return=0
+                row["RETURN"], row["RETURN_TO_TA"], row["RETURN_TYPE"], row["RETURN_CANTIDAD"]  
             )
 
             df.loc[index, "TRACKING_NUMBER"] = tracking_number
@@ -108,10 +139,10 @@ class OrderProcessor:
 
     def process_shipping_order(self, TA_ID: int, system_number: str, ivrs_number: str, 
                                ship_date: str, ship_time_from: str, ship_time_to: str, 
-                               delivery_date: dt.datetime, delivery_time_from: str, delivery_time_to: str,
+                               delivery_date: str, delivery_time_from: str, delivery_time_to: str,
                                type_of_material: str, temperature: str, 
                                contacts: str, amount_of_boxes: int, 
-                               return_: bool, return_to_TA: bool, type_of_return: str, amount_of_boxes_to_return: int) -> str:
+                               return_: bool, return_to_TA: bool, type_of_return: str, amount_of_boxes_to_return: int) -> (str, str):
         """
         - Process an order by completing the TA form
         - Creates a return order if necessary
@@ -147,11 +178,11 @@ class OrderProcessor:
             url = f"https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarEnvio+idubicacion={TA_ID}"
             reference = f"{system_number} {ivrs_number}"[:50]
 
-            self.driver.get(url)
-            return_delivery_date = dt.datetime.strptime(delivery_date, '%d%m%Y') + dt.timedelta(days=1)
+            #self.driver.get(url)
+            return_delivery_date = dt.datetime.strptime(delivery_date, '%d/%m/%Y') + dt.timedelta(days=1)
 
-            delivery_date = dt.datetime.strptime(delivery_date, '%d%m%Y').strftime('%d%m%Y')
-            return_delivery_date = return_delivery_date.strftime('%d%m%Y')
+            delivery_date = dt.datetime.strptime(delivery_date, '%d/%m/%Y').strftime('%d/%m/%Y')
+            return_delivery_date = return_delivery_date.strftime('%d/%m/%Y')
 
             tracking_number = self.complete_shipping_order_form(
                 url, reference, 
@@ -159,7 +190,8 @@ class OrderProcessor:
                 delivery_date, delivery_time_from, delivery_time_to,
                 type_of_material, temperature, contacts, amount_of_boxes)
 
-            if tracking_number == "":  "", ""
+            if tracking_number == "":
+                return  "", ""
 
             if return_:
                 url_return = f"https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarRetorno+idsp={tracking_number[:7]}&idubicacion={TA_ID}"
@@ -167,22 +199,24 @@ class OrderProcessor:
 
                 reference_return = f"{reference} RET {tracking_number}"[:50]
 
-                self.driver.get(url_return)
+                #self.driver.get(url_return)
                 return_tracking_number = self.complete_shipping_order_return_form(
                     url_return, reference_return, 
-                    return_delivery_date, "9", "16",
+                    return_delivery_date, "9", "17",
                     type_of_return, "Personal de FCS", amount_of_boxes_to_return
                 )
             else:
                 return_tracking_number = ""
 
             url_guias = f"https://sgi.tanet.com.ar/sgi/srv.SrvPdf.emitirOde+id={tracking_number[:7]}&idservicio={tracking_number[:7]}&copies=4"
-            self.driver.get(url_guias)
             self.print_webpage(url_guias)
 
-            url_rotulo = f"https://sgi.tanet.com.ar/sgi/srv.SrvEtiqueta.editar+id={tracking_number[:7]}&copias=1"
-            self.driver.get(url_rotulo)
+            self.driver.implicitly_wait(5)
+
+            url_rotulo = f"https://sgi.tanet.com.ar/sgi/srv.RotuloPdf.emitir+id={tracking_number[:7]}&idservicio={tracking_number[:7]}"
             self.print_webpage(url_rotulo)
+
+            self.driver.implicitly_wait(5)
 
         except Exception as e:
             print(f"Error processing order: {e}")
@@ -236,10 +270,16 @@ class OrderProcessor:
             self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[2]").send_keys(delivery_time_from)
             self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[3]").send_keys(delivery_time_to)
 
-            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[7]/td/div[2]/table/tbody/tr/td[1]/input").send_keys("FCS")
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[7]/td/div[2]/table/tbody/tr/td[1]/input").send_keys("Fisher Clinical Services FCS")
+            self.driver.implicitly_wait(5)
+            
             suggestions_container = self.wait.until(EC.presence_of_element_located((By.ID, "suggest_nomDomOri_list")))
-
+            self.driver.implicitly_wait(5)
+            time.sleep(1)
+            
             self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[7]/td/div[2]/table/tbody/tr/td[1]/div/div/div[1]/table/tbody")))
+            self.driver.implicitly_wait(5)
+            time.sleep(1)
 
             # Finds all suggested buttons inside the suggestions container
             suggested_buttons = suggestions_container.find_elements(By.CLASS_NAME, "suggest")
@@ -259,7 +299,6 @@ class OrderProcessor:
             for i in range(0, it_type_of_material):
                 self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[10]/td/select[1]").send_keys(Keys.DOWN)
             
-
             # Selects the temperature
             if temperature == "Ambiente": it_temperature = 0
             elif temperature == "Ambiente Controlado": it_temperature = 1
@@ -284,7 +323,9 @@ class OrderProcessor:
 
             # Wait for the webpage to load and get the tracking number
             self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))
-        
+            
+            self.driver.implicitly_wait(5)
+
             return self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:15]
             
         except Exception as e:
@@ -345,10 +386,13 @@ class OrderProcessor:
             # Wait for the webpage to load and get the return tracking number
             self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))
             
+            self.driver.implicitly_wait(5)
+            
             return_tracking_number = self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:15]
         except Exception as e:
             print(f"Error completing shipping order return form: {e}")
             print(f"Order: {reference_return}")
+            return return_tracking_number
 
         return return_tracking_number
 
@@ -361,7 +405,8 @@ class OrderProcessor:
             url (str): webpage url
         """
         try:
-            self.browser.get_page_and_print(url)
+            self.driver.get(url) # this print since chrome options are set to print automatically
+            self.driver.implicitly_wait(5)
 
         except Exception as e:
             print(f"Error printing TA documents: {e}")
@@ -404,11 +449,11 @@ class OrderProcessor:
             print("Not logged in")
             return
             
-        self.process_all_shipping_orders(self.driver, df)
-        
+        self.process_all_shipping_orders(df)
+
         if not df.empty:
             dataframe_name = "orders_" + dt.datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
-            df.to_excel(os.path.expanduser("~\\Downloads") + "\\" + dataframe_name, index=False)
+            df.to_excel(self.folder_path + "\\" + dataframe_name, index=False)
         else:
             print("Empty DataFrame")
 
@@ -427,7 +472,7 @@ class MyUserForm(tk.Tk):
         # Top Frame
         frame_top = ctk.CTkFrame(self)
         frame_top.pack(side=tk.TOP, fill=tk.X, pady=0)
-        
+
         # Image banner
         imagen = Image.open("fcs.jpg")
         imagen = imagen.resize((284, 67))
@@ -440,7 +485,8 @@ class MyUserForm(tk.Tk):
         # DatePicker
         self.cal = Calendar(frame_top, selectmode='day', locale='en_US', disabledforeground='red',
                 cursor="hand2", background=ctk.ThemeManager.theme["CTkFrame"]["fg_color"][1],
-                selectbackground=ctk.ThemeManager.theme["CTkButton"]["fg_color"][1])
+                selectbackground=ctk.ThemeManager.theme["CTkButton"]["fg_color"][1], date_pattern='yyyy-MM-dd')
+
         self.cal.pack(padx=50, pady=0, side=tk.LEFT)
         
         # Teams Combobox
@@ -469,7 +515,12 @@ class MyUserForm(tk.Tk):
         self.treeview.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         self.treeview.tag_configure('odd', background='#E8E8E8')
+        self.treeview.tag_configure('odd_done', background='#C6E0B4')
+        self.treeview.tag_configure('odd_error', background='#FFC7CE')
+
         self.treeview.tag_configure('even', background='#DFDFDF')
+        self.treeview.tag_configure('even_done', background='#A9D08E')
+        self.treeview.tag_configure('even_error', background='#FFA7BB')
 
         # Treeview columns headings and columns width
         self.treeview.column("#0", width=0, stretch=tk.NO)  # Hide the first column
@@ -502,7 +553,6 @@ class MyUserForm(tk.Tk):
                                        width=150, height=50, font=('Calibri', 22, 'bold'))
         loadOrders_btn.pack(side=tk.RIGHT, padx=10)
         
-
     def on_loadOrders_btn_click(self):
         """
         Loads orders table according to date and team
@@ -516,11 +566,11 @@ class MyUserForm(tk.Tk):
         Returns:
             DataFrame: orders table
         """
-        selected_date = self.cal.get_date()
+        selected_date = dt.datetime.strptime(self.cal.get_date(), '%Y-%m-%d')
         selected_team = self.team_combobox.get()
 
         self.df = self.generate_shipping_order_tables(selected_team, selected_date)
-        
+
         for item in self.treeview.get_children():
             self.treeview.delete(item)
         
@@ -528,14 +578,53 @@ class MyUserForm(tk.Tk):
         i = 1
         for index, row in self.df.iterrows():
             r = [i] + list(row)
-            self.treeview.insert("", "end", values=r, tags=('odd',) if parity else ('even',))
+
+            error = row['SHIP_DATE'] == "" or row['SHIP_TIME_FROM'] == "" or row['SHIP_TIME_TO'] == ""
+            error = error or row['DELIVERY_DATE'] == "" or row['DELIVERY_TIME_FROM'] == "" or row['DELIVERY_TIME_TO'] == ""
+            error = error or row['AMOUNT_OF_BOXES'] == 0 or row['TA_ID'] == ""
+
+            order_done = row['TRACKING_NUMBER'] != ""
+            tag_color = 'odd' if parity else 'even'
+            tag_color += "_done" if order_done else ""
+            tag_color += ("_error" if error else "") if not order_done else ""
+            self.treeview.insert("", "end", values=r, tags=(tag_color))
             parity = not parity
             i += 1
         
         self.treeview.update()
 
     def on_processOrders_btn_click(self):
-        OrderProcessor().generate_shipping_report(self.df)
+        selected_date = self.cal.get_date()
+        selected_date = selected_date.replace("/", "_")
+        selected_team = self.team_combobox.get()
+
+        folder_path = os.path.expanduser("~\\Downloads") + "\\" + "TA_Form_AutoLoad" + "\\" + selected_team
+
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+
+        folder_path += "\\" + selected_date
+
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+
+        self.df = OrderProcessor(folder_path).generate_shipping_report(self.df)
+
+        for item in self.treeview.get_children():
+            self.treeview.delete(item)
+        
+        parity = False
+        i = 1
+        for index, row in self.df.iterrows():
+            r = [i] + list(row)
+            order_done = row['TRACKING_NUMBER'] != ""
+            tag_color = 'odd' if parity else 'even'
+            tag_color += "_done" if order_done else ""
+            self.treeview.insert("", "end", values=r, tags=(tag_color))
+            parity = not parity
+            i += 1
+        
+        self.treeview.update()
 
     def load_paths(self, team: str) -> (str, str, str):
         """
@@ -592,7 +681,7 @@ class MyUserForm(tk.Tk):
                             "Dia de entrega": "DELIVERY_DATE", "Destination": "DESTINATION",
                             "CONDICION": "TEMPERATURE", "TT4": "AMOUNT_OF_BOXES",  
                             "AWB": "TRACKING_NUMBER", "Shipper return AWB": "RETURN_TRACKING_NUMBER"}
-            columns_types = {"CT-WIN": int, "IVRS": str, 
+            columns_types = {"CT-WIN": str, "IVRS": str, 
                             "Trial Alias": str, "Site ": str, 
                             "Order received": str, "Ship date": dt.datetime,
                             "Horario de Despacho": str,
@@ -610,9 +699,15 @@ class MyUserForm(tk.Tk):
 
         df = pd.read_excel(path, sheet_name=sheet, header=0, dtype=columns_types)
         df.rename(columns=columns_names, inplace=True)
+        
         df = df[df["SHIP_DATE"] == date]
         
-        df["SHIP_DATE"] = df["SHIP_DATE"].dt.strftime('%d%m%y')
+        df["SHIP_DATE"] = df["SHIP_DATE"].astype("datetime64[ns]")
+        df["SHIP_DATE"] = pd.to_datetime(df["SHIP_DATE"], format='%d/%m/%Y', errors='coerce')
+        #df["SHIP_DATE"] = df["SHIP_DATE"].dt.date
+
+        df["SHIP_DATE"] = df["SHIP_DATE"].dt.strftime('%d/%m/%Y')
+
         df["SITE#"] = df["SITE#"].astype(object)
         df["AMOUNT_OF_BOXES"] = df["AMOUNT_OF_BOXES"].fillna(0).astype(int)
 
@@ -625,13 +720,15 @@ class MyUserForm(tk.Tk):
                             "REF": "Refrigerado", "REF + H": "Refrigerado", "REF + M": "Refrigerado", "REF + L": "Refrigerado",
                             "REF + H + M": "Refrigerado", "REF + H + L": "Refrigerado", "REF + M + L": "Refrigerado",
                             "REF + H + M + L": "Refrigerado"}
+            df["TEMPERATURE"] = df["TEMPERATURE"].str.strip()
             df["TEMPERATURE"] = df["TEMPERATURE"].replace(temperatures)
-            df[(df["TEMPERATURE"] == "Ambiente") & (df["RETURN_TRACKING_NUMBER"] != "NA")]["TEMPERATURE"] = "Ambiente Controlado"
+            df.loc[(df["TEMPERATURE"] == "Ambiente") & (df["RETURN_TRACKING_NUMBER"] != "NA"), "TEMPERATURE"] = "Ambiente Controlado"
             df["Cajas (Carton)"] = df["Cajas (Carton)"].fillna(0).astype(int)
             df["RETURN_CANTIDAD"] = df["AMOUNT_OF_BOXES"] - df["Cajas (Carton)"]
             df["RETURN"] = (df["RETURN_CANTIDAD"] > 0) & (df["TEMPERATURE"] != "Ambiente")
             df["RETURN_TO_TA"] = False
-            df["RETURN_TYPE"] = "CREDO"
+            df["RETURN_TYPE"] = "NA"
+            df.loc[df["RETURN"], "RETURN_TYPE"] = "CREDO"
 
             shipSchedules = {"8": "08:00:00", "16.3": "16:30:00", "19": "19:00:00"} 
             df["SHIP_TIME_FROM"] = df["SHIP_TIME_FROM"].replace(shipSchedules)
@@ -641,11 +738,13 @@ class MyUserForm(tk.Tk):
             df["SHIP_TIME_TO"] = df["SHIP_TIME_TO"].dt.strftime('%H:%M')
 
             df["RETURN_CANTIDAD"] = df["RETURN_CANTIDAD"].astype(int)
-            df["DELIVERY_DATE"] = pd.to_datetime(df["DELIVERY_DATE"], format='%d%m%Y', errors='coerce')
+            df["DELIVERY_DATE"] = df["DELIVERY_DATE"].astype("datetime64[ns]")
+            df["DELIVERY_DATE"] = pd.to_datetime(df["DELIVERY_DATE"], format='%d/%m/%Y', errors='coerce')
+            df["DELIVERY_DATE"] = df["DELIVERY_DATE"].dt.strftime('%d/%m/%Y')
     
         elif team == "GPM": # Specific cases for GPM team
             df = df #TODO
-        
+
         elif team == "Test" or team == "Test_5_ordenes": # Specific cases for tests
             df["SHIP_TIME_TO"] = ""
             df["SHIP_TIME_FROM"] = pd.to_datetime(df["SHIP_TIME_FROM"], format='%H:%M:%S', errors='coerce')
@@ -720,7 +819,7 @@ class MyUserForm(tk.Tk):
         df_path, sheet, info_sites_sheet = self.load_paths(team)
         
         df_orders = self.load_shipping_order_table(shipdate, team, df_path, sheet)
-        
+
         df_info_sites = self.load_table_info_sites(team, df_path, info_sites_sheet)
         
         df = pd.merge(df_orders, df_info_sites, on=["STUDY", "SITE#"], how="inner")
