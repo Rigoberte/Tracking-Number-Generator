@@ -3,13 +3,16 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.options import Options
 import pandas as pd
 import datetime as dt
 import tkinter as tk
 import customtkinter as ctk
 from tkcalendar import Calendar
 from PIL import Image, ImageTk
+import win32print
 import os, time
+from PyPDF2 import PdfReader
 
 class Browser(object):
     def __init__(self, folder_path: str):
@@ -22,7 +25,7 @@ class Browser(object):
         Attributes:
             self.driver (webdriver): selenium self.driver
         """
-        chrome_options = webdriver.ChromeOptions()
+        chrome_options = webdriver.ChromeOptions() #Options()
         #chrome_options.add_argument('--headless') # Disable headless mode
         chrome_options.add_argument('--disable-gpu') # Disable GPU acceleration
         chrome_options.add_argument('--disable-software-rasterizer')  # Disable software rasterizer
@@ -108,8 +111,6 @@ class OrderProcessor:
             error = row['SHIP_DATE'] == "" or row['SHIP_TIME_FROM'] == "" or row['SHIP_TIME_TO'] == ""
             error = error or row['DELIVERY_DATE'] == "" or row['DELIVERY_TIME_FROM'] == "" or row['DELIVERY_TIME_TO'] == ""
             error = error or row['AMOUNT_OF_BOXES'] == 0 or row['TA_ID'] == ""
-            error = error or row['SHIP_TIME_FROM'] == 'nan' or row['SHIP_TIME_TO'] == 'nan'
-            error = error or row['DELIVERY_TIME_FROM'] == 'nan' or row['DELIVERY_TIME_TO'] == 'nan'
 
             if error:
                 continue
@@ -530,6 +531,8 @@ class MyUserForm(tk.Tk):
 
         self.colors = self.Chroma()
 
+        self.configure(bg=self.colors.body_color)
+
         """self.canvas = tk.Canvas(
             self, #tk.Tk(),
             bg = self.colors.body_color,
@@ -600,7 +603,23 @@ class MyUserForm(tk.Tk):
         
         # Top Frame
         frame_top = ctk.CTkFrame(self)
-        frame_top.pack(side=tk.TOP, fill=tk.X, pady=0)
+        frame_top.pack(pady=0, side = tk.TOP, fill=tk.BOTH)
+
+        frame_top_2 = ctk.CTkFrame(self)
+        frame_top_2.pack(pady=0, after = frame_top, side = tk.LEFT)
+
+        frame_top_3 = ctk.CTkFrame(self)
+        frame_top_3.pack(pady=0, after = frame_top_2, side = tk.LEFT)
+
+        frame_top_4 = ctk.CTkFrame(self)
+        frame_top_4.pack(pady=0, after = frame_top_3, side = tk.LEFT)
+
+        frame_top_5 = ctk.CTkFrame(self)
+        frame_top_5.pack(pady=0, after = frame_top_4, side = tk.LEFT)
+
+        # Bottom Frame
+        frame_bottom = ctk.CTkFrame(self)
+        frame_bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, pady=0, anchor = tk.S, after = frame_top)
 
         # Image banner
         imagen = Image.open("fcs.jpg")
@@ -609,29 +628,45 @@ class MyUserForm(tk.Tk):
 
         label_banner = tk.Label(frame_top, image=imagen)
         label_banner.image = imagen
-        label_banner.pack(side=tk.LEFT, padx=10)
+        label_banner.pack(padx=10)
 
         # DatePicker
-        self.cal = Calendar(frame_top, selectmode='day', locale='en_US', disabledforeground='red',
+        self.cal = Calendar(frame_top_2, selectmode='day', locale='en_US', disabledforeground='red',
                 cursor="hand2", background=ctk.ThemeManager.theme["CTkFrame"]["fg_color"][1],
                 selectbackground=ctk.ThemeManager.theme["CTkButton"]["fg_color"][1], date_pattern='yyyy-MM-dd')
 
-        self.cal.pack(padx=50, pady=0, side=tk.LEFT)
+        self.cal.pack(padx=50, pady=0)
         
         # Teams Combobox
         teams_options = ["Lilly", "GPM", "Test", "Test_5_ordenes"]
-        self.team_combobox = tk.ttk.Combobox(frame_top, values=teams_options, width=20, height=15, font=30)
-        self.team_combobox.pack(side=tk.LEFT, padx=10)
+        self.team_combobox = tk.ttk.Combobox(frame_top_3, values=teams_options, width=20, height=15, font=30)
+        self.team_combobox.pack(padx=10)
         self.team_combobox.current(0)
 
-        #carrier_options = ["Transportes Ambientales", "NA"]
-        #self.carrier_combobox = tk.ttk.Combobox(frame_top, values=carrier_options, width=20, height=15, font=30)
-        #self.carrier_combobox.pack(side=tk.LEFT, padx=10)
-        #self.carrier_combobox.current(0)
+        carrier_options = ["Transportes Ambientales", "NA"]
+        self.carrier_combobox = tk.ttk.Combobox(frame_top_3, values=carrier_options, width=20, height=15, font=30)
+        self.carrier_combobox.pack(padx=10)
+        self.carrier_combobox.current(0)
 
-        # Bottom Frame
-        frame_bottom = ctk.CTkFrame(self)
-        frame_bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, pady=0)
+        # Buttons ###################
+        # Load orders button
+        loadOrders_btn = ctk.CTkButton(master=frame_top_4, text="Load Orders", command=self.on_loadOrders_btn_click,
+                                       width=150, height=50, font=('Calibri', 22, 'bold'))
+        loadOrders_btn.pack(padx=10)
+
+        # Process orders button
+        processOrders_btn = ctk.CTkButton(master=frame_top_4, text="Process Orders", command=self.on_processOrders_btn_click,
+                                        width=150, height=50, font=('Calibri', 22, 'bold'))
+        processOrders_btn.pack(padx=10)
+
+        exporttable_btn = ctk.CTkButton(master=frame_top_5, text="Export Table", command=print("Export Table"),
+                                       width=150, height=50, font=('Calibri', 22, 'bold'))
+        exporttable_btn.pack(padx=10)
+
+        # Process orders button
+        configuration_btn = ctk.CTkButton(master=frame_top_5, text="Configuration", command=print("Configuration"),
+                                        width=150, height=50, font=('Calibri', 22, 'bold'))
+        configuration_btn.pack(padx=10)
 
         # Orders self.treeview (table)
         style = tk.ttk.Style()
@@ -665,8 +700,9 @@ class MyUserForm(tk.Tk):
 
         # Scrollbars ###################
         # Vertical scrollbar
-        #y_scrollbar = tk.ttk.Scrollbar(frame_bottom, orient=tk.VERTICAL, command=self.treeview.yview)
-        #y_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        y_scrollbar = tk.ttk.Scrollbar(frame_bottom, orient=tk.VERTICAL, command=self.treeview.yview)
+        y_scrollbar.pack(after = self.treeview, side=tk.RIGHT, fill=tk.Y)
+        self.treeview.configure(yscrollcommand=y_scrollbar.set)
         #self.treeview.configure(command=self.treeview.yview)
         #y_scrollbar.grid(row=0, column=1, rowspan=10, sticky=NS)
         #y_scrollbar.place(x=self.treeview.winfo_x() + self.treeview.winfo_width(), y=self.treeview.winfo_y(), height=self.treeview.winfo_height())
@@ -676,16 +712,6 @@ class MyUserForm(tk.Tk):
         x_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
         self.treeview.configure(xscrollcommand=x_scrollbar.set)
 
-        # Buttons ###################
-        # Process orders button
-        processOrders_btn = ctk.CTkButton(master=frame_top, text="Process Orders", command=self.on_processOrders_btn_click,
-                                        width=150, height=50, font=('Calibri', 22, 'bold'))
-        processOrders_btn.pack(side=tk.RIGHT, padx=10)
-
-        # Load orders button
-        loadOrders_btn = ctk.CTkButton(master=frame_top, text="Load Orders", command=self.on_loadOrders_btn_click,
-                                       width=150, height=50, font=('Calibri', 22, 'bold'))
-        loadOrders_btn.pack(side=tk.RIGHT, padx=10)
         
     def on_loadOrders_btn_click(self):
         """
@@ -716,8 +742,6 @@ class MyUserForm(tk.Tk):
             error = row['SHIP_DATE'] == "" or row['SHIP_TIME_FROM'] == "" or row['SHIP_TIME_TO'] == ""
             error = error or row['DELIVERY_DATE'] == "" or row['DELIVERY_TIME_FROM'] == "" or row['DELIVERY_TIME_TO'] == ""
             error = error or row['AMOUNT_OF_BOXES'] == 0 or row['TA_ID'] == ""
-            error = error or row['SHIP_TIME_FROM'] == 'nan' or row['SHIP_TIME_TO'] == 'nan'
-            error = error or row['DELIVERY_TIME_FROM'] == 'nan' or row['DELIVERY_TIME_TO'] == 'nan'
 
             order_done = row['TRACKING_NUMBER'] != ""
             tag_color = 'odd' if parity else 'even'
