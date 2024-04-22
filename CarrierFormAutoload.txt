@@ -92,30 +92,6 @@ class OrderProcessor:
         except:
             self.wait = WebDriverWait(self.driver, 10)
             return False
-    
-    def renameAllReturnFiles(self, df: pd.DataFrame):
-        """
-        Renames all return files
-
-        Args:
-            df (DataFrame): return tracking numbers
-        """
-        for index, row in df.iterrows():
-            self.renameReturnPDFFile(row["RETURN_TRACKING_NUMBER"])
-
-    def renameReturnPDFFile(self, return_tracking_number: str):
-        """
-        Renames the return file
-
-        Args:
-            return_tracking_number (str): return tracking number
-        """
-        try:
-            pdf_path = self.folder_path + "\\JOB " + return_tracking_number + ".pdf"
-            new_pdf_path = self.folder_path + "\\JOB " + return_tracking_number + " RETORNO DE CREDO.pdf"
-            os.rename(pdf_path, new_pdf_path)
-        except Exception as e:
-            print(f"Error renaming return file: {e}")
 
     def process_all_shipping_orders(self, df: pd.DataFrame):
         """
@@ -129,7 +105,11 @@ class OrderProcessor:
             if df.loc[index, "TRACKING_NUMBER"] != "":
                 continue
 
-            error = row['HAS_AN_ERROR'] != "No error"
+            error = row['SHIP_DATE'] == "" or row['SHIP_TIME_FROM'] == "" or row['SHIP_TIME_TO'] == ""
+            error = error or row['DELIVERY_DATE'] == "" or row['DELIVERY_TIME_FROM'] == "" or row['DELIVERY_TIME_TO'] == ""
+            error = error or row['AMOUNT_OF_BOXES'] == 0 or row['TA_ID'] == ""
+            error = error or row['SHIP_TIME_FROM'] == 'nan' or row['SHIP_TIME_TO'] == 'nan'
+            error = error or row['DELIVERY_TIME_FROM'] == 'nan' or row['DELIVERY_TIME_TO'] == 'nan'
 
             if error:
                 continue
@@ -348,7 +328,7 @@ class OrderProcessor:
             
             self.driver.implicitly_wait(5)
 
-            return self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:14]
+            return self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:15]
             
         except Exception as e:
             print(f"Error completing shipping order form: {e}")
@@ -410,7 +390,7 @@ class OrderProcessor:
             
             self.driver.implicitly_wait(5)
             
-            return_tracking_number = self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:14]
+            return_tracking_number = self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:15]
         except Exception as e:
             print(f"Error completing shipping order return form: {e}")
             print(f"Order: {reference_return}")
@@ -472,10 +452,6 @@ class OrderProcessor:
             return
             
         self.process_all_shipping_orders(df)
-
-        time.sleep(1)
-
-        self.renameAllReturnFiles(df[(df["RETURN_TRACKING_NUMBER"] != "") & (df["PRINT_RETURN_DOCUMENT"])][["RETURN_TRACKING_NUMBER"]])
 
         if not df.empty:
             dataframe_name = "orders_" + dt.datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
@@ -553,74 +529,6 @@ class MyUserForm(tk.Tk):
         screen_height = self.winfo_screenheight()
 
         self.colors = self.Chroma()
-
-        """self.canvas = tk.Canvas(
-            self, #tk.Tk(),
-            bg = self.colors.body_color,
-            height = screen_height,
-            width = screen_width,
-            bd = 0,
-            highlightthickness = 0,
-            relief = "ridge"
-        )
-        
-        self.canvas.place(x = 0, y = 0)
-        
-        self.canvas.create_rectangle( # Topbar
-            0.0,
-            0.0,
-            screen_width,
-            screen_height * 0.3,
-            fill=self.colors.primary_color,
-            outline="")
-        
-        self.canvas.create_rectangle( # Body
-            0.0,
-            screen_height * 0.3,
-            screen_width,
-            screen_height * 0.7,
-            fill=self.colors.body_color,
-            outline="")
-        
-        self.canvas.create_rectangle( # Top
-            screen_width * 0.8,
-            0.0,
-            screen_width * 0.2,
-            screen_height * 0.3,
-            fill="red",
-            outline="")
-        
-        self.canvas.create_rectangle(
-            screen_width * 0.6,
-            0.0,
-            screen_width * 0.2,
-            screen_height * 0.3,
-            fill="green",
-            outline="")
-        
-        self.canvas.create_rectangle(
-            screen_width * 0.4,
-            0.0,
-            screen_width * 0.2,
-            screen_height * 0.3,
-            fill="blue",
-            outline="")
-        
-        self.canvas.create_rectangle(
-            screen_width * 0.2,
-            0.0,
-            screen_width * 0.2,
-            screen_height * 0.3,
-            fill="yellow",
-            outline="")
-        
-        self.canvas.create_rectangle(
-            screen_width*0.0,
-            0.0,
-            screen_width * 0.2,
-            screen_height * 0.3,
-            fill="pink",
-            outline="")"""
         
         # Top Frame
         frame_top = ctk.CTkFrame(self)
@@ -668,7 +576,7 @@ class MyUserForm(tk.Tk):
                 'DELIVERY_DATE', 'DELIVERY_TIME_FROM', 'DELIVERY_TIME_TO', 
                 'TYPE_OF_MATERIAL', 'TEMPERATURE', 'AMOUNT_OF_BOXES',
                 'RETURN', 'RETURN_TO_TA', 'RETURN_TYPE', 'RETURN_CANTIDAD',
-                'TRACKING_NUMBER', 'RETURN_TRACKING_NUMBER', 'PRINT_RETURN_DOCUMENT', 'CONTACTS', 'TA_ID', 'HAS_AN_ERROR']
+                'TRACKING_NUMBER', 'RETURN_TRACKING_NUMBER', 'PRINT_RETURN_DOCUMENT', 'CONTACTS', 'TA_ID']
         self.treeview = tk.ttk.Treeview(frame_bottom, columns=columns_df, show='headings', style="mystyle.Treeview")
         self.treeview.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
@@ -737,7 +645,11 @@ class MyUserForm(tk.Tk):
         for index, row in self.df.iterrows():
             r = [i] + list(row)
 
-            error = row['HAS_AN_ERROR'] != "No error"
+            error = row['SHIP_DATE'] == "" or row['SHIP_TIME_FROM'] == "" or row['SHIP_TIME_TO'] == ""
+            error = error or row['DELIVERY_DATE'] == "" or row['DELIVERY_TIME_FROM'] == "" or row['DELIVERY_TIME_TO'] == ""
+            error = error or row['AMOUNT_OF_BOXES'] == 0 or row['TA_ID'] == ""
+            error = error or row['SHIP_TIME_FROM'] == 'nan' or row['SHIP_TIME_TO'] == 'nan'
+            error = error or row['DELIVERY_TIME_FROM'] == 'nan' or row['DELIVERY_TIME_TO'] == 'nan'
 
             order_done = row['TRACKING_NUMBER'] != ""
             tag_color = 'odd' if parity else 'even'
@@ -777,12 +689,8 @@ class MyUserForm(tk.Tk):
         for index, row in self.df.iterrows():
             r = [i] + list(row)
             order_done = row['TRACKING_NUMBER'] != ""
-
-            error = row['HAS_AN_ERROR'] != "No error"
-            
             tag_color = 'odd' if parity else 'even'
             tag_color += "_done" if order_done else ""
-            tag_color += ("_error" if error else "") if not order_done else ""
             self.treeview.insert("", "end", values=r, tags=(tag_color))
             parity = not parity
             i += 1
@@ -885,7 +793,7 @@ class MyUserForm(tk.Tk):
                             "REF + H + M + L": "Refrigerado"}
             df["TEMPERATURE"] = df["TEMPERATURE"].str.strip()
             df["TEMPERATURE"] = df["TEMPERATURE"].replace(temperatures)
-            df.loc[(df["TEMPERATURE"] == "Ambiente") & (df["RETURN_TRACKING_NUMBER"] != "N"), "TEMPERATURE"] = "Ambiente Controlado"
+            df.loc[(df["TEMPERATURE"] == "Ambiente") & (df["RETURN_TRACKING_NUMBER"] != "NA"), "TEMPERATURE"] = "Ambiente Controlado"
             df["Cajas (Carton)"] = df["Cajas (Carton)"].fillna(0).astype(int)
             df["RETURN_CANTIDAD"] = df["AMOUNT_OF_BOXES"] - df["Cajas (Carton)"]
             df["RETURN"] = (df["RETURN_CANTIDAD"] > 0) & (df["TEMPERATURE"] != "Ambiente")
@@ -920,11 +828,7 @@ class MyUserForm(tk.Tk):
 
             df["RETURN_CANTIDAD"] = df["AMOUNT_OF_BOXES"]
 
-            df["PRINT_RETURN_DOCUMENT"] = True #False
-
-            df["DELIVERY_DATE"] = df["DELIVERY_DATE"].astype("datetime64[ns]")
-            df["DELIVERY_DATE"] = pd.to_datetime(df["DELIVERY_DATE"], format='%d/%m/%Y', errors='coerce')
-            df["DELIVERY_DATE"] = df["DELIVERY_DATE"].dt.strftime('%d/%m/%Y')
+            df["PRINT_RETURN_DOCUMENT"] = False
 
         df.fillna('', inplace=True)
         
@@ -977,56 +881,6 @@ class MyUserForm(tk.Tk):
         df.fillna('', inplace=True)
 
         return df[["STUDY", "SITE#", "TA_ID", "DELIVERY_TIME_FROM", "DELIVERY_TIME_TO", "CONTACTS"]]
-    
-    def checkErrorsOnEachOrder(self, row: pd.Series) -> str:
-        """
-        Checks errors on each order
-
-        Args:
-            row (Series): order row
-        """
-
-        errors = ""
-        if row['SHIP_DATE'] == "":
-            errors += "No ship date; "
-        
-        if row['SHIP_TIME_FROM'] == "": 
-            errors += "No ship time (from); "
-        
-        if row['SHIP_TIME_TO'] == "":
-            errors += "No ship time (to); "
-        
-        if row['DELIVERY_DATE'] == "":
-            errors += "No delivery date; "
-        
-        if row['DELIVERY_TIME_FROM'] == "":
-            errors += "No delivery time (from); "
-        
-        if row['DELIVERY_TIME_TO'] == "":
-            errors += "No delivery time (to); "
-        
-        if row['AMOUNT_OF_BOXES'] == 0: 
-            errors += "No amount of boxes; "
-        
-        if row['TA_ID'] == "":
-            errors += "No TA ID; "
-        
-        if row['SHIP_TIME_FROM'] == 'nan':
-            errors += "No ship time (from); "
-        
-        if row['SHIP_TIME_TO'] == 'nan':
-            errors += "No ship time (to); "
-        
-        if row['DELIVERY_TIME_FROM'] == 'nan':
-            errors += "No delivery time (from); "
-        
-        if row['DELIVERY_TIME_TO'] == 'nan':
-            errors += "No delivery time (to); "
-
-        if errors != "":
-            return errors
-        else:
-            return "No error"
 
     def generate_shipping_order_tables(self, team: str, shipdate: dt.datetime) -> pd.DataFrame:
         """
@@ -1046,15 +900,13 @@ class MyUserForm(tk.Tk):
         df_info_sites = self.load_table_info_sites(team, df_path, info_sites_sheet)
         
         df = pd.merge(df_orders, df_info_sites, on=["STUDY", "SITE#"], how="inner")
-
-        df["HAS_AN_ERROR"] = df.apply(self.checkErrorsOnEachOrder, axis=1)
         
         return df[['SYSTEM_NUMBER', 'IVRS_NUMBER', 'STUDY', 'SITE#',
                 'SHIP_DATE', 'SHIP_TIME_FROM', 'SHIP_TIME_TO', 
                 'DELIVERY_DATE', 'DELIVERY_TIME_FROM', 'DELIVERY_TIME_TO', 
                 'TYPE_OF_MATERIAL', 'TEMPERATURE', 'AMOUNT_OF_BOXES',
                 'RETURN', 'RETURN_TO_TA', 'RETURN_TYPE', 'RETURN_CANTIDAD',
-                'TRACKING_NUMBER', 'RETURN_TRACKING_NUMBER', 'PRINT_RETURN_DOCUMENT', 'CONTACTS', 'TA_ID', 'HAS_AN_ERROR']]
+                'TRACKING_NUMBER', 'RETURN_TRACKING_NUMBER', 'PRINT_RETURN_DOCUMENT', 'CONTACTS', 'TA_ID']]
 
 def main():
     ctk.set_appearance_mode("dark")
