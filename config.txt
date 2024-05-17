@@ -1,0 +1,4 @@
+--orders_source_path = 'C:\Users\inaki.costa\Thermo Fisher Scientific\Power BI Lilly Argentina - General\Share Point Lilly Argentina.xlsx'
+--orders_source_sheet = 'Shipments'
+--sites_source_path = 'C:\Users\inaki.costa\Thermo Fisher Scientific\Power BI Lilly Argentina - General\Share Point Lilly Argentina.xlsx'
+--sites_source_sheet = 'Dias y Destinos'
