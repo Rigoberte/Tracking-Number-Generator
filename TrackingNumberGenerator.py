@@ -97,7 +97,7 @@ class MyUserForm(tk.Tk):
         
         self.selected_team = Teams(selected_team_name, self.folder_path_to_download)
 
-        self.df = DataRecolector(self.selected_team).generate_shipping_order_tables(selected_date)
+        self.df = DataRecolector(self.selected_team).generate_orders_and_contacts_table(selected_date)
 
         self.__update_treeview__(self.df, self.treeview)
 
@@ -108,11 +108,29 @@ class MyUserForm(tk.Tk):
         Button to process all orders in the table
         """
         
+        def on_close():
+            self.loginFormResult, _ = self.loginForm.getLoginFormResult()
+            self.loginForm.destroy()
+
+        """self.loginFormResult = False
+
+        loginRoot = tk.Tk()
+        loginRoot.protocol("WM_DELETE_WINDOW", on_close)
+        loginRoot.after(20000, on_close)
+        
+        self.loginForm = LoginForm(loginRoot, self.selected_team)
+        loginRoot.mainloop()
+
+        time.sleep(1)
+        if self.loginFormResult:
+            print ("Login Successful")
+        else:
+            print ("Login Failed")
+            return"""
+
         self.__create_folder__(self.folder_path_to_download)  
         
-        carriersWebpage = self.selected_team.getCarrierWebpage()
-        
-        orderProcessor = OrderProcessor(self.folder_path_to_download, carriersWebpage)
+        orderProcessor = OrderProcessor(self.folder_path_to_download, self.selected_team)
 
         orderProcessor.setUserForm(self)
         
@@ -414,7 +432,7 @@ class MyUserForm(tk.Tk):
         amount_of_total_orders = len(df)
         amount_of_orders_processed = len(df[df['TRACKING_NUMBER'] != ""])
         amount_of_orders_ready_to_be_processed = len(df[(df['TRACKING_NUMBER'] == "") & (df['HAS_AN_ERROR'] == "No error")])
-        amount_of_orders_with_errors = len(df[df['HAS_AN_ERROR'] != "No error"])
+        amount_of_orders_with_errors = len(df[(df['HAS_AN_ERROR'] != "No error") & (df['TRACKING_NUMBER'] == "")])
         self.bottom_bar.config(text=f"Amount of total orders: {amount_of_total_orders} | Amount of orders processed: {amount_of_orders_processed} | Amount of orders ready to be processed: {amount_of_orders_ready_to_be_processed} | Amount of orders with errors: {amount_of_orders_with_errors}")
 
 class ToolTip:
@@ -464,7 +482,7 @@ class ToolTip:
         self.tip_window = None
 
 class LoginForm:
-    def __init__(self, root, carrierWebpage = None):
+    def __init__(self, root, team = None):
         super().__init__()
         self.root = root
         self.root.title("Login Form")
@@ -490,15 +508,27 @@ class LoginForm:
         self.exit_button = tk.Button(root, text="Exit", command=root.quit)
         self.exit_button.pack(pady=5)
 
-        if carrierWebpage is None:
-            self.carrierWebpage = CarriersWebpage()
-        self.carrierWebpage = carrierWebpage
+        if team is None:
+            self.selectedTeam = Teams()
+        self.selectedTeam = team
+
+        self.loginResult = False
     
-    def validate_login(self) -> bool:
+    def validate_login(self):
         username = self.username_entry.get()
         password = self.password_entry.get()
 
-        return self.carrierWebpage.log_in_webpage(username, password)
+        self.selectedTeam.build_driver()
+        if self.selectedTeam.log_in_webpage(username, password):
+            self.loginResult = True
+        else:
+            self.selectedTeam.quit_driver()
+
+    def getLoginFormResult(self):
+        return self.loginResult, self.selectedTeam
+
+    def destroy(self):
+        self.root.destroy()
 
 class Chroma:
     def __init__(self):
@@ -601,7 +631,7 @@ class Browser(object):
         self.driver = webdriver.Chrome(options=chrome_options)
 
 class OrderProcessor:
-    def __init__(self, folder_path_to_download : str, carrierWebpage):
+    def __init__(self, folder_path_to_download : str, selectedTeam):
         """
         Class constructor
 
@@ -613,7 +643,8 @@ class OrderProcessor:
             wait (WebDriverWait): selenium wait
         """
         self.folder_path_to_download = folder_path_to_download
-        self.carrierWebpage = carrierWebpage
+        #self.carrierWebpage = carrierWebpage
+        self.selectedTeam = selectedTeam
     
     def setUserForm(self, userForm):
         # I know this breaks encapsulation
@@ -738,11 +769,11 @@ class OrderProcessor:
             DataFrame: orders table with tracking numbers
         """
         try:
-            self.carrierWebpage.build_driver()
+            self.selectedTeam.build_driver()
 
-            if not self.carrierWebpage.log_in_website():
+            if not self.selectedTeam.log_in_website():
                 return
-
+            
             self.__process_all_shipping_orders__(ordersDataFrame)
 
             time.sleep(2) # Wait for the download to finish
@@ -756,7 +787,7 @@ class OrderProcessor:
               
         finally:
             try:
-                self.carrierWebpage.quit()
+                self.selectedTeam.quit_driver()
             except Exception as e:
                 print(f"Error quitting the webpage: {e}")
             finally:
@@ -806,7 +837,7 @@ class OrderProcessor:
         reference = f"{system_number} {ivrs_number}"[:50]
         delivery_date = dt.datetime.strptime(delivery_date, '%d/%m/%Y').strftime('%d/%m/%Y')
 
-        tracking_number = self.carrierWebpage.complete_shipping_order_form(
+        tracking_number = self.selectedTeam.complete_shipping_order_form(
             carrier_id, reference, 
             ship_date, ship_time_from, ship_time_to, 
             delivery_date, delivery_time_from, delivery_time_to, 
@@ -847,8 +878,8 @@ class OrderProcessor:
             return_delivery_date = return_delivery_date.strftime('%d/%m/%Y')
             return_delivery_hour_from = "9"
             return_delivery_hour_to = "17"
-
-            return_tracking_number = self.carrierWebpage.complete_shipping_order_return_form(
+            
+            return_tracking_number = self.selectedTeam.complete_shipping_order_return_form(
                 carrier_id, reference_return, 
                 return_delivery_date, return_delivery_hour_from, return_delivery_hour_to, 
                 type_of_return, "", amount_of_boxes_to_return, 
@@ -934,11 +965,11 @@ class OrderProcessor:
                 print(f"Error sending email to medical center: {e}")
                 print(f"Order: {row['SYSTEM_NUMBER']} {row['IVRS_NUMBER']}")"""
 
-            """
+            
             try:
                 self.__updateTreeviewLine__(index, tracking_number, return_tracking_number)
             except Exception as e:
-                print(f"Error updating treeview line: {e}")"""
+                print(f"Error updating treeview line: {e}")
 
     def __printOrderDocuments__(self, tracking_number: str, return_tracking_number: str, print_return_document: bool):
         """
@@ -950,11 +981,11 @@ class OrderProcessor:
             print_return_document (bool): if True, prints the return document
         """
         if tracking_number != "":
-            self.carrierWebpage.printWayBillDocument(tracking_number, 4)
-            self.carrierWebpage.printLabelDocument(tracking_number)
+            self.selectedTeam.printWayBillDocument(tracking_number, 4)
+            self.selectedTeam.printLabelDocument(tracking_number)
         
         if print_return_document and return_tracking_number != "" and return_tracking_number != "Error":
-            self.carrierWebpage.printReturnWayBillDocument(return_tracking_number, 1)
+            self.selectedTeam.printReturnWayBillDocument(return_tracking_number, 1)
 
     def __get_tracking_numbers_from_carrier__(self, carrier_id: int, system_number: str, ivrs_number: str, 
                                ship_date: str, ship_time_from: str, ship_time_to: str, 
@@ -1024,6 +1055,7 @@ class OrderProcessor:
             index (int): row index
         """
         try:
+            print (f"Updating treeview line: {index}")
             self.userForm.update_tag_color_of_a_treeview_line(index, self.userForm.getTreeview(), tracking_number, return_tracking_number)    
         except Exception as e:
             print(f"Error updating treeview line: {e}")
@@ -1055,7 +1087,7 @@ class DataRecolector:
     def getColumnNames(self):
         return self.columns_df
     
-    def generate_shipping_order_tables(self, shipdate: dt.datetime) -> pd.DataFrame:
+    def generate_orders_and_contacts_table(self, shipdate: dt.datetime) -> pd.DataFrame:
         """
         Process all orders in the table
 
@@ -1066,18 +1098,18 @@ class DataRecolector:
         Returns:
             DataFrame: orders table with standarisized data
         """
-        df_orders = self.__load_shipping_order_table__(shipdate, self.team)
+        ordersDataframe = self.__load_shipping_order_table__(shipdate, self.team)
 
-        df_info_sites = self.__load_table_info_sites__(self.team)
+        contactsDataframe = self.__load_contacts_table__(self.team)
         
-        df = pd.merge(df_orders, df_info_sites, on=["STUDY", "SITE#"], how="left")
+        ordersAndContactsDataframe = pd.merge(ordersDataframe, contactsDataframe, on=["STUDY", "SITE#"], how="left")
 
-        df["HAS_AN_ERROR"] = df.apply(self.__checkErrorsOnEachOrder__, axis=1)
+        ordersAndContactsDataframe["HAS_AN_ERROR"] = ordersAndContactsDataframe.apply(self.__checkErrorsOnEachOrder__, axis=1)
         
-        return df[self.columns_df]
+        return ordersAndContactsDataframe[self.columns_df]
 
     # Private methods
-    def __load_shipping_order_table__(self, date: dt.datetime, team) -> pd.DataFrame:
+    def __load_shipping_order_table__(self, shipDate: dt.datetime, team) -> pd.DataFrame:
         """
         Loads orders table according to date and team
 
@@ -1089,7 +1121,7 @@ class DataRecolector:
         """
         ordersDataFrame = self.__load_shipping_order_table_with_normalized_columns__(team)
 
-        ordersDataFrame = ordersDataFrame[ordersDataFrame["SHIP_DATE"] == date]
+        ordersDataFrame = ordersDataFrame[ordersDataFrame["SHIP_DATE"] == shipDate]
         
         ordersDataFrame = self.__correct_regular_columns_for_shipping_orders_table__(ordersDataFrame)
 
@@ -1147,7 +1179,7 @@ class DataRecolector:
         
         return ordersDataFrame
 
-    def __load_table_info_sites__(self, team) -> pd.DataFrame:
+    def __load_contacts_table__(self, team) -> pd.DataFrame:
         """
         Loads sites info table according to team
 
@@ -1377,11 +1409,11 @@ class CarriersWebpage:
         """
         self.carrierWebpage.build_driver()
     
-    def quit(self):
+    def quit_driver(self):
         """
         Quits the browser
         """
-        self.carrierWebpage.quit()
+        self.carrierWebpage.quit_driver()
 
     def log_in_website(self) -> bool:
         """
@@ -1401,7 +1433,7 @@ class CarriersWebpage:
             username (str): username
             password (str): password
         """
-        self.carrierWebpage.log_in_webpage(username, password)
+        return self.carrierWebpage.log_in_webpage(username, password)
 
     def complete_shipping_order_form(self, carrier_id: str, reference: str, 
                                     ship_date: str, ship_time_from: str, ship_time_to: str, 
@@ -1501,19 +1533,18 @@ class CarriersWebpage:
 
     # Private methods
     def __print_webpage__(self, driver, url: str):
-        """
-        Prints webpage
-
-        Args:
-            self.driver (webdriver): selenium self.driver
-            url (str): webpage url
-        """
         try:
             driver.get(url) # this print since chrome options are set to print automatically
             driver.implicitly_wait(5)
 
         except Exception as e:
             print(f"Error printing documents: {e}")
+    
+    def __quit_driver__(self, driver):
+        try:
+            driver.quit()
+        except Exception as e:
+            print(f"Error quitting driver: {e}")
 
     # Sub classes
     class NoCarrier:
@@ -1526,14 +1557,15 @@ class CarriersWebpage:
                 father (CarriersWebpage): father class
             """
             self.folder_path_to_download = folder_path_to_download
+            self.father = father
 
         def build_driver(self):
             self.browser = Browser(self.folder_path_to_download)
             self.driver = self.browser.driver
             self.wait = WebDriverWait(self.driver, 10)
 
-        def quit(self):
-            self.driver.quit()
+        def quit_driver(self):
+            self.father.__quit_driver__(self.driver)
 
         def log_in_website(self) -> bool:
             return False
@@ -1584,8 +1616,8 @@ class CarriersWebpage:
             self.driver = self.browser.driver
             self.wait = WebDriverWait(self.driver, 10)
 
-        def quit(self):
-            self.driver.quit()
+        def quit_driver(self):
+            self.father.__quit_driver__(self.driver)
 
         def log_in_website(self) -> bool:
             self.driver.get("https://sgi.tanet.com.ar/sgi/index.php")
@@ -1613,17 +1645,19 @@ class CarriersWebpage:
                 username (str): username
                 password (str): password
             """
-            try:
-                self.driver.get("https://sgi.tanet.com.ar/sgi/index.php")
-                self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/input[1]")))
-                
-                self.driver.find_element(By.XPATH, "/html/body/form/input[1]").send_keys(username)
-                self.driver.find_element(By.XPATH, "/html/body/form/input[2]").send_keys(password)
-                self.driver.find_element(By.XPATH, "/html/body/form/button").click()
+            self.driver.get("https://sgi.tanet.com.ar/sgi/index.php")
+            self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/input[1]")))
+            
+            self.driver.find_element(By.XPATH, "/html/body/form/input[1]").send_keys(username)
+            self.driver.find_element(By.XPATH, "/html/body/form/input[2]").send_keys(password)
+            self.driver.find_element(By.XPATH, "/html/body/form/button").click()
 
-                self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/div[2]/div[1]/table/tbody/tr[1]/td")))
+            try:
+                time.sleep(1)
+                self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form")))
                 return True
-            except:
+            except Exception as e:
+                print(f"Error logging in webpage: {e}")
                 return False
 
         def complete_shipping_order_form(self, carrier_id: str, reference: str, 
@@ -1825,12 +1859,6 @@ class Teams():
         Gets team email
         """
         return self.selectedTeam.getTeamEmail()
-    
-    def getCarrierWebpage(self):
-        """
-        Gets the carrier webpage
-        """
-        return self.selectedTeam.getCarrierWebpage()
 
     def get_column_rename_type_config_for_contacts_table(self) -> (dict, dict):
         """
@@ -1903,6 +1931,49 @@ class Teams():
     def readSitesExcel(self, path_from_get_data: str, sites_sheet: str, columns_types: dict) -> pd.DataFrame:
         return self.selectedTeam.readSitesExcel(path_from_get_data, sites_sheet, columns_types)
 
+    def build_driver(self):
+        self.selectedTeam.build_driver()
+
+    def log_in_webpage(self, username: str, password: str) -> bool:
+        return self.selectedTeam.log_in_webpage(username, password)
+    
+    def log_in_website(self) -> bool:
+        return self.selectedTeam.log_in_website()
+
+    def quit_driver(self):
+        self.selectedTeam.quit_driver()
+
+    def complete_shipping_order_form(self, carrier_id: str, reference: str,
+                                    ship_date: str, ship_time_from: str, ship_time_to: str,
+                                    delivery_date: str, delivery_time_from: str, delivery_time_to: str,
+                                    type_of_material: str, temperature: str,
+                                    contacts: str, amount_of_boxes: int) -> str:
+        return self.selectedTeam.complete_shipping_order_form(carrier_id, reference,
+                                    ship_date, ship_time_from, ship_time_to,
+                                    delivery_date, delivery_time_from, delivery_time_to,
+                                    type_of_material, temperature,
+                                    contacts, amount_of_boxes)
+
+    def complete_shipping_order_return_form(self, carrier_id: str, reference_return: str,
+                                            return_delivery_date: str, return_delivery_hour_from: str,
+                                            return_delivery_hour_to: str, type_of_return: str,
+                                            contacts: str, amount_of_boxes_to_return: int,
+                                            return_to_TA: bool, tracking_number: str) -> str:
+        return self.selectedTeam.complete_shipping_order_return_form(carrier_id, reference_return,
+                                                return_delivery_date, return_delivery_hour_from,
+                                                return_delivery_hour_to, type_of_return,
+                                                contacts, amount_of_boxes_to_return,
+                                                return_to_TA, tracking_number)
+
+    def printWayBillDocument(self, tracking_number: str, amount_of_copies: int):
+        self.selectedTeam.printWayBillDocument(tracking_number, amount_of_copies)
+
+    def printLabelDocument(self, tracking_number: str):
+        self.selectedTeam.printLabelDocument(tracking_number)
+
+    def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int):
+        self.selectedTeam.printReturnWayBillDocument(return_tracking_number, amount_of_copies)
+
     # Private methods
     def __sendEmailWithOrdersToTeam__(self, folder_path_with_orders_files: str, date: str, emails_of_team: str, emails_of_admin: str):
         try:
@@ -1938,15 +2009,92 @@ class Teams():
 
     def __zip_folder__(self, folder_path: str, zip_path: str):
             shutil.make_archive(zip_path, 'zip', folder_path)
-        
+
+    def __log_in_webpage__(self, carrierWebpage: CarriersWebpage, username: str, password: str) -> bool:
+        return carrierWebpage.log_in_webpage(username, password)
+    
+    def __quit_driver__(self, carrierWebpage: CarriersWebpage):
+        carrierWebpage.quit_driver()
+
+    def __complete_shipping_order_form__(self, carrierWebpage: CarriersWebpage, carrier_id: str, reference: str,
+                                    ship_date: str, ship_time_from: str, ship_time_to: str,
+                                    delivery_date: str, delivery_time_from: str, delivery_time_to: str,
+                                    type_of_material: str, temperature: str,
+                                    contacts: str, amount_of_boxes: int) -> str:
+        return carrierWebpage.complete_shipping_order_form(carrier_id, reference,
+                                    ship_date, ship_time_from, ship_time_to,
+                                    delivery_date, delivery_time_from, delivery_time_to,
+                                    type_of_material, temperature,
+                                    contacts, amount_of_boxes)
+
+    def __complete_shipping_order_return_form__(self, carrierWebpage: CarriersWebpage, carrier_id: str, reference_return: str,
+                                                delivery_date: str, return_time_from: str,
+                                                return_time_to: str, type_of_return: str,
+                                                contacts: str, amount_of_boxes_to_return: int,
+                                                return_to_TA: bool, tracking_number: str) -> str:
+        return carrierWebpage.complete_shipping_order_return_form(carrier_id, reference_return,
+                                                delivery_date, return_time_from,
+                                                return_time_to, type_of_return,
+                                                contacts, amount_of_boxes_to_return,
+                                                return_to_TA, tracking_number)
+    
+    def __printWayBillDocument__(self, carrierWebpage: CarriersWebpage, tracking_number: str, amount_of_copies: int):
+        carrierWebpage.printWayBillDocument(tracking_number, amount_of_copies)
+
+    def __printLabelDocument__(self, carrierWebpage: CarriersWebpage, tracking_number: str):
+        carrierWebpage.printLabelDocument(tracking_number)
+
+    def __printReturnWayBillDocument__(self, carrierWebpage: CarriersWebpage, return_tracking_number: str, amount_of_copies: int):
+        carrierWebpage.printReturnWayBillDocument(return_tracking_number, amount_of_copies)
+
+    def __build_driver__(self, carrierWebpage: CarriersWebpage):
+        carrierWebpage.build_driver()
+
+    def __quit_driver__(self, carrierWebpage: CarriersWebpage):
+        carrierWebpage.quit_driver()
+
+    def __log_in_webpage__(self, carrierWebpage: CarriersWebpage, username: str, password: str) -> bool:
+        return carrierWebpage.log_in_webpage(username, password)
+    
+    def __log_in_website__(self, carrierWebpage: CarriersWebpage) -> bool:
+        return carrierWebpage.log_in_website()
+
+    def __complete_shipping_order_form__(self, carrierWebpage: CarriersWebpage, carrier_id: str, reference: str,
+                                    ship_date: str, ship_time_from: str, ship_time_to: str,
+                                    delivery_date: str, delivery_time_from: str, delivery_time_to: str,
+                                    type_of_material: str, temperature: str,
+                                    contacts: str, amount_of_boxes: int) -> str:
+        return carrierWebpage.complete_shipping_order_form(carrier_id, reference,
+                                    ship_date, ship_time_from, ship_time_to,
+                                    delivery_date, delivery_time_from, delivery_time_to,
+                                    type_of_material, temperature,
+                                    contacts, amount_of_boxes)
+    
+    def __complete_shipping_order_return_form__(self, carrierWebpage: CarriersWebpage, carrier_id: str, reference_return: str,
+                                                delivery_date: str, return_time_from: str,
+                                                return_time_to: str, type_of_return: str,
+                                                contacts: str, amount_of_boxes_to_return: int,
+                                                return_to_TA: bool, tracking_number: str) -> str:
+        return carrierWebpage.complete_shipping_order_return_form(carrier_id, reference_return,
+                                                delivery_date, return_time_from,
+                                                return_time_to, type_of_return,
+                                                contacts, amount_of_boxes_to_return,
+                                                return_to_TA, tracking_number)
+    
+    def __printWayBillDocument__(self, carrierWebpage: CarriersWebpage, tracking_number: str, amount_of_copies: int):
+        carrierWebpage.printWayBillDocument(tracking_number, amount_of_copies)
+
+    def __printLabelDocument__(self, carrierWebpage: CarriersWebpage, tracking_number: str):
+        carrierWebpage.printLabelDocument(tracking_number)
+
+    def __printReturnWayBillDocument__(self, carrierWebpage: CarriersWebpage, return_tracking_number: str, amount_of_copies: int):
+        carrierWebpage.printReturnWayBillDocument(return_tracking_number, amount_of_copies)
+
     # Sub classes
     class NoSelectedTeam:
         def __init__(self, folder_path_to_download: str, father = None):
             self.carrierWebpage = CarriersWebpage("", folder_path_to_download)
             self.father = father
-
-        def getCarrierWebpage(self):
-            return self.carrierWebpage
 
         def getTeamName(self) -> str:
             return "No Selected Team"
@@ -1980,13 +2128,50 @@ class Teams():
             df = pd.DataFrame()
             return df
 
+        def build_driver(self):
+            self.father.__build_driver__(self.carrierWebpage)
+
+        def log_in_webpage(self, username: str, password: str) -> bool:
+            return self.father.__log_in_webpage__(self.carrierWebpage, username, password)
+        
+        def quit_driver(self):
+            self.father.__quit_driver__(self.carrierWebpage)
+
+        def complete_shipping_order_form(self, carrier_id: str, reference: str,
+                                        ship_date: str, ship_time_from: str, ship_time_to: str,
+                                        delivery_date: str, delivery_time_from: str, delivery_time_to: str,
+                                        type_of_material: str, temperature: str,
+                                        contacts: str, amount_of_boxes: int) -> str:
+            return self.father.__complete_shipping_order_form__(self.carrierWebpage, carrier_id, reference,
+                                        ship_date, ship_time_from, ship_time_to,
+                                        delivery_date, delivery_time_from, delivery_time_to,
+                                        type_of_material, temperature,
+                                        contacts, amount_of_boxes)
+        
+        def complete_shipping_order_return_form(self, carrier_id: str, reference_return: str,
+                                                delivery_date: str, return_time_from: str,
+                                                return_time_to: str, type_of_return: str,
+                                                contacts: str, amount_of_boxes_to_return: int,
+                                                return_to_TA: bool, tracking_number: str) -> str:
+            return self.father.__complete_shipping_order_return_form__(self.carrierWebpage, carrier_id, reference_return,
+                                                delivery_date, return_time_from,
+                                                return_time_to, type_of_return,
+                                                contacts, amount_of_boxes_to_return,
+                                                return_to_TA, tracking_number)
+        
+        def printWayBillDocument(self, tracking_number: str, amount_of_copies: int):
+            self.father.__printWayBillDocument__(self.carrierWebpage, tracking_number, amount_of_copies)
+
+        def printLabelDocument(self, tracking_number: str):
+            self.father.__printLabelDocument__(self.carrierWebpage, tracking_number)
+
+        def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int):
+            self.father.__printReturnWayBillDocument__(self.carrierWebpage, return_tracking_number, amount_of_copies)
+    
     class EliLillyArgentinaTeam:
         def __init__(self, folder_path_to_download: str, father = None):
             self.carrierWebpage = CarriersWebpage("Transportes Ambientales", folder_path_to_download)
             self.father = father
-
-        def getCarrierWebpage(self):
-            return self.carrierWebpage
 
         def getTeamName(self) -> str:
             return "Eli Lilly Argentina"
@@ -2068,13 +2253,56 @@ class Teams():
         def sendEmailWithOrdersToTeam(self, folder_path_with_orders_files: str, date: str):
             self.father.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "inaki.costa@thermofisher")
 
+        def build_driver(self):
+            self.father.__build_driver__(self.carrierWebpage)
+
+        def log_in_webpage(self, username: str, password: str) -> bool:
+            return self.father.__log_in_webpage__(self.carrierWebpage, username, password)
+        
+        def log_in_website(self) -> bool:
+            return self.father.__log_in_website__(self.carrierWebpage)
+
+        def quit_driver(self):
+            self.father.__quit_driver__(self.carrierWebpage)
+
+        def complete_shipping_order_form(self, carrier_id: str, reference: str,
+                                        ship_date: str, ship_time_from: str, ship_time_to: str,
+                                        delivery_date: str, delivery_time_from: str, delivery_time_to: str,
+                                        type_of_material: str, temperature: str,
+                                        contacts: str, amount_of_boxes: int) -> str:
+            return self.father.__complete_shipping_order_form__(self.carrierWebpage, carrier_id, reference,
+                                        ship_date, ship_time_from, ship_time_to,
+                                        delivery_date, delivery_time_from, delivery_time_to,
+                                        type_of_material, temperature,
+                                        contacts, amount_of_boxes)
+        
+        def complete_shipping_order_return_form(self, carrier_id: str, reference_return: str,
+                                                delivery_date: str, return_time_from: str,
+                                                return_time_to: str, type_of_return: str,
+                                                contacts: str, amount_of_boxes_to_return: int,
+                                                return_to_TA: bool, tracking_number: str) -> str:
+            return self.father.__complete_shipping_order_return_form__(self.carrierWebpage, carrier_id, reference_return,
+                                                delivery_date, return_time_from,
+                                                return_time_to, type_of_return,
+                                                contacts, amount_of_boxes_to_return,
+                                                return_to_TA, tracking_number)
+        
+        def printWayBillDocument(self, tracking_number: str, amount_of_copies: int):
+            self.father.__printWayBillDocument__(self.carrierWebpage, tracking_number, amount_of_copies)
+
+        def printLabelDocument(self, tracking_number: str):
+            self.father.__printLabelDocument__(self.carrierWebpage, tracking_number)
+
+        def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int):
+            self.father.__printReturnWayBillDocument__(self.carrierWebpage, return_tracking_number, amount_of_copies)
+        
     class GPMArgentinaTeam:
         def __init__(self, folder_path_to_download: str, father = None):
             self.carrierWebpage = CarriersWebpage("Transportes Ambientales", folder_path_to_download)
             self.father = father
 
-        def getCarrierWebpage(self):
-            return self.carrierWebpage
+        def log_in_website(self) -> bool:
+            return self.father.__log_in_website__(self.carrierWebpage)
 
         def getTeamName(self) -> str:
             return "GPM Argentina"
@@ -2139,13 +2367,50 @@ class Teams():
             df = pd.read_excel(path_from_get_data, sheet_name=sites_sheet, dtype=columns_types, header=0)
             return df
     
+        def build_driver(self):
+            self.father.__build_driver__(self.carrierWebpage)
+
+        def log_in_webpage(self, username: str, password: str) -> bool:
+            return self.father.__log_in_webpage__(self.carrierWebpage, username, password)
+        
+        def quit_driver(self):
+            self.father.__quit_driver__(self.carrierWebpage)
+
+        def complete_shipping_order_form(self, carrier_id: str, reference: str,
+                                        ship_date: str, ship_time_from: str, ship_time_to: str,
+                                        delivery_date: str, delivery_time_from: str, delivery_time_to: str,
+                                        type_of_material: str, temperature: str,
+                                        contacts: str, amount_of_boxes: int) -> str:
+            return self.father.__complete_shipping_order_form__(self.carrierWebpage, carrier_id, reference,
+                                        ship_date, ship_time_from, ship_time_to,
+                                        delivery_date, delivery_time_from, delivery_time_to,
+                                        type_of_material, temperature,
+                                        contacts, amount_of_boxes)
+        
+        def complete_shipping_order_return_form(self, carrier_id: str, reference_return: str,
+                                                delivery_date: str, return_time_from: str,
+                                                return_time_to: str, type_of_return: str,
+                                                contacts: str, amount_of_boxes_to_return: int,
+                                                return_to_TA: bool, tracking_number: str) -> str:
+            return self.father.__complete_shipping_order_return_form__(self.carrierWebpage, carrier_id, reference_return,
+                                                delivery_date, return_time_from,
+                                                return_time_to, type_of_return,
+                                                contacts, amount_of_boxes_to_return,
+                                                return_to_TA, tracking_number)
+        
+        def printWayBillDocument(self, tracking_number: str, amount_of_copies: int):
+            self.father.__printWayBillDocument__(self.carrierWebpage, tracking_number, amount_of_copies)
+
+        def printLabelDocument(self, tracking_number: str):
+            self.father.__printLabelDocument__(self.carrierWebpage, tracking_number)
+
+        def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int):
+            self.father.__printReturnWayBillDocument__(self.carrierWebpage, return_tracking_number, amount_of_copies)
+        
     class TestTeam:
         def __init__(self, folder_path_to_download: str, father = None):
             self.carrierWebpage = CarriersWebpage("Transportes Ambientales", folder_path_to_download)
             self.father = father
-
-        def getCarrierWebpage(self):
-            return self.carrierWebpage
 
         def getTeamName(self) -> str:
             return "Test"
@@ -2176,27 +2441,17 @@ class Teams():
             columns_types = {"SITE#": str, "RETURN_TO_CARRIER_DEPOT": bool, "SHIP_TIME_TO": str}
             return columns_names, columns_types
         
-        def apply_team_specific_changes_for_orders_tables(self, df: pd.DataFrame) -> pd.DataFrame:
-            #df["SHIP_TIME_FROM"] = pd.to_datetime(df["SHIP_TIME_FROM"], format='%H:%M:%S', errors='coerce')
-            df["SHIP_TIME_TO"] = df["SHIP_TIME_FROM"] + dt.timedelta(minutes=30)
+        def apply_team_specific_changes_for_orders_tables(self, ordersDataFrame: pd.DataFrame) -> pd.DataFrame:
+            ordersDataFrame["AMOUNT_OF_BOXES_TO_RETURN"] = ordersDataFrame["AMOUNT_OF_BOXES_TO_SEND"]
 
-            #df["SHIP_TIME_FROM"] = df["SHIP_TIME_FROM"].dt.strftime('%H:%M')
-            #df["SHIP_TIME_TO"] = df["SHIP_TIME_TO"].dt.strftime('%H:%M')
+            ordersDataFrame["PRINT_RETURN_DOCUMENT"] = True
 
-            df["AMOUNT_OF_BOXES_TO_RETURN"] = df["AMOUNT_OF_BOXES_TO_SEND"]
+            ordersDataFrame["CUSTOMER"]  = "Test Customer"
+            ordersDataFrame["HAS_RETURN"] = (ordersDataFrame["AMOUNT_OF_BOXES_TO_RETURN"] > 0) & (ordersDataFrame["TEMPERATURE"] != "Ambient")
+            ordersDataFrame["TYPE_OF_RETURN"] = "CREDO"
+            ordersDataFrame["RETURN_TO_CARRIER_DEPOT"] = True
 
-            df["PRINT_RETURN_DOCUMENT"] = True
-
-            #df["DELIVERY_DATE"] = df["DELIVERY_DATE"].astype("datetime64[ns]")
-            #df["DELIVERY_DATE"] = pd.to_datetime(df["DELIVERY_DATE"], format='%d/%m/%Y', errors='coerce')
-            #df["DELIVERY_DATE"] = df["DELIVERY_DATE"].dt.strftime('%d/%m/%Y')
-
-            df["CUSTOMER"]  = "Test Customer"
-            df["HAS_RETURN"] = (df["AMOUNT_OF_BOXES_TO_RETURN"] > 0) & (df["TEMPERATURE"] != "Ambient")
-            df["TYPE_OF_RETURN"] = "CREDO"
-            df["RETURN_TO_CARRIER_DEPOT"] = True
-
-            return df
+            return ordersDataFrame
         
         def sendEmailWithOrdersToTeam(self, folder_path_with_orders_files: str, date: str):
             self.father.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "")
@@ -2209,6 +2464,46 @@ class Teams():
             df = pd.read_excel(path_from_get_data, sheet_name=sites_sheet, dtype=columns_types, header=0)
             return df
 
+        def build_driver(self):
+            self.father.__build_driver__(self.carrierWebpage)
+
+        def log_in_webpage(self, username: str, password: str) -> bool:
+            return self.father.__log_in_webpage__(self.carrierWebpage, username, password)
+        
+        def quit_driver(self):
+            self.father.__quit_driver__(self.carrierWebpage)
+
+        def complete_shipping_order_form(self, carrier_id: str, reference: str,
+                                        ship_date: str, ship_time_from: str, ship_time_to: str,
+                                        delivery_date: str, delivery_time_from: str, delivery_time_to: str,
+                                        type_of_material: str, temperature: str,
+                                        contacts: str, amount_of_boxes: int) -> str:
+            return self.father.__complete_shipping_order_form__(self.carrierWebpage, carrier_id, reference,
+                                        ship_date, ship_time_from, ship_time_to,
+                                        delivery_date, delivery_time_from, delivery_time_to,
+                                        type_of_material, temperature,
+                                        contacts, amount_of_boxes)
+        
+        def complete_shipping_order_return_form(self, carrier_id: str, reference_return: str,
+                                                delivery_date: str, return_time_from: str,
+                                                return_time_to: str, type_of_return: str,
+                                                contacts: str, amount_of_boxes_to_return: int,
+                                                return_to_TA: bool, tracking_number: str) -> str:
+            return self.father.__complete_shipping_order_return_form__(self.carrierWebpage, carrier_id, reference_return,
+                                                delivery_date, return_time_from,
+                                                return_time_to, type_of_return,
+                                                contacts, amount_of_boxes_to_return,
+                                                return_to_TA, tracking_number)
+        
+        def printWayBillDocument(self, tracking_number: str, amount_of_copies: int):
+            self.father.__printWayBillDocument__(self.carrierWebpage, tracking_number, amount_of_copies)
+
+        def printLabelDocument(self, tracking_number: str):
+            self.father.__printLabelDocument__(self.carrierWebpage, tracking_number)
+
+        def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int):
+            self.father.__printReturnWayBillDocument__(self.carrierWebpage, return_tracking_number, amount_of_copies)
+        
 # Controler
 
 # Initializer
