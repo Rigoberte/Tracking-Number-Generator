@@ -25,7 +25,7 @@ class MyUserForm(tk.Tk):
             self.team_combobox (Combobox): team combobox
             self.carrier_combobox (Combobox): carrier combobox
             self.treeview (Treeview): treeview widget
-            self.tooltip (ToolTip): tooltip widget
+            self.tooltip (TreeviewToolTip): tooltip widget
             self.ordersAndContactsDataframe (DataFrame): orders table
 
         Args:
@@ -50,7 +50,12 @@ class MyUserForm(tk.Tk):
         self.loadOrders_btn = None
         self.processOrders_btn = None
         self.config_btn = None
-        self.ordersAndContactsDataframe = pd.DataFrame(columns = DataRecolector(Teams()).getColumnNames())
+        self.ordersAndContactsDataframe = DataRecolector(Teams()).getEmptyOrdersAndContactsData()
+
+        self.amountOfTotalOrders = 0
+        self.amountOfOrdersProcessed = 0
+        self.amountOfOrdersReadyToBeProcessed = 0
+        self.amountOfOrdersWithErrors = 0
 
     def getSelectedTeam(self):
         return self.selected_team
@@ -91,6 +96,10 @@ class MyUserForm(tk.Tk):
             tag_color = self.__tag_color_of_a_treeview_line__(parity, is_a_processed_order, has_an_error)
             self.treeview.item(index, tags=tag_color)
 
+            # i know this is not the best way to do it, but this doesn't need too much resources
+            # the correct way is to implement a multithreading
+            self.treeview.update()
+
         except Exception as e:
             Log().add_log(f"Error updating tag color of a treeview line: {e}")
     
@@ -102,8 +111,20 @@ class MyUserForm(tk.Tk):
             ordersAndContactsDataframe (DataFrame): orders table
         """
         self.__update_treeview__(ordersAndContactsDataframe)
-        self.__update_bottom_dataFrame_description__(ordersAndContactsDataframe)
+
+
+        self.amountOfTotalOrders = len(ordersAndContactsDataframe)
+        self.amountOfOrdersProcessed = len(ordersAndContactsDataframe[ordersAndContactsDataframe['TRACKING_NUMBER'] != ""])
+        self.amountOfOrdersReadyToBeProcessed = len(ordersAndContactsDataframe[(ordersAndContactsDataframe['TRACKING_NUMBER'] == "") & (ordersAndContactsDataframe['HAS_AN_ERROR'] == "No error")])
+        self.amountOfOrdersWithErrors = len(ordersAndContactsDataframe[(ordersAndContactsDataframe['HAS_AN_ERROR'] != "No error") & (ordersAndContactsDataframe['TRACKING_NUMBER'] == "")])
+        
+        self.__update_bottom_dataFrame_description__(self.amountOfTotalOrders, self.amountOfOrdersProcessed, self.amountOfOrdersReadyToBeProcessed, self.amountOfOrdersWithErrors)
         self.ordersAndContactsDataframe = ordersAndContactsDataframe
+
+    def increase_amount_of_orders_processed(self):
+        self.amountOfOrdersProcessed += 1
+        self.amountOfOrdersReadyToBeProcessed = max(0, self.amountOfOrdersReadyToBeProcessed - 1)
+        self.__update_bottom_dataFrame_description__(self.amountOfTotalOrders, self.amountOfOrdersProcessed, self.amountOfOrdersReadyToBeProcessed, self.amountOfOrdersWithErrors)
 
     def show_userform(self):
         self.__load_userform__()
@@ -185,7 +206,7 @@ class MyUserForm(tk.Tk):
             return frames
 
         def load_top_logo_image(self, frame) -> tk.Label:
-            label_banner = tk.Label(frame,  bg= self.colors.getPrimaryColor()) #ctk.ThemeManager.theme["CTkFrame"]["fg_color"][1])
+            label_banner = tk.Label(frame,  bg= self.colors.getSidebarColor()) #ctk.ThemeManager.theme["CTkFrame"]["fg_color"][1])
             label_banner.pack(side=tk.LEFT, padx=10)
 
             return label_banner
@@ -318,8 +339,8 @@ class MyUserForm(tk.Tk):
                 except Exception as e:
                     Log().add_log(f"Error updating selection: {e}")
 
-            # ToolTip
-            self.tooltip = ToolTip(treeview)
+            # TreeviewToolTip
+            self.tooltip = TreeviewToolTip(treeview)
             on_treeview_motion.last_item_id = None
             self.selected_cells = []
             self.start_cell = None
@@ -371,7 +392,7 @@ class MyUserForm(tk.Tk):
 
             return clear_treeview_btn
 
-        def load_bottom_bar(self, frame) -> tk.Label:
+        def load_dataFrame_description(self, frame) -> tk.Label:
             bottom_dataFrame_description = create_label_template(self, frame, "", font_size = 11, is_bold=False)
             return bottom_dataFrame_description
 
@@ -401,10 +422,14 @@ class MyUserForm(tk.Tk):
             def on_treeview_leave(event):
                 self.log_tooltip.hide_tip()
 
+            def on_log_btn_click(event):
+                self.controller.on_log_btn_click()
+
             log_image = create_label_template(self, frame, "", font_size = 11, side=tk.RIGHT)
             self.log_tooltip = LogToolTip(self)
             log_image.bind("<Motion>", on_log_motion)
             log_image.bind("<Leave>", on_treeview_leave)
+            log_image.bind("<Double-1>", on_log_btn_click)
 
             return log_image
 
@@ -423,7 +448,7 @@ class MyUserForm(tk.Tk):
         self.clear_treeview_btn = load_button_clear_treeview(self, self.frames["button_bottom_and_left"])
         self.config_btn = load_button_config(self, self.frames["button_bottom_and_right"])
 
-        self.bottom_dataFrame_description = load_bottom_bar(self, self.frames["bottom"])
+        self.bottom_dataFrame_description = load_dataFrame_description(self, self.frames["bottom"])
         self.dark_mode_image = load_dark_mode_image(self, self.frames["bottom"])
         self.log_image = load_log_image(self, self.frames["bottom"])
 
@@ -485,7 +510,7 @@ class MyUserForm(tk.Tk):
             
             self.colors.toggle()
             self.frames["top"].configure(bg_color=self.colors.getTextColor(),
-                                        fg_color=self.colors.getPrimaryColor())
+                                        fg_color=self.colors.getSidebarColor())
             
             self.frames["bottom"].configure(bg_color=self.colors.getTextColor(),
                                         fg_color=self.colors.getBodyColor())
@@ -493,9 +518,9 @@ class MyUserForm(tk.Tk):
             self.frames["mid"].configure(bg_color=self.colors.getTextColor(),
                                         fg_color=self.colors.getBodyColor())
             
-            self.calendar_text.configure(bg=self.colors.getPrimaryColor(), fg="white")
-            self.team_picker_text.configure(bg=self.colors.getPrimaryColor(), fg="white")
-            self.bottom_dataFrame_description.configure(bg=self.colors.getBodyColor(), fg= self.colors.getTextColor())
+            self.calendar_text.configure(bg=self.colors.getSidebarColor(), fg="white")
+            self.team_picker_text.configure(bg=self.colors.getSidebarColor(), fg="white")
+            self.bottom_dataFrame_description.configure(fg= self.colors.getTextColor(), bg = self.colors.getBodyColor()) 
             
             
             changeAllImages(self)
@@ -503,7 +528,7 @@ class MyUserForm(tk.Tk):
 
             buttons = [self.loadOrders_btn, self.processOrders_btn, self.clear_treeview_btn, self.config_btn]
             for button in buttons:
-                button.configure(fg_color=self.colors.getToggleColor(),
+                button.configure(fg_color=self.colors.getPrimaryColor(),
                                 hover_color = self.colors.getPrimaryColorLight(),
                                 text_color= self.colors.getTextColor())
 
@@ -519,12 +544,7 @@ class MyUserForm(tk.Tk):
         self.__tag_colors_for_each_treeview_line__(ordersAndContactsDataframe)
         self.treeview.update()
     
-    def __update_bottom_dataFrame_description__(self, ordersAndContactsDataframe):
-        amount_of_total_orders = len(ordersAndContactsDataframe)
-        amount_of_orders_processed = len(ordersAndContactsDataframe[ordersAndContactsDataframe['TRACKING_NUMBER'] != ""])
-        amount_of_orders_ready_to_be_processed = len(ordersAndContactsDataframe[(ordersAndContactsDataframe['TRACKING_NUMBER'] == "") & (ordersAndContactsDataframe['HAS_AN_ERROR'] == "No error")])
-        amount_of_orders_with_errors = len(ordersAndContactsDataframe[(ordersAndContactsDataframe['HAS_AN_ERROR'] != "No error") & (ordersAndContactsDataframe['TRACKING_NUMBER'] == "")])
-        
+    def __update_bottom_dataFrame_description__(self, amount_of_total_orders, amount_of_orders_processed, amount_of_orders_ready_to_be_processed, amount_of_orders_with_errors):
         text = f"Amount of total orders: {amount_of_total_orders} | "
         text += f"Amount of orders processed: {amount_of_orders_processed} | "
         text += f"Amount of orders ready to be processed: {amount_of_orders_ready_to_be_processed} | "
@@ -573,7 +593,7 @@ class MyUserForm(tk.Tk):
     def __config_button_on_click__(self):
         return #TODO
 
-class ToolTip:
+class TreeviewToolTip:
     def __init__(self, widget):
         self.widget = widget
         self.tip_window = None
@@ -600,15 +620,17 @@ class ToolTip:
         tw.update_idletasks()
         width, height = tw.winfo_width(), tw.winfo_height()
         
-        # Adjust x position if tooltip goes beyond screen width
-        if screen_x + width + 20 > screen_width:
-            x = screen_width - width - 20
+        # Adjust x position if tooltip goes beyond screen width and place it in the current screen
+        number_of_current_screen_x = screen_x // screen_width
+        if screen_x + width + 20 > screen_width * (number_of_current_screen_x + 1):
+            x = screen_width * (number_of_current_screen_x + 1) - width - 20
         else:
             x = screen_x + 20
-        
-        # Adjust y position if tooltip goes beyond screen height
-        if screen_y + height + 20 > screen_height:
-            y = screen_height - height - 20
+
+        # Adjust y position if tooltip goes beyond screen height and place it in the current screen
+        number_of_current_screen_y = screen_y // screen_height
+        if screen_y + height + 20 > screen_height * (number_of_current_screen_y + 1):
+            y = screen_height * (number_of_current_screen_y + 1) - height - 20
         else:
             y = screen_y + 20
 
@@ -646,10 +668,12 @@ class LogToolTip:
         tw.update_idletasks()
         width, height = tw.winfo_width(), tw.winfo_height()
         
-        # Adjust x position to place tip in the center of the mouse
+        # Adjust x position if tooltip goes beyond screen width and place it in the current screen
+        number_of_current_screen_x = screen_x // screen_width
         x = screen_x - width // 2
-        
+
         # Adjust y position to place tip above the log image
+        number_of_current_screen_y = screen_y // screen_height
         y = screen_y - height - 20
 
         tw.wm_geometry(f"+{x}+{y}")
@@ -658,6 +682,37 @@ class LogToolTip:
         if self.tip_window:
             self.tip_window.destroy()
         self.tip_window = None
+
+class LogConsole(tk.Tk):
+    def __init__(self, controller):
+        super().__init__()
+        self.controller = controller
+        self.title("Log Console")
+        self.geometry("800x600")
+
+        self.text = tk.Text(self, wrap=tk.WORD)
+        self.text.pack(fill=tk.BOTH, expand=True)
+        self.text.insert(tk.END, Log().print_last_n_logs(100))
+
+        self.text.bind("<Key>", lambda e: "break")
+        self.text.bind("<Button-1>", lambda e: "break")
+        self.text.bind("<Button-2>", lambda e: "break")
+        self.text.bind("<Button-3>", lambda e: "break")
+
+        self.text.bind("<Control-c>", self.copy)
+
+        self.text.config(bg="black", fg="white")
+        self.text.config(font=("Courier", 14))
+
+    def copy(self, event):
+        self.clipboard_clear()
+        self.clipboard_append(self.text.selection_get())
+
+    def show_userform(self):
+        self.mainloop()
+
+    def hide_userform(self):
+        self.destroy()
 
 class LogInUserForm(tk.Tk):
     def __init__(self, team = None, controller = None):
@@ -681,9 +736,9 @@ class LogInUserForm(tk.Tk):
 
         self.selectedTeam.build_driver()
         if self.selectedTeam.check_if_user_and_password_are_correct(username, password):
+            # Driver keeps built
             self.loginResult = True
-            self.selectedTeam.quit_driver()
-            self.controller.on_login_successful(username, password)
+            self.controller.on_login_successful()
         else:
             self.loginResult = False
             self.password_entry.delete(0, 'end')
@@ -710,6 +765,11 @@ class LogInUserForm(tk.Tk):
         self.password_label.pack(pady=5)
         self.password_entry = tk.Entry(root, show="*")
         self.password_entry.pack(pady=5)
+
+        def password_entry_on_return(event):
+            self.validate_login()
+        
+        self.password_entry.bind("<Return>", password_entry_on_return)
         
         # Login Button
         self.login_button = tk.Button(root, text="Login", command=self.validate_login)
@@ -740,16 +800,16 @@ class Chroma:
         """
         self.dark = not self.dark
         if self.dark:
-            self.body_color = '#18191A'
-            self.sidebar_color = '#242526'
-            self.primary_color = '#3A3B3C'
-            self.primary_color_light = '#3A3B3C'
-            self.toggle_color = '#FFF'
+            self.body_color = '#121212'
+            self.sidebar_color = '#3A3B3C'
+            self.primary_color = '#3700B3' 
+            self.primary_color_light = '#BB86FC'
+            self.toggle_color = '#3700B3'
             self.text_color = '#CCC'
         else:
             self.body_color = '#CCC'  #'#FFF'
             self.sidebar_color = '#E71316'
-            self.primary_color = '#E71316'
+            self.primary_color = '#c00000'
             self.primary_color_light = '#E83713'
             self.toggle_color = '#BE2F31'
             self.text_color = '#000'
@@ -930,7 +990,7 @@ class OrderProcessor:
         except Exception as e:
             Log().add_log(f"Error sending email to medical center: {e}")
 
-    def processOrdersAndContactsTable(self, ordersDataFrame:pd.DataFrame, user: str, password: str) -> pd.DataFrame:
+    def processOrdersAndContactsTable(self, ordersDataFrame:pd.DataFrame) -> pd.DataFrame:
         """
         Process all orders in the table
         
@@ -948,12 +1008,13 @@ class OrderProcessor:
 
         Returns:
             DataFrame: orders table with tracking numbers
+
+        Preconditions:
+            The orders table must be standardized as DataRecollector() class returns
+
+            Website must be built and logged in
         """
         try:
-            self.selectedTeam.build_driver()
-
-            self.selectedTeam.log_in_webpage(user, password)
-            
             self.__process_all_shipping_orders__(ordersDataFrame)
 
             time.sleep(2) # Wait for the download to finish
@@ -1094,11 +1155,11 @@ class OrderProcessor:
             
             self.__printOrderDocuments__(tracking_number, return_tracking_number, row["PRINT_RETURN_DOCUMENT"])
 
-            """medical_center_emails = row["MEDICAL_CENTER_EMAILS"]
+            medical_center_emails = row["MEDICAL_CENTER_EMAILS"]
             customer_email = ""
             cra_emails = ""
             team_email = ""
-            delivery_date = "29/05/2024"
+            delivery_date = "05/06/2024"
 
             try:
                 self.send_email_to_medical_center( row["STUDY"], row["SITE#"], row["IVRS_NUMBER"], 
@@ -1109,7 +1170,7 @@ class OrderProcessor:
                 row["CONTACTS"], medical_center_emails, customer_email, cra_emails, team_email)
             except Exception as e:
                 Log().add_log(f"Error sending email to medical center: {e}")
-                Log().add_log(f"Order: {row['SYSTEM_NUMBER']} {row['IVRS_NUMBER']}")"""
+                Log().add_log(f"Order: {row['SYSTEM_NUMBER']} {row['IVRS_NUMBER']}")
             
             try:
                 self.__updateTreeviewLine__(index, tracking_number, return_tracking_number)
@@ -1203,7 +1264,6 @@ class OrderProcessor:
         """
         try:
             if self.controller is not None:
-                Log().add_log(f"Updating treeview line: {index}")
                 self.controller.update_tag_color_of_a_treeview_line(index, tracking_number, return_tracking_number)
                 time.sleep(1)
         except Exception as e:
@@ -1254,6 +1314,15 @@ class DataRecolector:
         ordersAndContactsDataframe["HAS_AN_ERROR"] = ordersAndContactsDataframe.apply(self.__checkErrorsOnEachOrder__, axis=1)
         
         return ordersAndContactsDataframe[self.columns_df]
+
+    def getEmptyOrdersAndContactsData(self) -> pd.DataFrame:
+        """
+        Returns an empty orders table
+
+        Returns:
+            DataFrame: empty orders table
+        """
+        return pd.DataFrame(columns=self.columns_df)
 
     # Private methods
     def __load_shipping_order_table__(self, shipDate: dt.datetime, team) -> pd.DataFrame:
@@ -1405,7 +1474,7 @@ class DataRecolector:
             return assertIfIsNotNull(row['DELIVERY_DATE'])
         
         def assertIfAreValidDates(row: pd.Series) -> bool:
-            return row['SHIP_DATE'] <= row['DELIVERY_DATE']
+            return (row['SHIP_DATE'] <= row['DELIVERY_DATE']) and (row['SHIP_DATE'] >= dt.datetime.now().strftime('%d/%m/%Y'))
 
         def assertIfShipTimeFromIsNotEmpty(row: pd.Series) -> bool:
             return assertIfIsNotNull(row['SHIP_TIME_FROM'])
@@ -1481,8 +1550,8 @@ class DataRecolector:
         if not assertIfAreValidDeliveryTimes(row):
             errors += "Invalid delivery times; "
 
-        if not assertIfAreValidDates(row):
-            errors += "Invalid dates; "
+        #if not assertIfAreValidDates(row):
+        #    errors += "Invalid dates; "
 
         if not assertIfTypeOfMaterialIsNotEmpty(row):
             errors += "No type of material; "
@@ -1626,6 +1695,9 @@ class Log(metaclass=SingletonMeta):
         date_and_time = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.logs.append(f"{date_and_time} - {text}")
 
+    def add_separator(self):
+        self.logs.append("----------------------------------------")
+
     def print_logs(self) -> str:
         return "\n".join(self.logs)
     
@@ -1671,20 +1743,6 @@ class CarriersWebpage:
         Quits the browser
         """
         self.carrierWebpage.quit_driver()
-
-    def log_in_webpage(self, username: str, password: str):
-        """
-        Logs in webpage
-
-        Args:
-            driver (webdriver): selenium driver
-            username (str): username
-            password (str): password
-            
-        Precondition: user and password are correct, because they were checked before with check_if_user_and_password_are_correct
-            
-        """
-        self.carrierWebpage.log_in_webpage(username, password)
 
     def check_if_user_and_password_are_correct(self, username: str, password: str) -> bool:
         """
@@ -1828,9 +1886,6 @@ class CarriersWebpage:
 
         def quit_driver(self):
             self.father.__quit_driver__(self.driver)
-
-        def log_in_webpage(self, username: str, password: str):
-            return
         
         def check_if_user_and_password_are_correct(self, username: str, password: str) -> bool:
             return False
@@ -1903,12 +1958,6 @@ class CarriersWebpage:
             
             return False
         
-        def log_in_webpage(self, username: str, password: str):
-            self.driver.get("https://sgi.tanet.com.ar/sgi/index.php")
-            
-            self.complete_login_form(username, password)
-            self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[2]/h1")))
-
         def complete_login_form(self, username: str, password: str):
             """
             self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/input[1]")))
@@ -2176,7 +2225,11 @@ class Teams:
         Returns:
             DataFrame: orders table
         """
-        return self.selectedTeam.apply_team_specific_changes_for_orders_tables(ordersDataframe)
+        try:
+            return self.selectedTeam.apply_team_specific_changes_for_orders_tables(ordersDataframe)
+        except Exception as e:
+            Log().add_log(f"Error applying team specific changes for orders tables: {e}")
+            return ordersDataframe
     
     def sendEmailWithOrdersToTeam(self, folder_path_with_orders_files: str, date: str):
         """
@@ -2200,9 +2253,6 @@ class Teams:
     def check_if_user_and_password_are_correct(self, username: str, password: str) -> bool:
         return self.selectedTeam.check_if_user_and_password_are_correct(username, password)
     
-    def log_in_webpage(self, username: str, password: str):
-        self.selectedTeam.log_in_webpage(username, password)
-
     def quit_driver(self):
         self.selectedTeam.quit_driver()
 
@@ -2310,46 +2360,6 @@ class Teams:
     def __build_driver__(self, carrierWebpage: CarriersWebpage):
         carrierWebpage.build_driver()
 
-    def __quit_driver__(self, carrierWebpage: CarriersWebpage):
-        carrierWebpage.quit_driver()
-
-    def __check_if_user_and_password_are_correct__(self, carrierWebpage: CarriersWebpage, username: str, password: str) -> bool:
-        return carrierWebpage.check_if_user_and_password_are_correct(username, password)
-    
-    def __log_in_webpage__(self, carrierWebpage: CarriersWebpage, username: str, password: str):
-        carrierWebpage.log_in_webpage(username, password)
-
-    def __complete_shipping_order_form__(self, carrierWebpage: CarriersWebpage, carrier_id: str, reference: str,
-                                    ship_date: str, ship_time_from: str, ship_time_to: str,
-                                    delivery_date: str, delivery_time_from: str, delivery_time_to: str,
-                                    type_of_material: str, temperature: str,
-                                    contacts: str, amount_of_boxes: int) -> str:
-        return carrierWebpage.complete_shipping_order_form(carrier_id, reference,
-                                    ship_date, ship_time_from, ship_time_to,
-                                    delivery_date, delivery_time_from, delivery_time_to,
-                                    type_of_material, temperature,
-                                    contacts, amount_of_boxes)
-    
-    def __complete_shipping_order_return_form__(self, carrierWebpage: CarriersWebpage, carrier_id: str, reference_return: str,
-                                                delivery_date: str, return_time_from: str,
-                                                return_time_to: str, type_of_return: str,
-                                                contacts: str, amount_of_boxes_to_return: int,
-                                                return_to_TA: bool, tracking_number: str) -> str:
-        return carrierWebpage.complete_shipping_order_return_form(carrier_id, reference_return,
-                                                delivery_date, return_time_from,
-                                                return_time_to, type_of_return,
-                                                contacts, amount_of_boxes_to_return,
-                                                return_to_TA, tracking_number)
-    
-    def __printWayBillDocument__(self, carrierWebpage: CarriersWebpage, tracking_number: str, amount_of_copies: int):
-        carrierWebpage.printWayBillDocument(tracking_number, amount_of_copies)
-
-    def __printLabelDocument__(self, carrierWebpage: CarriersWebpage, tracking_number: str):
-        carrierWebpage.printLabelDocument(tracking_number)
-
-    def __printReturnWayBillDocument__(self, carrierWebpage: CarriersWebpage, return_tracking_number: str, amount_of_copies: int):
-        carrierWebpage.printReturnWayBillDocument(return_tracking_number, amount_of_copies)
-
     # Sub classes
     class NoSelectedTeam:
         def __init__(self, folder_path_to_download: str, father = None):
@@ -2381,12 +2391,10 @@ class Teams:
             return ""
         
         def readOrdersExcel(self, path_from_get_data: str, orders_sheet: str, columns_types: dict) -> pd.DataFrame:
-            df = pd.DataFrame()
-            return df
+            return DataRecolector(Teams()).getEmptyOrdersAndContactsData()
         
         def readSitesExcel(self, path_from_get_data: str, sites_sheet: str, columns_types: dict) -> pd.DataFrame:
-            df = pd.DataFrame()
-            return df
+            return DataRecolector(Teams()).getEmptyOrdersAndContactsData()
 
         def build_driver(self):
             self.father.__build_driver__(self.carrierWebpage)
@@ -2441,11 +2449,20 @@ class Teams:
             return "AR.Lilly.logistics@fishersci.com"
 
         def readOrdersExcel(self, path_from_get_data: str, orders_sheet: str, columns_types: dict) -> pd.DataFrame:
-            df = pd.read_excel(path_from_get_data, sheet_name=orders_sheet, dtype=columns_types, header=0)
+            try:
+                df = pd.read_excel(path_from_get_data, sheet_name=orders_sheet, dtype=columns_types, header=0)
+            except Exception as e:
+                Log().add_log(f"Error reading orders excel: {e}")
+                df = DataRecolector(Teams()).getEmptyOrdersAndContactsData()
+
             return df
         
         def readSitesExcel(self, path_from_get_data: str, sites_sheet: str, columns_types: dict) -> pd.DataFrame:
-            df = pd.read_excel(path_from_get_data, sheet_name=sites_sheet, dtype=columns_types, header=0)
+            try:
+                df = pd.read_excel(path_from_get_data, sheet_name=sites_sheet, dtype=columns_types, header=0)
+            except Exception as e:
+                Log().add_log(f"Error reading sites excel: {e}")
+                df = DataRecolector(Teams()).getEmptyOrdersAndContactsData()
             return df
 
         def get_column_rename_type_config_for_contacts_table(self) -> (dict, dict):
@@ -2519,9 +2536,6 @@ class Teams:
         def check_if_user_and_password_are_correct(self, username: str, password: str) -> bool:
             return self.father.__check_if_user_and_password_are_correct__(self.carrierWebpage, username, password)
         
-        def log_in_webpage(self, username: str, password: str):
-            self.father.__log_in_webpage__(self.carrierWebpage, username, password)
-
         def quit_driver(self):
             self.father.__quit_driver__(self.carrierWebpage)
 
@@ -2560,9 +2574,6 @@ class Teams:
         def __init__(self, folder_path_to_download: str, father = None):
             self.carrierWebpage = CarriersWebpage("Transportes Ambientales", folder_path_to_download)
             self.father = father
-
-        def log_in_webpage(self, username: str, password: str):
-            self.father.__log_in_webpage__(self.carrierWebpage, username, password)
 
         def getTeamName(self) -> str:
             return "GPM Argentina"
@@ -2620,11 +2631,19 @@ class Teams:
             self.father.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "")
 
         def readOrdersExcel(self, path_from_get_data: str, orders_sheet: str, columns_types: dict) -> pd.DataFrame:
-            df = pd.read_excel(path_from_get_data, sheet_name=orders_sheet, dtype=columns_types, header=0, skiprows=7)
+            try:
+                df = pd.read_excel(path_from_get_data, sheet_name=orders_sheet, dtype=columns_types, header=0, skiprows=7)
+            except Exception as e:
+                Log().add_log(f"Error reading orders excel: {e}")
+                df = DataRecolector(Teams()).getEmptyOrdersAndContactsData()
             return df
         
         def readSitesExcel(self, path_from_get_data: str, sites_sheet: str, columns_types: dict) -> pd.DataFrame:
-            df = pd.read_excel(path_from_get_data, sheet_name=sites_sheet, dtype=columns_types, header=0)
+            try:
+                df = pd.read_excel(path_from_get_data, sheet_name=sites_sheet, dtype=columns_types, header=0)
+            except Exception as e:
+                Log().add_log(f"Error reading sites excel: {e}")
+                df = DataRecolector(Teams()).getEmptyOrdersAndContactsData()
             return df
     
         def build_driver(self):
@@ -2678,9 +2697,6 @@ class Teams:
         def getTeamEmail(self) -> str:
             return "inaki.costa@thermofisher.com"
 
-        def log_in_webpage(self, username: str, password: str):
-            self.father.__log_in_webpage__(self.carrierWebpage, username, password)
-
         def get_column_rename_type_config_for_contacts_table(self) -> (dict, dict):
             columns_names = {}
             columns_types = {"STUDY": str, "SITE#": str, "CARRIER_ID": str, "DELIVERY_TIME_FROM": dt.datetime, "DELIVERY_TIME_TO": dt.datetime}
@@ -2720,11 +2736,19 @@ class Teams:
             self.father.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "")
 
         def readOrdersExcel(self, path_from_get_data: str, orders_sheet: str, columns_types: dict) -> pd.DataFrame:
-            df = pd.read_excel(path_from_get_data, sheet_name=orders_sheet, dtype=columns_types, header=0)
+            try:
+                df = pd.read_excel(path_from_get_data, sheet_name=orders_sheet, dtype=columns_types, header=0)
+            except Exception as e:
+                Log().add_log(f"Error reading orders excel: {e}")
+                df = DataRecolector(Teams()).getEmptyOrdersAndContactsData()
             return df
         
         def readSitesExcel(self, path_from_get_data: str, sites_sheet: str, columns_types: dict) -> pd.DataFrame:
-            df = pd.read_excel(path_from_get_data, sheet_name=sites_sheet, dtype=columns_types, header=0)
+            try:
+                df = pd.read_excel(path_from_get_data, sheet_name=sites_sheet, dtype=columns_types, header=0)
+            except Exception as e:
+                Log().add_log(f"Error reading sites excel: {e}")
+                df = DataRecolector(Teams()).getEmptyOrdersAndContactsData()
             return df
 
         def build_driver(self):
@@ -2773,7 +2797,7 @@ class Controller:
         self.mainUserForm = MyUserForm(self)
         self.logInUserForm = None
         self.selected_team = Teams()
-        self.ordersAndContactsDataframe = pd.DataFrame( columns= DataRecolector(Teams()).getColumnNames() )
+        self.ordersAndContactsDataframe = DataRecolector(Teams()).getEmptyOrdersAndContactsData()
         Log().add_log("Application started")
 
     def showMainUserForm(self):
@@ -2788,10 +2812,14 @@ class Controller:
     def destroyLogInUserForm(self):
         self.logInUserForm.hide_userform()
 
+    def on_log_btn_click(self):
+        LogConsole(self).show_userform()
+
     def on_loadOrders_btn_click(self):
         selected_team = self.mainUserForm.getSelectedTeamName()
         selected_date = self.mainUserForm.getSelectedDate()
 
+        Log().add_separator()
         Log().add_log(f"Start loading orders")
         time0 = time.time()
         self.ordersAndContactsDataframe = self.__loadOrders__(selected_team, selected_date)
@@ -2804,7 +2832,7 @@ class Controller:
         self.mainUserForm.update_ordersAndContactsDataframe_and_widgets(self.ordersAndContactsDataframe)
 
     def on_clearOrders_btn_click(self):
-        self.ordersAndContactsDataframe = pd.DataFrame( columns= DataRecolector(Teams()).getColumnNames() )
+        self.ordersAndContactsDataframe = DataRecolector(Teams()).getEmptyOrdersAndContactsData()
         self.mainUserForm.update_ordersAndContactsDataframe_and_widgets(self.ordersAndContactsDataframe)
         Log().add_log("Orders table cleaned")
 
@@ -2812,17 +2840,18 @@ class Controller:
         self.logInUserForm = LogInUserForm(self.selected_team, self)
         self.showLogInUserForm()
 
-    def on_login_successful(self, username: str, password: str):
+    def on_login_successful(self):
         self.destroyLogInUserForm()
         
         self.ordersAndContactsDataframe = self.__processOrdersAndCalculateTime__(
                                         self.selected_team, self.selected_date,
-                                        self.folder_path_to_download, self.ordersAndContactsDataframe, username, password)
+                                        self.folder_path_to_download, self.ordersAndContactsDataframe)
 
         self.mainUserForm.update_ordersAndContactsDataframe_and_widgets(self.ordersAndContactsDataframe)
 
     def update_tag_color_of_a_treeview_line(self, index: int, tracking_number: str, return_tracking_number: str):
         self.mainUserForm.update_tag_color_of_a_treeview_line(self.ordersAndContactsDataframe, index, tracking_number, return_tracking_number)
+        self.mainUserForm.increase_amount_of_orders_processed()
 
     def __loadOrders__(self, selected_team_name: str, selected_date: str) -> pd.DataFrame:
         self.folder_path_to_download = FilesInSystemController().getFolderPathToDownload(selected_team_name, selected_date.replace("/", "_"))
@@ -2833,10 +2862,10 @@ class Controller:
 
         return self.ordersAndContactsDataframe
 
-    def __processOrders__(self, selected_team, selected_date, folder_path_to_download: str, ordersAndContactsDataframe: pd.DataFrame, username: str, password: str) -> pd.DataFrame:
+    def __processOrders__(self, selected_team, selected_date, folder_path_to_download: str, ordersAndContactsDataframe: pd.DataFrame) -> pd.DataFrame:
         FilesInSystemController().create_folder(folder_path_to_download)
 
-        ordersAndContactsDataframe = OrderProcessor(folder_path_to_download, selected_team, self).processOrdersAndContactsTable(ordersAndContactsDataframe, username, password)
+        ordersAndContactsDataframe = OrderProcessor(folder_path_to_download, selected_team, self).processOrdersAndContactsTable(ordersAndContactsDataframe)
         
         selected_date_str = selected_date.strftime("%Y-%m-%d")
         
@@ -2844,32 +2873,30 @@ class Controller:
 
         return ordersAndContactsDataframe
 
-    def __processOrdersAndCalculateTime__(self, selected_team, selected_date, folder_path_to_download: str, ordersAndContactsDataframe: pd.DataFrame, username: str, password: str) -> pd.DataFrame:
+    def __processOrdersAndCalculateTime__(self, selected_team, selected_date, folder_path_to_download: str, ordersAndContactsDataframe: pd.DataFrame) -> pd.DataFrame:
         amountOfOrdersToProcess = len(ordersAndContactsDataframe[(ordersAndContactsDataframe["TRACKING_NUMBER"] == "") & (ordersAndContactsDataframe["HAS_AN_ERROR"] == "No error")])
         
         Log().add_log(f"Start processing orders")
         time0 = time.time()
         self.ordersAndContactsDataframe = self.__processOrders__(
                                         selected_team, selected_date,
-                                        folder_path_to_download, ordersAndContactsDataframe, username, password)
+                                        folder_path_to_download, ordersAndContactsDataframe)
         time1 = time.time()
         Log().add_log(f"End processing orders")
         
+        total_time = time1 - time0
+        total_time_with_2_decimals = round(total_time, 2)
+        Log().add_log(f"Total processing time: {total_time_with_2_decimals} s for {amountOfOrdersToProcess} orders")
 
-        total_time_with_2_decimals = round(time1 - time0, 2)
-        Log().add_log(f"Total processing time: {total_time_with_2_decimals} for {amountOfOrdersToProcess} orders")
-
-        if len(self.ordersAndContactsDataframe) == 0:
+        if amountOfOrdersToProcess == 0:
             avarage_time_with_2_decimals = 0.00
         else:
-            avarage_time_with_2_decimals = round((total_time_with_2_decimals) / amountOfOrdersToProcess, 2)
-        Log().add_log(f"Average processing time: {avarage_time_with_2_decimals}")
+            avarage_time_with_2_decimals = round(total_time / amountOfOrdersToProcess, 2)
+
+        Log().add_log(f"Average processing time: {avarage_time_with_2_decimals} s")
 
         return ordersAndContactsDataframe
 
 # Initializer
-def main():
-    Controller().showMainUserForm()
-
 if __name__ == "__main__":
-    main()
+    Controller().showMainUserForm()
