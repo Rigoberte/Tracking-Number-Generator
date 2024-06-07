@@ -1,0 +1,219 @@
+import time
+
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as EC
+
+from carriersWebpage.carrierWebPage import CarrierWebpage
+from logClass.log import Log
+
+class TransportesAmbientales(CarrierWebpage):
+    def __init__(self, folder_path_to_download: str = ""):
+        """
+        Class constructor for Transportes Ambientales
+
+        Args:
+            driver (webdriver): selenium driver
+        """
+        self.folder_path_to_download = folder_path_to_download
+
+    def build_driver(self) -> None:
+        self.driver, self.wait = self.__build_driver__(self.folder_path_to_download)
+
+    def quit_driver(self) -> None:
+        self.__quit_driver__(self.driver)
+
+    def check_if_user_and_password_are_correct(self, username: str, password: str) -> bool:
+        """
+        Checks if user can log in webpage
+
+        Args:
+            driver (webdriver): selenium driver
+            username (str): username
+            password (str): password
+        """
+        self.driver.get("https://sgi.tanet.com.ar/sgi/index.php")
+        
+        self.complete_login_form(username, password)
+
+        try:
+            time.sleep(1)
+            self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[2]/h1")))
+            return True
+        except Exception as e:
+            Log().add_log(f"Error logging in webpage: {e}")
+        
+        return False
+    
+    def complete_login_form(self, username: str, password: str) -> None:
+        """
+        self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/input[1]")))
+        Completes login form
+
+        Args:
+            driver (webdriver): selenium driver
+            username (str): username
+            password (str): password
+        """
+        self.driver.find_element(By.XPATH, "/html/body/form/input[1]").send_keys(username)
+        self.driver.find_element(By.XPATH, "/html/body/form/input[2]").send_keys(password)
+        self.driver.find_element(By.XPATH, "/html/body/form/button").click()
+
+    def complete_shipping_order_form(self, carrier_id: str, reference: str, 
+                                ship_date: str, ship_time_from: str, ship_time_to: str, 
+                                delivery_date: str, delivery_time_from: str, delivery_time_to: str,
+                                type_of_material: str, temperature: str,
+                                contacts: str, amount_of_boxes: int) -> str:
+        tracking_number = ""
+        url = f"https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarEnvio+idubicacion={carrier_id}"
+
+        try:
+            self.driver.get(url)
+
+            # Wait for the webpage to load
+            self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[7]/td/div[2]/table/tbody/tr/td[1]/input")))
+
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").send_keys(reference)
+
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[1]").send_keys(ship_date)
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[2]").send_keys(ship_time_from)
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[5]/td/input[3]").send_keys(ship_time_to)
+
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[1]").send_keys(delivery_date)
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[2]").send_keys(delivery_time_from)
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[3]").send_keys(delivery_time_to)
+
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[7]/td/div[2]/table/tbody/tr/td[1]/input").send_keys("Fisher Clinical Services FCS")
+            self.driver.implicitly_wait(5)
+
+            suggestions_container = self.wait.until(EC.presence_of_element_located((By.ID, "suggest_nomDomOri_list")))
+            self.driver.implicitly_wait(5)
+            time.sleep(1)
+
+            self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[7]/td/div[2]/table/tbody/tr/td[1]/div/div/div[1]/table/tbody")))
+            self.driver.implicitly_wait(5)
+            time.sleep(1)
+
+            # Finds all suggested buttons inside the suggestions container
+            suggested_buttons = suggestions_container.find_elements(By.CLASS_NAME, "suggest")
+            # Loops through the suggested buttons and finds the one that contains the text "Fisher Clinical Services FCS"
+            for button in suggested_buttons:
+                button_text = button.text.strip()
+                if "Fisher Clinical Services FCS" in button_text:
+                    button.click()
+                    break
+
+            # Selects the material type
+            if type_of_material == "Medicine": it_type_of_material = 3
+            elif type_of_material == "Ancillary": it_type_of_material = 5
+            elif type_of_material == "Equipment": it_type_of_material = 7
+            else: it_type_of_material = 8
+
+            for i in range(0, it_type_of_material):
+                self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[10]/td/select[1]").send_keys(Keys.DOWN)
+
+            # Selects the temperature
+            if temperature == "Ambient": it_temperature = 0
+            elif temperature == "Controlled Ambient": it_temperature = 1
+            elif temperature == "Refrigerated": it_temperature = 2
+            elif temperature == "Frozen": it_temperature = 2
+            elif temperature == "Refrigerated with Dry Ice": it_temperature = 3
+            elif temperature == "Frozen with Liquid Nitrogen": it_temperature = 4
+            else: it_temperature = 4
+
+            for i in range(0, it_temperature):
+                self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[10]/td/select[2]").send_keys(Keys.DOWN)
+
+            observaciones_textbox = self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[9]/td/textarea")
+            comments = ""
+            for line in observaciones_textbox.text.split("\n"):
+                if "Dias y horarios de entrega:" != line[:27]:
+                    comments += line + "\n"
+
+            if temperature != "Ambient":
+                comments += "***ENVÍO CON CAJA CREDO. EL COURIER AGUARDARÁ QUE EL CENTRO ALMACENE LA MEDICACIÓN Y RETORNE EL EMBALAJE***"
+
+            observaciones_textbox.clear()
+            observaciones_textbox.send_keys(comments)
+
+            if contacts != "" and contacts != "No contact":
+                self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").clear()
+                self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").send_keys(contacts)
+
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[12]/td/input").send_keys(amount_of_boxes)
+
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/button").click()
+
+            # Wait for the webpage to load and get the tracking number
+            self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))
+
+            self.driver.implicitly_wait(5)
+
+            tracking_number = self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:14]
+            
+        except Exception as e:
+            Log().add_log(f"Error completing shipping order form: {e}")
+            Log().add_log(f"Order: {reference}")
+
+        finally:
+            return tracking_number
+
+    def complete_shipping_order_return_form(self, carrier_id: str, reference_return: str,
+                                            delivery_date: str, return_time_from: str,
+                                            return_time_to: str, type_of_return: str,
+                                            contacts: str, amount_of_boxes_to_return: int,
+                                            return_to_carrier_depot: bool, tracking_number: str) -> str:
+        return_tracking_number = ""
+        url_return = f"https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarRetorno+idsp={tracking_number[:7]}&idubicacion={carrier_id}"
+        url_return += "&returnToTa=true" if return_to_carrier_depot else ""
+
+        try:
+            self.driver.get(url_return)
+            self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[9]/td/select")))
+            
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").clear()
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[3]/td/input").send_keys(reference_return)
+            
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[1]").send_keys(delivery_date)
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[2]").send_keys(return_time_from)
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[6]/td/input[3]").send_keys(return_time_to)
+
+            # Selects the return type
+            if type_of_return == "CREDO": it_tipo_retorno = 1
+            elif type_of_return == "DATALOGGER": it_tipo_retorno = 2
+            else: it_tipo_retorno = 3
+            for i in range(0, it_tipo_retorno):
+                self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[9]/td/select").send_keys(Keys.DOWN)
+
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[12]/td/input[1]").send_keys(contacts)
+            
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/input").clear()
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/input").send_keys(amount_of_boxes_to_return)
+
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[14]/td/button").click()
+            
+            # Wait for the webpage to load and get the return tracking number
+            self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))
+            
+            self.driver.implicitly_wait(5)
+            
+            return_tracking_number = self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:14]
+        except Exception as e:
+            Log().add_log(f"Error completing shipping order return form: {e}")
+            Log().add_log(f"Order: {reference_return}")
+            return "ERROR"
+            
+        finally:
+            return return_tracking_number
+    
+    def printWayBillDocument(self, tracking_number: str, amount_of_copies: int) -> None:
+        url_guias = f"https://sgi.tanet.com.ar/sgi/srv.SrvPdf.emitirOde+id={tracking_number[:7]}&idservicio={tracking_number[:7]}&copies={amount_of_copies}"
+        self.__print_webpage__(url_guias)
+
+    def printLabelDocument(self, tracking_number: str) -> None:
+        url_rotulo = f"https://sgi.tanet.com.ar/sgi/srv.RotuloPdf.emitir+id={tracking_number[:7]}&idservicio={tracking_number[:7]}"
+        self.__print_webpage__(url_rotulo)
+
+    def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int) -> None:
+        url_guias_return = f"https://sgi.tanet.com.ar/sgi/srv.SrvPdf.emitirOde+id={return_tracking_number[:7]}&idservicio={return_tracking_number[:7]}&copies={amount_of_copies}"
+        self.__print_webpage__(url_guias_return)

@@ -1,3 +1,4 @@
 {
+    "python.analysis.extraPaths": ["${workspaceFolder}"],
     "python.analysis.typeCheckingMode": "off"
 }

@@ -206,7 +206,7 @@ class MyUserForm(tk.Tk):
             return frames
 
         def load_top_logo_image(self, frame) -> tk.Label:
-            label_banner = tk.Label(frame,  bg= self.colors.getSidebarColor()) #ctk.ThemeManager.theme["CTkFrame"]["fg_color"][1])
+            label_banner = tk.Label(frame,  bg= self.colors.getSidebarColor())
             label_banner.pack(side=tk.LEFT, padx=10)
 
             return label_banner
@@ -405,7 +405,7 @@ class MyUserForm(tk.Tk):
 
         def create_button_template(self, frame, text, command) -> ctk.CTkButton:
             button = ctk.CTkButton(frame, text=text, command=command, width=150, height=50, font=('Calibri', 22, 'bold'))
-            button.pack(pady=10, padx=10) # expand=True, side=tk.LEFT, 
+            button.pack(pady=10, padx=10)
             return button
 
         def load_dark_mode_image(self, frame) -> tk.Label:
@@ -807,7 +807,7 @@ class Chroma:
             self.toggle_color = '#3700B3'
             self.text_color = '#CCC'
         else:
-            self.body_color = '#CCC'  #'#FFF'
+            self.body_color = '#CCC'
             self.sidebar_color = '#E71316'
             self.primary_color = '#c00000'
             self.primary_color_light = '#E83713'
@@ -985,8 +985,6 @@ class OrderProcessor:
 
             # Enviar el correo
             mail.Send()
-            
-            #send_email(subject, body)
         except Exception as e:
             Log().add_log(f"Error sending email to medical center: {e}")
 

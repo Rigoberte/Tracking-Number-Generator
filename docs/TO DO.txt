@@ -1,0 +1,28 @@
++ Distintos contactos segun tipo de material - Solucionado
+
++ Que pasa si un centro medico coordina cada envio con distintos horarios?
+
++ Agregar Frozen
+    *Ver retornos segun los que vayan a TA y las cajas frozen (20M) que vuelven a FCS
+    *Que pasa si necesitamos que las cajas tienen q empezar a venir a Fisher? Lo dejo como una opción a completar 
+    (que de momento siempre esté en la opcion que vaya a TA)?
+    
+
++ Agregar Condicion Hielo Seco
+---- En TranspostesAmbientales:
+    if temperature == "Ambient": it_temperature = 0
+    elif temperature == "Controlled Ambient": it_temperature = 1
+    elif temperature == "Refrigerated": it_temperature = 2
+    elif temperature == "Frozen": it_temperature = 2
+    elif temperature == "Refrigerated with Dry Ice": it_temperature = 3
+    elif temperature == "Frozen with Liquid Nitrogen": it_temperature = 4
+    else: it_temperature = 4
+
++ Tener en cuenta feriados para retornos
+    *Le agrego la fecha de retorno a la tabla de DataRecolector? Tiene sentido pq no es una decisión que deberia de tomar el orderProcessor
+
++ Agregar enviar email como una variable de config?
+
++ Clase aparte para emailSender?????
+
++ Sacar responsabilidades al Controller
