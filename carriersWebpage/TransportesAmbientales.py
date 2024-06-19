@@ -107,7 +107,7 @@ class TransportesAmbientales(CarrierWebpage):
             if type_of_material == "Medicine": it_type_of_material = 3
             elif type_of_material == "Ancillary": it_type_of_material = 5
             elif type_of_material == "Equipment": it_type_of_material = 7
-            else: it_type_of_material = 8
+            else: raise ValueError("Type of material not valid")
 
             for i in range(0, it_type_of_material):
                 self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[10]/td/select[1]").send_keys(Keys.DOWN)
@@ -119,7 +119,7 @@ class TransportesAmbientales(CarrierWebpage):
             elif temperature == "Frozen": it_temperature = 2
             elif temperature == "Refrigerated with Dry Ice": it_temperature = 3
             elif temperature == "Frozen with Liquid Nitrogen": it_temperature = 4
-            else: it_temperature = 4
+            else: raise ValueError("Temperature not valid")
 
             for i in range(0, it_temperature):
                 self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[10]/td/select[2]").send_keys(Keys.DOWN)
@@ -181,7 +181,9 @@ class TransportesAmbientales(CarrierWebpage):
             # Selects the return type
             if type_of_return == "CREDO": it_tipo_retorno = 1
             elif type_of_return == "DATALOGGER": it_tipo_retorno = 2
-            else: it_tipo_retorno = 3
+            elif it_tipo_retorno == "CREDO AND DATALOGGER": it_tipo_retorno = 3
+            else: raise ValueError("Type of return not valid")
+
             for i in range(0, it_tipo_retorno):
                 self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[9]/td/select").send_keys(Keys.DOWN)
 

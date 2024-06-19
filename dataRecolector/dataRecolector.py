@@ -1,26 +1,31 @@
 import pandas as pd
 import datetime as dt
+import numpy as np
+import queue
 
 from teams.team import Team
 from logClass.log import Log
 
 class DataRecolector:
-    def __init__(self, team: Team):
-        self.selectedTeam = team
+    def __init__(self, aTeam: Team, queue: queue.Queue = queue.Queue()):
+        self.selectedTeam = aTeam
+        self.queue = queue
+
         self.columns_df = ['SYSTEM_NUMBER', 'IVRS_NUMBER', 'CUSTOMER', 'STUDY', 'SITE#',
                 'SHIP_DATE', 'SHIP_TIME_FROM', 'SHIP_TIME_TO', 
                 'DELIVERY_DATE', 'DELIVERY_TIME_FROM', 'DELIVERY_TIME_TO', 
                 'TYPE_OF_MATERIAL', 'TEMPERATURE', 'AMOUNT_OF_BOXES_TO_SEND',
-                'HAS_RETURN', 'RETURN_TO_CARRIER_DEPOT', 'TYPE_OF_RETURN', 'AMOUNT_OF_BOXES_TO_RETURN',
+                'HAS_RETURN', 'RETURN_TO_CARRIER_DEPOT', 'TYPE_OF_RETURN', 'RETURN_DATE', 'RETURN_DELIVERY_HOUR_FROM', 'RETURN_DELIVERY_HOUR_TO', 'AMOUNT_OF_BOXES_TO_RETURN',
                 'TRACKING_NUMBER', 'RETURN_TRACKING_NUMBER', 'PRINT_RETURN_DOCUMENT', 'CONTACTS', 'TYPE_OF_MATERIAL_CAN_RECEIVE', 
                 "MEDICAL_CENTER_EMAILS", "CUSTOMER_EMAIL", "CRA_EMAILS", "TEAM_EMAILS",
                 'CARRIER_ID', 'HAS_AN_ERROR']
         
         self.columns_for_orders = ['SYSTEM_NUMBER', 'IVRS_NUMBER', 'CUSTOMER', 'STUDY', 'SITE#',
                 'SHIP_DATE', 'SHIP_TIME_FROM', 'SHIP_TIME_TO', 
-                'DELIVERY_DATE', 'TYPE_OF_MATERIAL', 
+                'DELIVERY_DATE', 'DELIVERY_TIME_FROM', 'DELIVERY_TIME_TO', 'TYPE_OF_MATERIAL', 
                 'TEMPERATURE', 'AMOUNT_OF_BOXES_TO_SEND', 'HAS_RETURN', 
-                'RETURN_TO_CARRIER_DEPOT', 'TYPE_OF_RETURN', 'AMOUNT_OF_BOXES_TO_RETURN',
+                'RETURN_TO_CARRIER_DEPOT', 'TYPE_OF_RETURN',
+                'RETURN_DATE', 'RETURN_DELIVERY_HOUR_FROM', 'RETURN_DELIVERY_HOUR_TO', 'AMOUNT_OF_BOXES_TO_RETURN',
                 'TRACKING_NUMBER', 'RETURN_TRACKING_NUMBER', 'PRINT_RETURN_DOCUMENT']
         
         self.columns_for_contacts = ["STUDY", "SITE#", "CARRIER_ID", 
@@ -42,14 +47,13 @@ class DataRecolector:
         try:
             ordersDataframe = self.__load_shipping_order_table__(shipdate, self.selectedTeam)
             contactsDataframe = self.__load_contacts_table__(self.selectedTeam)
-
-            ordersAndContactsDataframe = pd.merge(ordersDataframe, contactsDataframe, 
-                                                left_on=["STUDY", "SITE#", "TYPE_OF_MATERIAL"], 
-                                                right_on=["STUDY", "SITE#", "TYPE_OF_MATERIAL_CAN_RECEIVE"], 
-                                                how="left")
+            
+            ordersAndContactsDataframe = self.__merge_orders_with_contacts_tables_if_orders_do_not_a_coordinated_delivery_time__(ordersDataframe, contactsDataframe)
 
             ordersAndContactsDataframe["HAS_AN_ERROR"] = ordersAndContactsDataframe.apply(self.__checkErrorsOnEachOrder__, axis=1)
             ordersAndContactsDataframe.fillna("", inplace=True)
+
+            self.queue.put("recolectOrdersAndContactsData finished")
 
             return ordersAndContactsDataframe[self.columns_df]
         except Exception as e:
@@ -95,7 +99,7 @@ class DataRecolector:
             DataFrame: orders table
         """
         ordersDataFrame = self.__load_shipping_order_table_with_normalized_columns__(team)
-
+        
         ordersDataFrame = ordersDataFrame[ordersDataFrame["SHIP_DATE"] == shipDate]
         
         ordersDataFrame = self.__correct_regular_columns_for_shipping_orders_table__(ordersDataFrame)
@@ -103,7 +107,20 @@ class DataRecolector:
         ordersDataFrame = team.apply_team_specific_changes_for_orders_tables(ordersDataFrame)
 
         ordersDataFrame = self.__create_undefined_columns__(ordersDataFrame, self.columns_for_orders)
+
+        notWorkingDaysList = self.__load_not_working_days__(team)
         
+        ordersDataFrame["TRANSIT"] = ordersDataFrame.apply(lambda x: self.__calculate_transit_days_for_returns__(x["SHIP_DATE"], x["DELIVERY_DATE"]), axis=1)
+        ordersDataFrame["RETURN_DATE"] = ordersDataFrame.apply(lambda x: self.__calculate_return_date__(x["HAS_RETURN"], x["DELIVERY_DATE"], x["TRANSIT"], notWorkingDaysList), axis=1)
+        
+        ordersDataFrame["SHIP_DATE"] = ordersDataFrame["SHIP_DATE"].dt.strftime('%d/%m/%Y')
+        ordersDataFrame["DELIVERY_DATE"] = ordersDataFrame["DELIVERY_DATE"].dt.strftime('%d/%m/%Y')
+        ordersDataFrame["RETURN_DATE"] = self.__correctDateColumns__(ordersDataFrame, "RETURN_DATE")
+        ordersDataFrame["RETURN_DATE"] = ordersDataFrame["RETURN_DATE"].dt.strftime('%d/%m/%Y')
+
+        ordersDataFrame["RETURN_DELIVERY_HOUR_FROM"] = ordersDataFrame.apply(lambda x: "09:00" if x["HAS_RETURN"] else "", axis=1)
+        ordersDataFrame["RETURN_DELIVERY_HOUR_TO"] = ordersDataFrame.apply(lambda x: "16:00" if x["HAS_RETURN"] else "", axis=1)
+
         return ordersDataFrame[self.columns_for_orders]
 
     def __load_shipping_order_table_with_normalized_columns__(self, team: Team) -> pd.DataFrame:
@@ -113,8 +130,8 @@ class DataRecolector:
         Args:
             team (str): team to process
         """
-        path_from_get_data, orders_sheet, _ = team.get_data_path()
-            
+        path_from_get_data, orders_sheet = team.get_data_path(["team_excel_path", "team_orders_sheet"])
+        
         columns_names, columns_types = team.get_column_rename_type_config_for_orders_tables()
 
         ordersDataFrame = team.readOrdersExcel(path_from_get_data, orders_sheet, columns_types)
@@ -185,13 +202,29 @@ class DataRecolector:
         Args:
             team (Team): team to process
         """
-        path_from_get_data, _, sites_sheet = team.get_data_path()
+        path_from_get_data, contacts_sheet = team.get_data_path(["team_excel_path", "team_contacts_sheet"])
         columns_names, columns_types = team.get_column_rename_type_config_for_contacts_table()
 
-        contactsDataFrame = team.readSitesExcel(path_from_get_data, sites_sheet, columns_types)
+        contactsDataFrame = team.readSitesExcel(path_from_get_data, contacts_sheet, columns_types)
         contactsDataFrame.rename(columns=columns_names, inplace=True)
 
         return contactsDataFrame
+
+    def __load_not_working_days__(self, team: Team) -> list:
+        """
+        Loads not working days according to team
+
+        Args:
+            team (Team): team to process
+        """
+        
+        path_from_get_data, not_working_days_sheet = team.get_data_path(["team_excel_path", "team_not_working_days_sheet"])
+        
+        columns_names, columns_types = team.get_column_rename_type_config_for_not_working_days_table()
+        notWorkingDaysDataFrame = team.readNotWorkingDaysExcel(path_from_get_data, not_working_days_sheet, columns_types)
+        notWorkingDaysDataFrame.rename(columns=columns_names, inplace=True)
+
+        return notWorkingDaysDataFrame["DATE"].tolist()
 
     def __correct_regular_columns_for_contacts_table__(self, contactsDataFrame: pd.DataFrame, team: Team) -> pd.Series:
         """
@@ -269,10 +302,13 @@ class DataRecolector:
             return assertIfIsNotNull(row['TEMPERATURE'])
 
         def assertIfTemperatureIsValid(row: pd.Series) -> bool:
-            return row['TEMPERATURE'] in ["Ambient", "Controlled Ambient", "Refrigerated"]
+            return row['TEMPERATURE'] in ["Ambient", "Controlled Ambient", "Refrigerated", "Frozen", "Refrigerated with Dry Ice", "Frozen with Liquid Nitrogen"]
         
         def assertIfNumberOfBoxesToReturnIsValid(row: pd.Series) -> bool:
             return row['AMOUNT_OF_BOXES_TO_RETURN'] <= row['AMOUNT_OF_BOXES_TO_SEND']
+        
+        def assertIfTypeOfReturnIsValid(row: pd.Series) -> bool:
+            return row['TYPE_OF_RETURN'] in ["CREDO", "DATALOGGER", "CREDO AND DATALOGGER", "NA"]
         
         errors = ""
 
@@ -330,6 +366,9 @@ class DataRecolector:
         if not assertIfTemperatureIsValid(row):
             errors += "Invalid temperature; "
 
+        if not assertIfTypeOfReturnIsValid(row):
+            errors += "Invalid type of return; "
+
         if row['HAS_RETURN'] and not assertIfNumberOfBoxesToReturnIsValid(row):
             errors += "Invalid number of boxes to return; "
 
@@ -355,9 +394,53 @@ class DataRecolector:
         """
         dataFrame[column] = dataFrame[column].astype("datetime64[ns]")
         dataFrame[column] = pd.to_datetime(dataFrame[column], format='%d/%m/%Y', errors='coerce')
-        dataFrame[column] = dataFrame[column].dt.strftime('%d/%m/%Y')
         return dataFrame[column]
     
+    def __calculate_transit_days_for_returns__(self, shipDate: dt.datetime, deliveryDate: dt.datetime) -> int:
+        """
+        Calculates the transit days
+
+        Args:
+            shipDate (dt.datetime): ship date
+            deliveryDate (dt.datetime): delivery date
+        """
+        if deliveryDate is None or shipDate is None:
+            return 1
+        
+        return max((deliveryDate - shipDate).days, 1)
+
+    def __calculate_return_date__(self, hasReturn: bool, deliveryDate: dt.datetime, transitDays: int, notWorkingDaysList: list) -> dt.datetime:
+        """
+        Calculates the return date
+
+        Args:
+            deliveryDate (dt.datetime): delivery date
+            transitDays (int): transit days
+        """
+        if not hasReturn:
+            return None
+
+        if pd.isna(deliveryDate) or np.isnan(transitDays):
+            return None
+        
+        nextWorkingDay = self.__nextWorkingDay__(deliveryDate + dt.timedelta(days=1), notWorkingDaysList)
+
+        nextWorkingDayWithTransitDays = self.__nextWorkingDay__(nextWorkingDay + dt.timedelta(days=transitDays-1), notWorkingDaysList)
+
+        return nextWorkingDayWithTransitDays
+
+    def __nextWorkingDay__(self, date: dt.datetime, notWorkingDaysList: list) -> dt.datetime:
+        """
+        Returns the next working day
+
+        Args:
+            date (dt.datetime): date to process
+        """
+        while date.weekday() > 4 or date in notWorkingDaysList:
+            date += dt.timedelta(days=1)
+
+        return date
+
     def __create_undefined_columns__(self, dataFrame: pd.DataFrame, columns: list) -> pd.DataFrame:
         """
         Creates undefined columns
@@ -374,11 +457,11 @@ class DataRecolector:
     
     def __transform_material_receiving_options__(self, contactsDataFrame: pd.DataFrame) -> pd.DataFrame:
         # Columns that should not be transformed
-        other_columns = contactsDataFrame.columns.difference(['CAN_RECEIVE_MEDICINES', 'CAN_RECEIVE_ANCILLARIES'])
+        other_columns = contactsDataFrame.columns.difference(['CAN_RECEIVE_MEDICINES', 'CAN_RECEIVE_ANCILLARIES_TYPE1', 'CAN_RECEIVE_ANCILLARIES_TYPE2', 'CAN_RECEIVE_EQUIPMENTS'])
         
         # Turn the columns 'CAN_RECEIVE_MEDICINES' and 'CAN_RECEIVE_ANCILLARIES' into rows
         df_melted = contactsDataFrame.melt(id_vars=other_columns, 
-                            value_vars=['CAN_RECEIVE_MEDICINES', 'CAN_RECEIVE_ANCILLARIES'], 
+                            value_vars=['CAN_RECEIVE_MEDICINES', 'CAN_RECEIVE_ANCILLARIES_TYPE1', 'CAN_RECEIVE_ANCILLARIES_TYPE2', 'CAN_RECEIVE_EQUIPMENTS'],
                             var_name='Option',
                             value_name='Chosen')
         
@@ -395,8 +478,28 @@ class DataRecolector:
         df_filtered = df_filtered.drop(columns='Option')
 
         #Change MEDICINES to Medicine and ANCILLARIES to Ancillary
-        types_of_materials = {"MEDICINES": "Medicine", "ANCILLARIES": "Ancillary"}
+        types_of_materials = {"MEDICINES": "Medicine", "ANCILLARIES_TYPE1": "Ancillary", "ANCILLARIES_TYPE2": "Ancillary", "EQUIPMENT": "Equipment"}
 
         df_filtered["TYPE_OF_MATERIAL_CAN_RECEIVE"] = df_filtered["TYPE_OF_MATERIAL_CAN_RECEIVE"].replace(types_of_materials)
 
         return df_filtered
+    
+    def __merge_orders_with_contacts_tables_if_orders_do_not_a_coordinated_delivery_time__(self, ordersDataframe: pd.DataFrame, contactsDataframe: pd.DataFrame) -> pd.DataFrame:
+        """
+        Merges orders with contacts tables if orders do not have a coordinated delivery time
+
+        Args:
+            ordersDataframe (DataFrame): orders table
+            contactsDataframe (DataFrame): contacts table
+        """
+        ordersAndContactsDataframe = pd.merge(ordersDataframe, contactsDataframe, 
+                                    left_on=["STUDY", "SITE#", "TYPE_OF_MATERIAL"], 
+                                    right_on=["STUDY", "SITE#", "TYPE_OF_MATERIAL_CAN_RECEIVE"], 
+                                    how="left")
+
+        ordersAndContactsDataframe["DELIVERY_TIME_FROM"] = ordersAndContactsDataframe["DELIVERY_TIME_FROM_x"].replace('', '00:00').fillna(ordersAndContactsDataframe["DELIVERY_TIME_FROM_y"])
+        ordersAndContactsDataframe["DELIVERY_TIME_TO"] = ordersAndContactsDataframe["DELIVERY_TIME_TO_x"].replace('', '00:00').fillna(ordersAndContactsDataframe["DELIVERY_TIME_TO_y"])
+
+        ordersAndContactsDataframe = ordersAndContactsDataframe.drop(columns=["DELIVERY_TIME_FROM_x", "DELIVERY_TIME_TO_x", "DELIVERY_TIME_FROM_y", "DELIVERY_TIME_TO_y"])
+
+        return ordersAndContactsDataframe

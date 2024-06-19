@@ -17,10 +17,14 @@ class GPMArgentinaTeam(Team):
         return "inaki.costa@thermofisher.com"
 
     def get_column_rename_type_config_for_contacts_table(self) -> Tuple[dict, dict]:
-        columns_names = {"Linea de facturacion" : "STUDY", "Site": "SITE#", "Site ID": "CARRIER_ID",
-                        "Persona de contacto" : "CONTACTS", "Emails": "MEDICAL_CENTER_EMAILS", 
+        columns_names = {"STUDY" : "STUDY", "Site": "SITE#", "Site ID": "CARRIER_ID",
+                        "CONTACTOS" : "CONTACTS", "EMAILS": "MEDICAL_CENTER_EMAILS", 
                         "Emails2": "CUSTOMER_EMAIL", "Emails3": "CRA_EMAILS"}
-        columns_types = {"Linea de facturacion": str, "Site": str, "Site ID": str, "Persona de contacto": str}
+        columns_types = {"STUDY": str, "Site": str, "Site ID": str, "CONTACTOS": str,
+                        "EMAILS": str, "DELIVERY_TIME_FROM": dt.datetime, "DELIVERY_TIME_TO": dt.datetime,
+                        "CAN_RECEIVE_MEDICINES": str, "CAN_RECEIVE_ANCILLARIES_TYPE1": str,
+                        "CAN_RECEIVE_ANCILLARIES_TYPE2": str, "CAN_RECEIVE_EQUIPMENTS": str,
+                        "CUSTOMER_EMAIL": str}
         return columns_names, columns_types
     
     def apply_team_specific_changes_for_contacts_table(self, contactsDataFrame: pd.DataFrame) -> pd.DataFrame:
@@ -28,17 +32,13 @@ class GPMArgentinaTeam(Team):
         contactsDataFrame["SITE#"] = contactsDataFrame["SITE#"].str.strip()
 
         contactsDataFrame["CAN_RECEIVE_MEDICINES"] = contactsDataFrame["CAN_RECEIVE_MEDICINES"] != ""
-        contactsDataFrame["CAN_RECEIVE_ANCILLARIES"] = contactsDataFrame["CAN_RECEIVE_ANCILLARIES"] != ""
-        
+        contactsDataFrame["CAN_RECEIVE_ANCILLARIES_TYPE1"] = contactsDataFrame["CAN_RECEIVE_ANCILLARIES_TYPE1"] != ""
+        contactsDataFrame["CAN_RECEIVE_ANCILLARIES_TYPE2"] = contactsDataFrame["CAN_RECEIVE_ANCILLARIES_TYPE2"] != ""
+        contactsDataFrame["CAN_RECEIVE_EQUIPMENTS"] = contactsDataFrame["CAN_RECEIVE_EQUIPMENTS"] != ""
+
         contactsDataFrame["CUSTOMER_EMAIL"] = ""
         contactsDataFrame["CRA_EMAILS"] = ""
         return contactsDataFrame
-    
-    def get_data_path(self) -> Tuple[str, str, str]:
-        path_from_get_data = os.path.expanduser("~\\Downloads\orderTracker_GPM.xlsx")
-        orders_sheet = "Ordenes"
-        contacts_sheet = "Contactos"
-        return path_from_get_data, orders_sheet, contacts_sheet
     
     def get_column_rename_type_config_for_orders_tables(self) -> Tuple[dict, dict]:
         columns_names = {}
@@ -49,21 +49,30 @@ class GPMArgentinaTeam(Team):
                             "AMOUNT_OF_BOXES_TO_SEND": str, 
                             "HAS_RETURN": bool, 
                             "RETURN_TO_CARRIER_DEPOT": bool, "TYPE_OF_RETURN": str, 
-                            "AMOUNT_OF_BOXES_TO_RETURN": str, 
+                            "DISPOSABLE_BOXES": str, 
                             "TRACKING_NUMBER": str, 
                             "RETURN_TRACKING_NUMBER": str, "PRINT_RETURN_DOCUMENT": bool, 
                             "CONTACTS": str, "CARRIER_ID": str}
         return columns_names, columns_types
 
     def apply_team_specific_changes_for_orders_tables(self, ordersDataFrame: pd.DataFrame) -> pd.DataFrame:
-        temperatures = {"Ambiente": "Ambient", "Ambiente Controlado": "Controlled Ambient", "Refrigerado": "Refrigerated"}
+        temperatures = {"Ambiente": "Ambient", "AMB" : "Ambient",
+                        "Ambiente Controlado": "Controlled Ambient", "CON" : "Controlled Ambient", 
+                        "Refrigerado": "Refrigerated", "REF": "Refrigerated",
+                        "Congelado": "Frozen", "FRO": "Frozen",
+                        "Refrigerado con Hielo Seco": "Refrigerated with Dry Ice", "RHS" : "Refrigerated with Dry Ice",
+                        "Congelado con Nitrogeno Liquido": "Frozen with Liquid Nitrogen", "FNL": "Frozen with Liquid Nitrogen"}
         ordersDataFrame["TEMPERATURE"] = ordersDataFrame["TEMPERATURE"].replace(temperatures)
         
         ordersDataFrame["PRINT_RETURN_DOCUMENT"] = False
         
+        ordersDataFrame["DISPOSABLE_BOXES"] = ordersDataFrame["DISPOSABLE_BOXES"].replace("", 0).fillna(0).astype(int)
+        ordersDataFrame["AMOUNT_OF_BOXES_TO_RETURN"] = ordersDataFrame["AMOUNT_OF_BOXES_TO_SEND"] - ordersDataFrame["DISPOSABLE_BOXES"]
+
         ordersDataFrame["HAS_RETURN"] = (ordersDataFrame["AMOUNT_OF_BOXES_TO_RETURN"] > 0) & (ordersDataFrame["TEMPERATURE"] != "Ambient")
         ordersDataFrame.loc[ordersDataFrame["HAS_RETURN"], "TYPE_OF_RETURN"] = "CREDO"
-        ordersDataFrame["RETURN_TO_CARRIER_DEPOT"] = ordersDataFrame["HAS_RETURN"]
+
+        ordersDataFrame["RETURN_TO_CARRIER_DEPOT"] = ordersDataFrame["HAS_RETURN"] & (ordersDataFrame["TEMPERATURE"] != "Frozen")
 
         return ordersDataFrame
 
@@ -123,3 +132,15 @@ class GPMArgentinaTeam(Team):
 
     def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int):
         self.__printReturnWayBillDocument__(self.carrierWebpage, return_tracking_number, amount_of_copies)
+
+    def get_column_rename_type_config_for_not_working_days_table(self) -> Tuple[dict, dict]:
+        columns_names = {"Date" : "DATE"}
+        columns_types = {"Date": dt.datetime}
+        return columns_names, columns_types
+    
+    def readNotWorkingDaysExcel(self, path_from_get_data: str, not_working_days_sheet: str, columns_types: dict) -> pd.DataFrame:
+        try:
+            notWorkingDaysDataFrame = pd.read_excel(path_from_get_data, sheet_name=not_working_days_sheet, dtype=columns_types, header=0)
+        except Exception as e:
+            raise e
+        return notWorkingDaysDataFrame

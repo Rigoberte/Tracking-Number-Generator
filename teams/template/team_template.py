@@ -50,13 +50,6 @@ class NAMETeam(Team):
         raise NotImplementedError("Method not implemented")
         return contactsDataFrame
     
-    def get_data_path(self) -> Tuple[str, str, str]:
-        raise NotImplementedError("Method not implemented")
-        path_from_get_data = os.path.expanduser("~\\Downloads\EXCEL.xlsx")
-        orders_sheet = "Shipments"
-        contacts_sheet = "Contacts"
-        return path_from_get_data, orders_sheet, contacts_sheet
-    
     def get_column_rename_type_config_for_orders_tables(self) -> Tuple[dict, dict]:
         """
         Columns names must turn columns into DataRecolector.columns_for_orders
@@ -112,3 +105,17 @@ class NAMETeam(Team):
 
     def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int) -> None:
         self.__printReturnWayBillDocument__(self.carrierWebpage, return_tracking_number, amount_of_copies)
+
+    def get_column_rename_type_config_for_not_working_days_table(self) -> Tuple[dict, dict]:
+        raise NotImplementedError("Method not implemented")
+        columns_names = {}
+        columns_types = {}
+        return columns_names, columns_types
+    
+    def readNotWorkingDaysExcel(self, path_from_get_data: str, not_working_days_sheet: str, columns_types: dict) -> pd.DataFrame:
+        raise NotImplementedError("Method not implemented")
+        try:
+            notWorkingDaysDataFrame = pd.read_excel(path_from_get_data, sheet_name=not_working_days_sheet, dtype=columns_types, header=0)
+        except Exception as e:
+            raise e
+        return notWorkingDaysDataFrame

@@ -9,6 +9,7 @@ from carriersWebpage.carrierWebPage_factory import CarrierWebPageFactory
 from .team_factory import TeamFactory
 from logClass.log import Log
 from utils.utils import zip_folder
+from dataPathController.dataPathController import DataPathController
 
 class Team(ABC):
     """
@@ -26,6 +27,30 @@ class Team(ABC):
         """
         return TeamFactory.get_team_names()
 
+    def get_data_path(self, vars_to_returns: list = []) -> list:
+        """
+        Loads data path
+
+        Returns:
+            str: excel file path
+            str: excel sheet name
+            str: excel sheet name with sites info
+            str: excel sheet name with not working days
+        """
+        possible_vars = ["team_excel_path", 
+                        "team_orders_sheet",
+                        "team_contacts_sheet",
+                        "team_not_working_days_sheet",
+                        "team_send_email_to_medical_centers"]
+
+        result = []
+        config = DataPathController().get_config_of_a_team(self.getTeamName())
+        for var in vars_to_returns:
+            if var in possible_vars:
+                result.append(config[var])
+        
+        return result
+    
     # Methods to be implemented by each sub class
     @abstractmethod
     def getTeamName(self) -> str:
@@ -62,18 +87,6 @@ class Team(ABC):
 
         Returns:
             DataFrame: contacts table with team specific changes
-        """
-        pass
-    
-    @abstractmethod
-    def get_data_path(self) -> Tuple[str, str, str]:
-        """
-        Loads data path
-
-        Returns:
-            str: excel file path
-            str: excel sheet name
-            str: excel sheet name with sites info
         """
         pass
     
@@ -217,6 +230,36 @@ class Team(ABC):
         Prints return way bill document
         """
         pass
+
+    @abstractmethod
+    def get_column_rename_type_config_for_not_working_days_table(self) -> Tuple[dict, dict]:
+        """
+        Loads columns names and types for the not working days table
+
+        Returns:
+            dict: columns names
+            dict: columns types
+        """
+        pass
+
+    @abstractmethod
+    def readNotWorkingDaysExcel(self, path_from_get_data: str, not_working_days_sheet: str, columns_types: dict) -> pd.DataFrame:
+        """
+        Reads not working days excel
+
+        Args:
+            path_from_get_data (str): path from get data
+            not_working_days_sheet (str): not working days sheet
+            columns_types (dict): columns types
+
+        Returns:
+            DataFrame: not working days table
+        """
+        try:
+            pass
+        except Exception as e:
+            Log().add_log(f"Error reading not working days excel: {e}")
+            return pd.DataFrame(columns=["DATE"])
 
     # Private methods
     def __sendEmailWithOrdersToTeam__(self, folder_path_with_orders_files: str, date: str, emails_of_team: str, emails_of_admin: str):

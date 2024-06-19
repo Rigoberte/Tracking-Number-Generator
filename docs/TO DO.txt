@@ -1,28 +1,51 @@
-+ Distintos contactos segun tipo de material - Solucionado
+*Terminado --------------------------------------------------------------------------------------------------
+    + Distintos contactos segun tipo de material - Solucionado
 
-+ Que pasa si un centro medico coordina cada envio con distintos horarios?
+    + Sacar Equipment como tipo de material - Solucionado
 
-+ Agregar Frozen
-    *Ver retornos segun los que vayan a TA y las cajas frozen (20M) que vuelven a FCS
-    *Que pasa si necesitamos que las cajas tienen q empezar a venir a Fisher? Lo dejo como una opción a completar 
-    (que de momento siempre esté en la opcion que vaya a TA)?
-    
+    + Elevo un error en TA cuadno hay algo no definido? -- Solucionado
 
-+ Agregar Condicion Hielo Seco
----- En TranspostesAmbientales:
-    if temperature == "Ambient": it_temperature = 0
-    elif temperature == "Controlled Ambient": it_temperature = 1
-    elif temperature == "Refrigerated": it_temperature = 2
-    elif temperature == "Frozen": it_temperature = 2
-    elif temperature == "Refrigerated with Dry Ice": it_temperature = 3
-    elif temperature == "Frozen with Liquid Nitrogen": it_temperature = 4
-    else: it_temperature = 4
+    + Aviso de que no se logeo en la pagina del transportista -- Solucionado
 
-+ Tener en cuenta feriados para retornos
-    *Le agrego la fecha de retorno a la tabla de DataRecolector? Tiene sentido pq no es una decisión que deberia de tomar el orderProcessor
+    + Tener en cuenta feriados para retornos -- Solucionado
+        *Le agrego la fecha de retorno a la tabla de DataRecolector? -- Solucionado
+        Tiene sentido pq no es una decisión que deberia de tomar el orderProcessor -- Solucionado
+        - modificar order processor -- Solucionado
+        - implementar __load_not_working_days__ -- Solucionado
 
-+ Agregar enviar email como una variable de config?
+    + Implementar coordinacion de cada envio, y que no tome el horario automatico -- Solucionado
 
-+ Clase aparte para emailSender?????
+    + Agregar Condicion Hielo Seco: 
+    ---- En TranspostesAmbientales: - Solucionado
+        ["Ambient", "Controlled Ambient", "Refrigerated", "Frozen", "Refrigerated with Dry Ice", "Frozen with Liquid Nitrogen"]
+    ---- Ver convenciones -- Solucionado
 
-+ Sacar responsabilidades al Controller
+    + Agregar Frozen
+        *Ver retornos segun los que vayan a TA y las cajas frozen (20M) que vuelven a FCS - Solucionado
+
+    + Si Lilly cambia la temp a amb controlado, no crea el retorno -- Lo dejo asi a proposito
+
+    + Configuracion -- Listo
+        -- Hacer JSON con configuracion -- Listo
+        
+        -- Agregar enviar o no enviar email como una opción en config -- Listo
+
+    + Reimplementar tipo de material Equipment y material tipo 2
+
+    + Agrego boton para abrir y/o actualizar el excel desde la app?
+*A medio hacer --------------------------------------------------------------------------------------------------
+    + Que pasa si necesitamos que las cajas tienen q empezar a venir a Fisher? Lo dejo como una opción a completar en el excel (que de momento siempre esté en la opcion que vaya a TA) ??
+
+*Ideas descartadas --------------------------------------------------------------------------------------------------
+    + Diferenciar horario de entrega segun el dia de entrega - No aplica
+
+    + Clase aparte de emailSender
+
+*No iniciado --------------------------------------------------------------------------------------------------
+    + Sacar responsabilidades al Controller (opcional)
+
+    + Separar utils (opcional)
+
+    + Arreglar assertIfAreValidDates -- mirar justo en el cambio de mes
+
+    + Implementar multi Thredering

@@ -40,17 +40,13 @@ class EliLillyArgentinaTeam(Team):
     def apply_team_specific_changes_for_contacts_table(self, contactsDataFrame: pd.DataFrame) -> pd.DataFrame:
         contactsDataFrame["CONTACTS"] = "No contact"
         contactsDataFrame["CAN_RECEIVE_MEDICINES"] = True
-        contactsDataFrame["CAN_RECEIVE_ANCILLARIES"] = False
+        contactsDataFrame["CAN_RECEIVE_ANCILLARIES_TYPE1"] = False
+        contactsDataFrame["CAN_RECEIVE_ANCILLARIES_TYPE2"] = False
+        contactsDataFrame["CAN_RECEIVE_EQUIPMENTS"] = False
         contactsDataFrame["MEDICAL_CENTER_EMAILS"] = ""
         contactsDataFrame["CUSTOMER_EMAIL"] = ""
         contactsDataFrame["CRA_EMAILS"] = ""
         return contactsDataFrame
-    
-    def get_data_path(self) -> Tuple[str, str, str]:
-        path_from_get_data = os.path.expanduser("~\\Thermo Fisher Scientific\Power BI Lilly Argentina - General\Share Point Lilly Argentina.xlsx")
-        orders_sheet = "Shipments"
-        contacts_sheet = "Dias y Destinos"
-        return path_from_get_data, orders_sheet, contacts_sheet
     
     def get_column_rename_type_config_for_orders_tables(self) -> Tuple[dict, dict]:
         columns_names = {"CT-WIN": "SYSTEM_NUMBER", "IVRS": "IVRS_NUMBER",
@@ -136,3 +132,15 @@ class EliLillyArgentinaTeam(Team):
 
     def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int):
         self.__printReturnWayBillDocument__(self.carrierWebpage, return_tracking_number, amount_of_copies)
+
+    def get_column_rename_type_config_for_not_working_days_table(self) -> Tuple[dict, dict]:
+        columns_names = {"date" : "DATE"}
+        columns_types = {"date": dt.datetime}
+        return columns_names, columns_types
+    
+    def readNotWorkingDaysExcel(self, path_from_get_data: str, not_working_days_sheet: str, columns_types: dict) -> pd.DataFrame:
+        try:
+            notWorkingDaysDataFrame = pd.read_excel(path_from_get_data, sheet_name=not_working_days_sheet, dtype=columns_types, header=0)
+        except Exception as e:
+            raise e
+        return notWorkingDaysDataFrame

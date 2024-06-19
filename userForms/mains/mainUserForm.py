@@ -94,7 +94,6 @@ class MyUserForm(tk.Tk):
             tag_color = self.__tag_color_of_a_treeview_line__(parity, is_a_processed_order, has_an_error)
             
             self.treeview.item(index, tags=tag_color)
-            self.treeview.update()
             # i know this is not the best way to do it, but this doesn't need too much resources
             # the correct way is to implement a multithreading
 
@@ -424,6 +423,27 @@ class MyUserForm(tk.Tk):
 
             return log_image
 
+        def load_open_excel_image(self, frame) -> tk.Label:
+            def on_open_excel_motion(event):
+                self.open_excel_tooltip.hide_tip()
+                
+                text = "Open Excel"
+                self.open_excel_tooltip.show_tip(text, event.x_root, event.y_root)
+
+            def on_open_excel_leave(event):
+                self.open_excel_tooltip.hide_tip()
+
+            def on_open_excel_btn_click(event):
+                self.controller.on_open_excel_double_btn_click()
+
+            open_excel_image = create_label_template(self, frame, "", font_size = 11, side=tk.RIGHT)
+            self.open_excel_tooltip = LogToolTip(self)
+
+            open_excel_image.bind("<Motion>", on_open_excel_motion)
+            open_excel_image.bind("<Leave>", on_open_excel_leave)
+            open_excel_image.bind("<Double-1>", on_open_excel_btn_click)
+            return open_excel_image
+
         self.frames = create_all_frames(self)
 
         self.logo = load_top_logo_image(self, self.frames["logo"])
@@ -442,6 +462,7 @@ class MyUserForm(tk.Tk):
         self.bottom_dataFrame_description = load_dataFrame_description(self, self.frames["bottom"])
         self.dark_mode_image = load_dark_mode_image(self, self.frames["bottom"])
         self.log_image = load_log_image(self, self.frames["bottom"])
+        self.open_excel_image = load_open_excel_image(self, self.frames["bottom"])
 
         columns_names = self.controller.getEmptyOrdersAndContactsData().columns.tolist()
         treeviewColumns = ['#'] + columns_names
@@ -499,6 +520,7 @@ class MyUserForm(tk.Tk):
                 changeImage(self, self.logo, "TMO_logo.png", "TMO_logo_light.png", (284, 61))
                 changeImage(self, self.dark_mode_image, "moon-regular-24.png", "sun-solid-24.png", (24, 24))
                 changeImage(self, self.log_image, "message-alt-detail-regular-24.png", "message-alt-detail-solid-24.png", (24, 24))
+                changeImage(self, self.open_excel_image, "data-regular-24.png", "data-solid-24.png", (24, 24))
             
             self.colors.toggle()
             self.frames["top"].configure(bg_color=self.colors.getTextColor(),
@@ -534,7 +556,6 @@ class MyUserForm(tk.Tk):
         """
         self.__clear_treeview__()
         self.__tag_colors_for_each_treeview_line__(ordersAndContactsDataframe)
-        self.treeview.update()
     
     def __update_bottom_dataFrame_description__(self, amount_of_total_orders: int, 
                                                 amount_of_orders_processed: int, 
@@ -587,4 +608,4 @@ class MyUserForm(tk.Tk):
         self.controller.on_clearOrders_btn_click()
 
     def __config_button_on_click__(self):
-        return #TODO
+        self.controller.config_button_on_click()

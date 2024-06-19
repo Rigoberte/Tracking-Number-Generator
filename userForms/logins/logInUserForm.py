@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import messagebox
 
 class LogInUserForm(tk.Tk):
     def __init__(self, controller = None):
@@ -7,8 +8,6 @@ class LogInUserForm(tk.Tk):
         self.geometry("300x150")
 
         self.controller = controller
-
-        self.__load_userform__(self)
     
     def get_username(self) -> str:
         return self.username_entry.get()
@@ -20,6 +19,7 @@ class LogInUserForm(tk.Tk):
         self.password_entry.delete(0, 'end')
 
     def show_userform(self) -> None:
+        self.__load_userform__(self)
         self.mainloop()
 
     def hide_userform(self) -> None:
@@ -27,6 +27,9 @@ class LogInUserForm(tk.Tk):
 
     def validate_login(self) -> None:
         self.controller.validate_login()
+
+    def show_login_failed(self) -> None:
+        messagebox.showerror("Login Failed", "Username or Password incorrect")
 
     def __load_userform__(self, root) -> None:
         # Username Label and Entry

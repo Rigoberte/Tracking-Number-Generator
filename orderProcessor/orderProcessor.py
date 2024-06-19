@@ -4,13 +4,14 @@ import win32com.client as win32
 import time
 import os
 from typing import Tuple
+import queue
 
 from teams.team import Team
 from logClass.log import Log
 from utils.utils import renameAllReturnFiles, export_to_excel
 
 class OrderProcessor:
-    def __init__(self, folder_path_to_download : str, selectedTeam: Team, controller = None):
+    def __init__(self, folder_path_to_download : str, selectedTeam: Team, queue: queue.Queue):
         """
         Class constructor
 
@@ -23,7 +24,7 @@ class OrderProcessor:
         """
         self.folder_path_to_download = folder_path_to_download
         self.selectedTeam = selectedTeam
-        self.controller = controller
+        self.queue = queue
     
     def send_email_to_medical_center(self, study: str, site: str, ivrs_number: str,
                                     delivery_date: str, delivery_time_from: str, delivery_time_to: str,
@@ -110,6 +111,8 @@ class OrderProcessor:
 
             self.__export_to_excel__(ordersDataFrame)
 
+            self.queue.put("processOrdersAndContactsTable finished")
+
         except Exception as e:
             Log().add_log(f"Error generating shipping report: {e}")
 
@@ -167,6 +170,7 @@ class OrderProcessor:
     
     def __get_return_tracking_number__(self, carrier_id: int, system_number: str, ivrs_number: str,
                                     delivery_date: str,  tracking_number: str, hasReturn: bool,
+                                    return_delivery_date: str, return_delivery_hour_from: str, return_delivery_hour_to: str,
                                     return_to_TA: bool, type_of_return: str, amount_of_boxes_to_return: int) -> str:
             """
             Gets the return tracking number
@@ -189,13 +193,6 @@ class OrderProcessor:
                 return  ""
 
             reference_return = f"{system_number} {ivrs_number} RET {tracking_number}"[:50]
-            transit_days = dt.timedelta(days=1)
-            #transit_days = max(dt.datetime.strptime(delivery_date, '%d/%m/%Y') - dt.datetime.strptime(ship_date, '%d/%m/%Y'), dt.timedelta(days=1))
-            return_delivery_date = dt.datetime.strptime(delivery_date, '%d/%m/%Y') + transit_days
-            return_delivery_date += dt.timedelta(days=2) if return_delivery_date.weekday() >= 5 else dt.timedelta(days=0) # Add 2 days if the return delivery date is on a weekend
-            return_delivery_date = return_delivery_date.strftime('%d/%m/%Y')
-            return_delivery_hour_from = "9"
-            return_delivery_hour_to = "17"
             
             return_tracking_number = self.selectedTeam.complete_shipping_order_return_form(
                 carrier_id, reference_return, 
@@ -216,6 +213,8 @@ class OrderProcessor:
         Args:
             ordersAndContactsDataframe (DataFrame): orders table
         """
+        email_must_be_sent = self.selectedTeam.get_data_path(["team_send_email_to_medical_centers"])
+
         for index, row in ordersAndContactsDataframe.iterrows():
             if row['TRACKING_NUMBER'] != "":
                 # Skip orders that have already been processed
@@ -231,10 +230,12 @@ class OrderProcessor:
                 row["DELIVERY_DATE"], row["DELIVERY_TIME_FROM"], row["DELIVERY_TIME_TO"],
                 row["TYPE_OF_MATERIAL"], row["TEMPERATURE"],
                 row["CONTACTS"], row["AMOUNT_OF_BOXES_TO_SEND"],
-                row["HAS_RETURN"], row["RETURN_TO_CARRIER_DEPOT"], row["TYPE_OF_RETURN"], row["AMOUNT_OF_BOXES_TO_RETURN"]
+                row["HAS_RETURN"], row["RETURN_DELIVERY_DATE"], row["RETURN_DELIVERY_HOUR_FROM"], row["RETURN_DELIVERY_HOUR_TO"], 
+                row["RETURN_TO_CARRIER_DEPOT"], row["TYPE_OF_RETURN"], row["AMOUNT_OF_BOXES_TO_RETURN"]
             )
 
             if tracking_number == "":
+                # Skip orders with errors (no tracking number generated)
                 continue
 
             ordersAndContactsDataframe.loc[index, "TRACKING_NUMBER"] = tracking_number
@@ -242,27 +243,19 @@ class OrderProcessor:
             
             self.__printOrderDocuments__(tracking_number, return_tracking_number, row["PRINT_RETURN_DOCUMENT"])
 
-            medical_center_emails = row["MEDICAL_CENTER_EMAILS"]
-            customer_email = ""
-            cra_emails = ""
-            team_email = ""
-            delivery_date = "05/06/2024"
-
-            try:
-                self.send_email_to_medical_center( row["STUDY"], row["SITE#"], row["IVRS_NUMBER"], 
-                delivery_date, row["DELIVERY_TIME_FROM"], row["DELIVERY_TIME_TO"], 
-                row["TYPE_OF_MATERIAL"], row["TEMPERATURE"], row["AMOUNT_OF_BOXES_TO_SEND"],
-                row["HAS_RETURN"], row["TYPE_OF_RETURN"], row["AMOUNT_OF_BOXES_TO_RETURN"],
-                tracking_number, return_tracking_number,
-                row["CONTACTS"], medical_center_emails, customer_email, cra_emails, team_email)
-            except Exception as e:
-                Log().add_log(f"Error sending email to medical center: {e}")
-                Log().add_log(f"Order: {row['SYSTEM_NUMBER']} {row['IVRS_NUMBER']}")
+            if email_must_be_sent:
+                try:
+                    self.send_email_to_medical_center( row["STUDY"], row["SITE#"], row["IVRS_NUMBER"], 
+                    row["DELIVERY_DATE"], row["DELIVERY_TIME_FROM"], row["DELIVERY_TIME_TO"], 
+                    row["TYPE_OF_MATERIAL"], row["TEMPERATURE"], row["AMOUNT_OF_BOXES_TO_SEND"],
+                    row["HAS_RETURN"], row["TYPE_OF_RETURN"], row["AMOUNT_OF_BOXES_TO_RETURN"],
+                    tracking_number, return_tracking_number,
+                    row["CONTACTS"], row["MEDICAL_CENTER_EMAILS"], row["CUSTOMER_EMAIL"], row["CRA_EMAILS"], row["TEAM_EMAILS"])
+                except Exception as e:
+                    Log().add_log(f"Error sending email to medical center: {e}")
+                    Log().add_log(f"Order: {row['SYSTEM_NUMBER']} {row['IVRS_NUMBER']}")
             
-            try:
-                self.__updateTreeviewLine__(index, tracking_number, return_tracking_number)
-            except Exception as e:
-                Log().add_log(f"Error updating treeview line: {e}")
+            self.__updateTreeviewLine__(index, tracking_number, return_tracking_number)
 
     def __printOrderDocuments__(self, tracking_number: str, return_tracking_number: str, print_return_document: bool) -> None:
         """
@@ -287,7 +280,8 @@ class OrderProcessor:
         delivery_date: str, delivery_time_from: str, delivery_time_to: str,
         type_of_material: str, temperature: str, 
         contacts: str, amount_of_boxes: int, 
-        hasReturn: bool, return_to_TA: bool, type_of_return: str, amount_of_boxes_to_return: int) -> Tuple[str, str]:
+        hasReturn: bool, return_delivery_date: str, return_delivery_hour_from: str, return_delivery_hour_to: str, 
+        return_to_TA: bool, type_of_return: str, amount_of_boxes_to_return: int) -> Tuple[str, str]:
         """
         - Process an order by completing the carrier form
         - Creates a return order if necessary
@@ -332,7 +326,9 @@ class OrderProcessor:
             
             return_tracking_number = self.__get_return_tracking_number__(
                 carrier_id, system_number, ivrs_number,
-                delivery_date, tracking_number, hasReturn, return_to_TA, type_of_return, amount_of_boxes_to_return
+                delivery_date, tracking_number, hasReturn, 
+                return_delivery_date, return_delivery_hour_from, return_delivery_hour_to,
+                return_to_TA, type_of_return, amount_of_boxes_to_return
             )
 
         except Exception as e:
@@ -350,9 +346,7 @@ class OrderProcessor:
             index (int): row index
         """
         try:
-            if self.controller is not None:
-                self.controller.update_tag_color_of_a_treeview_line(index, tracking_number, return_tracking_number)
-                time.sleep(1)
+            self.queue.put(f"update_tag_color_of_a_treeview_line({index}, {tracking_number}, {return_tracking_number})")
         except Exception as e:
             Log().add_log(f"Error updating treeview line: {e}")
 

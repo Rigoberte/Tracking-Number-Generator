@@ -1,6 +1,7 @@
 import pandas as pd
 import datetime as dt
 import time
+import os
 
 from userForms.mains.mainUserForm import MyUserForm
 from userForms.logins.logInUserForm import LogInUserForm
@@ -10,19 +11,18 @@ from orderProcessor.orderProcessor import OrderProcessor
 from teams.team import Team
 from teams.team_factory import TeamFactory
 from logClass.log import Log
+from dataPathController.dataPathController import DataPathController
+from userForms.mains.configUserForm import ConfigUserForm
 from utils.utils import getFolderPathToDownload, create_folder
 
 class Controller:
     def __init__(self):
-        self.NO_SELECTED_TEAM = TeamFactory().create_team("No Selected Team", "")
-        
-        self.mainUserForm = MyUserForm(self)
-        self.logInUserForm = LogInUserForm(self).hide_userform() # TODO I dont know why this userform is shown by default
-        self.selected_team = self.NO_SELECTED_TEAM
-        self.ordersAndContactsDataframe = DataRecolector(self.NO_SELECTED_TEAM).getEmptyOrdersAndContactsData()
+        self.selected_team = TeamFactory().create_team("No Selected Team", "")
+        self.ordersAndContactsDataframe = self.getEmptyOrdersAndContactsData()
         Log().add_log("Application started")
 
     def showMainUserForm(self) -> None:
+        self.mainUserForm = MyUserForm(self)
         self.mainUserForm.show_userform()
 
     def destroyMainUserForm(self) -> None:
@@ -30,7 +30,7 @@ class Controller:
 
     def showLogInUserForm(self) -> None:
         self.logInUserForm = LogInUserForm(self)
-        self.logInUserForm.show_userform() # TODO here i should only show the userform
+        self.logInUserForm.show_userform()
 
     def destroyLogInUserForm(self) -> None:
         self.logInUserForm.hide_userform()
@@ -43,11 +43,10 @@ class Controller:
         selected_date = self.mainUserForm.getSelectedDate()
 
         self.__loadOrdersAndCalculateTime__(selected_team_name, selected_date)
-
         self.mainUserForm.update_ordersAndContactsDataframe_and_widgets(self.ordersAndContactsDataframe)
 
     def on_clearOrders_btn_click(self) -> None:
-        self.ordersAndContactsDataframe = DataRecolector(self.NO_SELECTED_TEAM).getEmptyOrdersAndContactsData()
+        self.ordersAndContactsDataframe = self.getEmptyOrdersAndContactsData()
         self.mainUserForm.update_ordersAndContactsDataframe_and_widgets(self.ordersAndContactsDataframe)
         Log().add_log("Orders table cleaned")
 
@@ -65,6 +64,10 @@ class Controller:
         else:
             self.logInUserForm.clear_password_entry()
             self.selected_team.quit_driver()
+            self.on_login_failed()
+
+    def on_login_failed(self) -> None:
+        self.logInUserForm.show_login_failed()
 
     def on_login_successful(self) -> None:
         self.destroyLogInUserForm()
@@ -80,7 +83,8 @@ class Controller:
         self.mainUserForm.increase_amount_of_orders_processed()
 
     def getEmptyOrdersAndContactsData(self) -> pd.DataFrame:
-        return DataRecolector(self.NO_SELECTED_TEAM).getEmptyOrdersAndContactsData()
+        no_selected_team = TeamFactory().create_team("No Selected Team", "")
+        return DataRecolector(no_selected_team).getEmptyOrdersAndContactsData()
 
     def getTeamsNames(self) -> list:
         return ["Eli Lilly Argentina", "GPM Argentina", "Test_5_ordenes"]
@@ -90,6 +94,46 @@ class Controller:
 
     def get_last_n_logs(self, n: int) -> list:
         return Log().print_last_n_logs(n)
+
+    def config_button_on_click(self) -> None:
+        self.configUserForm = ConfigUserForm(self)
+        self.configUserForm.show_userform()
+
+    def get_config_of_a_team(self, teamName: str) -> str:
+        return DataPathController().get_config_of_a_team(teamName)
+    
+    def on_click_save_config_button(self) -> None:
+        teamName = self.configUserForm.getSelectedTeamName()
+        team_excel_path = self.configUserForm.getTeamExcelPath()
+        team_orders_sheet = self.configUserForm.getTeamOrdersSheet()
+        team_contacts_sheet = self.configUserForm.getTeamContactsSheet()
+        team_not_working_days_sheet = self.configUserForm.getTeamNotWorkingDaysSheet()
+        team_send_email_to_medical_centers = self.configUserForm.getSendEmailVar()
+
+        DataPathController().redefine_a_config_of_a_team(teamName, 
+            {
+            "team_excel_path": team_excel_path,
+            "team_orders_sheet": team_orders_sheet,
+            "team_contacts_sheet": team_contacts_sheet,
+            "team_not_working_days_sheet": team_not_working_days_sheet,
+            "team_send_email_to_medical_centers": team_send_email_to_medical_centers
+            }
+        )
+
+    def on_open_excel_double_btn_click(self) -> None:
+        temporal_selected_team_name = self.mainUserForm.getSelectedTeamName()
+        temporal_selected_team = TeamFactory().create_team(temporal_selected_team_name, "")
+
+        excel_dataPath = temporal_selected_team.get_data_path(["team_excel_path"])
+
+        try:
+            if excel_dataPath[0] == "" or not os.path.exists(excel_dataPath[0]) or not excel_dataPath[0].endswith(".xlsx"):
+                Log().add_log("Excel file path not found")
+                return
+                
+            os.startfile(excel_dataPath[0])
+        except Exception as e:
+            Log().add_log(f"Error opening Excel file: {e}")
 
     def __loadOrders__(self, selected_team_name: str, selected_date: str) -> pd.DataFrame:
         self.folder_path_to_download = getFolderPathToDownload(selected_team_name, selected_date.replace("/", "_"))

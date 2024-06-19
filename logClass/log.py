@@ -19,7 +19,7 @@ class Log(metaclass=SingletonMeta):
 
     def add_log(self, text: str):
         date_and_time = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.logs.append(f"{date_and_time} - {text}")
+        self.logs.append(f"<{date_and_time}> - {text}")
 
     def add_separator(self):
         self.logs.append("----------------------------------------")
@@ -37,4 +37,3 @@ class Log(metaclass=SingletonMeta):
 
     def clear_logs(self):
         self.logs = []
-           

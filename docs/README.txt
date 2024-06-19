@@ -1,0 +1,5 @@
+Actualmente, el proceso de  órdenes implica cargar una tabla de Excel con las órdenes, una tabla de contactos y los horarios de entrega de cada centro médico. Luego, se recopila la información de cada orden para ingresarla manualmente en la página del transportista y así generar un número de seguimiento de transporte.
+
+Tracking Number Generator es una herramienta diseñada para automatizar este proceso. Esta aplicación permite a los distintos equipos ingresar órdenes y procesarlas de manera eficiente y precisa, simplificando el flujo de trabajo y reduciendo la posibilidad de errores humanos.
+
+Es importante destacar que esta aplicación normaliza una tabla de Excel con los datos de las órdenes, luego carga las órdenes en las páginas web de los transportistas pre-configuradas. Esto significa que puede adaptarse a diferentes tablas de órdenes y a distintas páginas web.

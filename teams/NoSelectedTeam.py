@@ -24,9 +24,6 @@ class NoSelectedTeam(Team):
         contactsDataframe["CAN_RECEIVE_ANCILLARIES"] = False
         return contactsDataframe
     
-    def get_data_path(self) -> Tuple[str, str, str]:
-        return ""
-    
     def get_column_rename_type_config_for_orders_tables(self) -> Tuple[dict, dict]:
         return {}, {}
     
@@ -81,3 +78,9 @@ class NoSelectedTeam(Team):
 
     def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int):
         self.__printReturnWayBillDocument__(self.carrierWebpage, return_tracking_number, amount_of_copies)
+
+    def get_column_rename_type_config_for_not_working_days_table(self) -> Tuple[dict, dict]:
+        return {}, {}
+    
+    def readNotWorkingDaysExcel(self, path_from_get_data: str, not_working_days_sheet: str, columns_types: dict) -> pd.DataFrame:
+        return pd.DataFrame(columns=["DATE"])

@@ -11,7 +11,7 @@ class TestTeam(Team):
         self.carrierWebpage = self.__build_carrier_Webpage__("Transportes Ambientales", folder_path_to_download)
 
     def getTeamName(self) -> str:
-        return "Test"
+        return "Test Team"
     
     def getTeamEmail(self) -> str:
         return "inaki.costa@thermofisher.com"
@@ -26,13 +26,11 @@ class TestTeam(Team):
         contactsDataFrame["MEDICAL_CENTER_EMAILS"] = "inaki.costa@thermofisher.com"
         contactsDataFrame["CUSTOMER_EMAIL"] = ""
         contactsDataFrame["CRA_EMAILS"] = ""
+        contactsDataFrame["CAN_RECEIVE_MEDICINES"] = contactsDataFrame["CAN_RECEIVE_MEDICINES"] != ""
+        contactsDataFrame["CAN_RECEIVE_ANCILLARIES_TYPE1"] = contactsDataFrame["CAN_RECEIVE_ANCILLARIES_TYPE1"] != ""
+        contactsDataFrame["CAN_RECEIVE_ANCILLARIES_TYPE2"] = contactsDataFrame["CAN_RECEIVE_ANCILLARIES_TYPE2"] != ""
+        contactsDataFrame["CAN_RECEIVE_EQUIPMENTS"] = contactsDataFrame["CAN_RECEIVE_EQUIPMENTS"] != ""
         return contactsDataFrame
-    
-    def get_data_path(self) -> Tuple[str, str, str]:
-        path_from_get_data = os.path.expanduser("~\\OneDrive - Thermo Fisher Scientific\Desktop\Tracking_Number_Generator\Automatizacion_Ordenes.xlsx")
-        orders_sheet = "Test_5_ordenes"
-        contacts_sheet = "SiteInfo"
-        return path_from_get_data, orders_sheet, contacts_sheet
     
     def get_column_rename_type_config_for_orders_tables(self) -> Tuple[dict, dict]:
         columns_names = {}
@@ -107,3 +105,15 @@ class TestTeam(Team):
 
     def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int):
         self.__printReturnWayBillDocument__(self.carrierWebpage, return_tracking_number, amount_of_copies)
+
+    def get_column_rename_type_config_for_not_working_days_table(self) -> Tuple[dict, dict]:
+        columns_names = {}
+        columns_types = {"DATE": dt.datetime}
+        return columns_names, columns_types
+    
+    def readNotWorkingDaysExcel(self, path_from_get_data: str, not_working_days_sheet: str, columns_types: dict) -> pd.DataFrame:
+        try:
+            notWorkingDaysDataFrame = pd.DataFrame(columns=["DATE"])
+        except Exception as e:
+            raise e
+        return notWorkingDaysDataFrame
