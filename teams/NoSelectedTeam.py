@@ -36,7 +36,7 @@ class NoSelectedTeam(Team):
     def readOrdersExcel(self, path_from_get_data: str, orders_sheet: str, columns_types: dict) -> pd.DataFrame:
         return self.__getEmptyOrdersDataFrame__()
     
-    def readSitesExcel(self, path_from_get_data: str, sites_sheet: str, columns_types: dict) -> pd.DataFrame:
+    def readContactsExcel(self, path_from_get_data: str, sites_sheet: str, columns_types: dict) -> pd.DataFrame:
         return self.__getEmptyContactsDataFrame__()
 
     def build_driver(self):

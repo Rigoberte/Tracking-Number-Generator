@@ -11,125 +11,290 @@ from ..tooltips.logTooltip import LogToolTip
 from ..chroma import Chroma
 
 class MyUserForm(tk.Tk):
-    def __init__(self, controller = None):
+    def __init__(self):
         """
         Class constructor for UserForm
 
         Attributes:
             self.colors (Chroma): color palette
-            self.treeview (tk.ttk.Treeview): self.treeview to show orders table
-            self.bottom_dataFrame_description (tk.Label): label to show the amount of orders processed
-            self.team_combobox (tk.ttk.Combobox): combobox to select a team
-            
-            self.clear_treeview_btn (ctk.CTkButton): button to clear the treeview
-            self.loadOrders_btn (ctk.CTkButton): button to load orders
-            self.processOrders_btn (ctk.CTkButton): button to process orders
-            self.config_btn (ctk.CTkButton): button to configure the app
-            
-            self.ordersAndContactsDataframe (DataFrame): orders table
-
-            self.amountOfTotalOrders (int): amount of total orders
-            self.amountOfOrdersProcessed (int): amount of orders processed
-            self.amountOfOrdersReadyToBeProcessed (int): amount of orders ready to be processed
-            self.amountOfOrdersWithErrors (int): amount of orders with errors
-
-        Args:
-            controller (Controller): controller
+            self.representedOrdersAndContactsDataframe (DataFrame): orders table
         """
         super().__init__()
-        self.controller = controller
 
         self.title("Tracking Number Generator")
         self.state("zoomed")
 
         self.colors = Chroma()
         
-        self.treeview = None
-        self.bottom_dataFrame_description = None
-        self.team_combobox = None
-        self.clear_treeview_btn = None
-        self.loadOrders_btn = None
-        self.processOrders_btn = None
-        self.config_btn = None
-        self.ordersAndContactsDataframe = self.controller.getEmptyOrdersAndContactsData()
+        # Represented model
+        self.representedOrdersAndContactsDataframe = pd.DataFrame( columns=['TRACKING_NUMBER', 'HAS_AN_ERROR'] )
 
-        self.amountOfTotalOrders = 0
-        self.amountOfOrdersProcessed = 0
-        self.amountOfOrdersReadyToBeProcessed = 0
-        self.amountOfOrdersWithErrors = 0
-    
-    def getSelectedTeamName(self) -> str:
-        return self.team_combobox.get()
+        self.__load_userform__()
 
-    def getSelectedDate(self) -> str:
+    def get_selected_team_name(self) -> str:
+        """
+        Returns the selected team name from the combobox
+        """
+
+        selected_team_name = self.team_combobox.get()
+        return selected_team_name
+
+    def get_selected_date(self) -> str:
+        """
+        Returns the selected date from the calendar
+        """
         selected_date = self.cal.get_date()
         return selected_date
 
-    def update_tag_color_of_a_treeview_line(self, ordersAndContactsDataframe: pd.DataFrame,
-                                            index: int, tracking_number: str = "",
-                                            return_tracking_number: str = ""):
+    def update_a_line_to_processed_of_represented_ordersAndContactsDataframe(self, index: int, tracking_number: str, return_tracking_number: str) -> None:
         """
-        Updates tag color on each treeview line
+        Updates a line of the orders table
 
         Args:
             index (int): row index
-            row (Series): row of the orders table
-            treeview (tk.ttk.Treeview): self.treeview to show orders table
+            tracking_number (str): tracking number
+            return_tracking_number (str): return tracking number
         """
-        try:
-            if tracking_number != "":
-                ordersAndContactsDataframe.loc[index, "TRACKING_NUMBER"] = tracking_number
-            
-            if return_tracking_number != "":
-                ordersAndContactsDataframe.loc[index, "RETURN_TRACKING_NUMBER"] = return_tracking_number
-            
-            row_values = ordersAndContactsDataframe.loc[index]
-            row_values_list = [index] + list(row_values)
+        self.representedOrdersAndContactsDataframe.loc[index, "TRACKING_NUMBER"] = tracking_number
+        self.representedOrdersAndContactsDataframe.loc[index, "RETURN_TRACKING_NUMBER"] = return_tracking_number
 
-            self.treeview.item(index, values = row_values_list)
+        self.__update_tag_color_of_a_treeview_line__(index)
+        self.__update_bottom_dataFrame_description__()
 
-            parity = index % 2 == 0
-            is_a_processed_order = row_values['TRACKING_NUMBER'] != ""
-            has_an_error = row_values['HAS_AN_ERROR'] != "No error"
-            tag_color = self.__tag_color_of_a_treeview_line__(parity, is_a_processed_order, has_an_error)
-            
-            self.treeview.item(index, tags=tag_color)
-            # i know this is not the best way to do it, but this doesn't need too much resources
-            # the correct way is to implement a multithreading
-
-        except Exception as e:
-            self.controller.addToLog(f"Error updating tag color of a treeview line: {e}")
-    
-    def update_ordersAndContactsDataframe_and_widgets(self, ordersAndContactsDataframe: pd.DataFrame):
+    def update_whole_represented_ordersAndContactsDataframe(self, ordersAndContactsDataframe: pd.DataFrame) -> None:
         """
         Updates the orders table and the widgets
 
         Args:
             ordersAndContactsDataframe (DataFrame): orders table
         """
-        self.__update_treeview__(ordersAndContactsDataframe)
+        self.representedOrdersAndContactsDataframe = ordersAndContactsDataframe
 
-        self.amountOfTotalOrders = len(ordersAndContactsDataframe)
-        self.amountOfOrdersProcessed = len(ordersAndContactsDataframe[ordersAndContactsDataframe['TRACKING_NUMBER'] != ""])
-        self.amountOfOrdersReadyToBeProcessed = len(ordersAndContactsDataframe[(ordersAndContactsDataframe['TRACKING_NUMBER'] == "") & (ordersAndContactsDataframe['HAS_AN_ERROR'] == "No error")])
-        self.amountOfOrdersWithErrors = len(ordersAndContactsDataframe[(ordersAndContactsDataframe['HAS_AN_ERROR'] != "No error") & (ordersAndContactsDataframe['TRACKING_NUMBER'] == "")])
-        
-        self.__update_bottom_dataFrame_description__(self.amountOfTotalOrders, self.amountOfOrdersProcessed, self.amountOfOrdersReadyToBeProcessed, self.amountOfOrdersWithErrors)
-        self.ordersAndContactsDataframe = ordersAndContactsDataframe
+        self.__update_treeview__()
+        self.__update_bottom_dataFrame_description__()
 
-    def increase_amount_of_orders_processed(self):
-        self.amountOfOrdersProcessed += 1
-        self.amountOfOrdersReadyToBeProcessed = max(0, self.amountOfOrdersReadyToBeProcessed - 1)
-        self.__update_bottom_dataFrame_description__(self.amountOfTotalOrders, self.amountOfOrdersProcessed, self.amountOfOrdersReadyToBeProcessed, self.amountOfOrdersWithErrors)
-
-    def show_userform(self):
-        self.__load_userform__()
+    def show_userform(self) -> None:
+        """
+        Shows the UserForm
+        """
         self.mainloop()
 
-    def hide_userform(self):
+    def hide_userform(self) -> None:
+        """
+        Hides the UserForm
+        """
         self.destroy()
 
+    def get_root(self) -> tk.Tk:
+        """
+        Returns the root
+
+        i know this breaks the encapsulation but i need it for the controller
+        """
+        return self
+
+    def block_widgets(self) -> None:
+        """
+        Blocks the widgets
+        """
+        self.loadOrders_btn.configure(state=tk.DISABLED)
+        self.processOrders_btn.configure(state=tk.DISABLED)
+        self.clear_treeview_btn.configure(state=tk.DISABLED)
+        self.config_btn.configure(state=tk.DISABLED)
+        self.cal.configure(state='disabled')
+        self.team_combobox.configure(state='disabled')
+
+    def unblock_widgets(self) -> None:
+        """
+        Unblocks the widgets
+        """
+        self.loadOrders_btn.configure(state=tk.NORMAL)
+        self.processOrders_btn.configure(state=tk.NORMAL)
+        self.clear_treeview_btn.configure(state=tk.NORMAL)
+        self.config_btn.configure(state=tk.NORMAL)
+        self.cal.configure(state='normal')
+        self.team_combobox.configure(state='readonly')
+
+    def block_processOrders_btn(self) -> None:
+        """
+        Blocks the processOrders_btn
+        """
+        self.processOrders_btn.configure(state=tk.DISABLED)
+
+    def unblock_processOrders_btn(self) -> None:
+        """
+        Unblocks the processOrders_btn
+        """
+        self.processOrders_btn.configure(state=tk.NORMAL)
+
+    def connect_commands_with_controller(self, controller) -> None:
+        """
+        Connects the commands with the controller
+
+        Args:
+            controller (Controller): controller
+        """
+        self.loadOrders_btn.configure(command=controller.on_loadOrders_btn_click)
+        self.processOrders_btn.configure(command=controller.on_processOrders_btn_click)
+        self.clear_treeview_btn.configure(command=controller.on_clearOrders_btn_click)
+        self.config_btn.configure(command=controller.config_button_on_click)
+
+        self.team_combobox['values'] = controller.getTeamsNames()
+        self.team_combobox.current(0)
+
+        self.__change_treeview_columns__(self.treeview, controller.getEmptyOrdersAndContactsData().columns.tolist())
+
+        def on_log_motion(event):
+            self.log_tooltip.hide_tip()
+            
+            logs_df = controller.print_last_n_logs(35)
+
+            text = ""
+            for index, row in logs_df.iterrows():
+                text += f"{row['Date and Time']} - {row['Type']}: {row['Text']}\n"
+
+            text = text[:-1] # Remove the last '\n'
+
+            self.log_tooltip.show_tip(text, event.x_root, event.y_root)
+
+        def on_treeview_leave(event):
+            self.log_tooltip.hide_tip()
+
+        def on_log_btn_click(event):
+            controller.on_log_btn_click()
+
+        self.log_tooltip = LogToolTip(self)
+        self.log_image.bind("<Motion>", on_log_motion)
+        self.log_image.bind("<Leave>", on_treeview_leave)
+        self.log_image.bind("<Double-1>", on_log_btn_click)
+
+        def on_open_excel_motion(event):
+            self.open_excel_tooltip.hide_tip()
+            
+            text = "Open Excel"
+            self.open_excel_tooltip.show_tip(text, event.x_root, event.y_root)
+
+        def on_open_excel_leave(event):
+            self.open_excel_tooltip.hide_tip()
+
+        def on_open_excel_btn_click(event):
+            controller.on_open_excel_double_btn_click()
+
+        self.open_excel_tooltip = LogToolTip(self)
+
+        self.open_excel_image.bind("<Motion>", on_open_excel_motion)
+        self.open_excel_image.bind("<Leave>", on_open_excel_leave)
+        self.open_excel_image.bind("<Double-1>", on_open_excel_btn_click)
+
+        def on_treeview_motion(event):
+            item_id = self.treeview.identify_row(event.y)
+            if item_id and (item_id != on_treeview_motion.last_item_id):
+                on_treeview_motion.last_item_id = item_id
+                item_id_column = self.treeview.identify_column(event.x)
+                text = self.treeview.item(item_id, "values")[int(item_id_column[1:]) - 1]
+                self.tooltip.hide_tip()
+                self.tooltip.show_tip(text, event.x_root, event.y_root)
+            elif not item_id:
+                self.tooltip.hide_tip()
+                on_treeview_motion.last_item_id = None
+
+        def on_treeview_leave(event):
+            self.tooltip.hide_tip()
+
+        def copy_selection(event):
+            if self.selected_cells:
+                selected_texts = {}
+                for item, column in self.selected_cells:
+                    cell_value = self.treeview.set(item, column)
+                    if item not in selected_texts:
+                        selected_texts[item] = []
+                    selected_texts[item].append(cell_value)
+
+                final_text = []
+                for item in selected_texts:
+                    if len(selected_texts[item]) == 1:
+                        final_text.append(selected_texts[item][0])
+                    else:
+                        final_text.append('\t'.join(selected_texts[item]))
+                
+                self.clipboard_clear()
+                self.clipboard_append('\n'.join(final_text))
+
+        def on_treeview_click(event):
+            self.start_cell = (self.treeview.identify_row(event.y), self.treeview.identify_column(event.x))
+            self.selected_cells = [self.start_cell]
+            update_selection()
+        
+        def on_treeview_drag(event):
+            end_cell = (self.treeview.identify_row(event.y), self.treeview.identify_column(event.x))
+            self.selected_cells = get_cells_in_range(self.start_cell, end_cell)
+            update_selection()
+        
+        def get_cells_in_range(start, end):
+            start_item, start_col = start
+            end_item, end_col = end
+            start_row_index = self.treeview.index(start_item)
+            end_row_index = self.treeview.index(end_item)
+            
+            if start_row_index > end_row_index:
+                start_row_index, end_row_index = end_row_index, start_row_index
+            if start_col > end_col:
+                start_col, end_col = end_col, start_col
+            
+            items = self.treeview.get_children()
+            selected = []
+            if len(items) != 0:
+                for row_index in range(start_row_index, end_row_index + 1):
+                    for col in range(int(start_col[1:]), int(end_col[1:]) + 1):
+                        selected.append((items[row_index], f"#{col}"))
+            
+            return selected
+        
+        def update_selection():
+            try:
+                for index, item in enumerate(self.treeview.get_children()):
+                    self.__update_tag_color_of_a_treeview_line__(index)
+                
+                # Highlight selected cells
+                for item, column in self.selected_cells:
+                    self.treeview.selection_add(item)
+            except Exception as e:
+                print(f"Error updating selection: {e}")
+
+        # TreeviewToolTip
+        self.tooltip = TreeviewToolTip(self.treeview)
+        on_treeview_motion.last_item_id = None
+        self.selected_cells = []
+        self.start_cell = None
+        self.treeview.bind("<Motion>", on_treeview_motion)
+        self.treeview.bind("<Leave>", on_treeview_leave)
+        
+        # Copy selection
+        self.bind('<Control-c>', copy_selection)
+
+        # Bind mouse click to select a cell
+        self.treeview.bind('<Button-1>', on_treeview_click)
+
+        # Bind mouse drag to select multiple cells
+        self.treeview.bind('<B1-Motion>', on_treeview_drag)
+
     # Private methods
+    def __change_treeview_columns__(self, treeview: tk.ttk.Treeview, columns_names: list) -> None:
+        """
+        Changes the columns of the treeview
+
+        Args:
+            columns_names (list): columns names
+            treeview (tk.ttk.Treeview): self.treeview to show orders table
+        """
+        treeview["columns"] = ['#'] + columns_names
+        treeview.delete(*treeview.get_children())
+        
+        for col in columns_names:
+            treeview.heading(col, text=col)
+            treeview.column(col, anchor=tk.W, width=int(self.winfo_screenwidth() * 0.7 * 0.3))
+        treeview.column('#', anchor=tk.W, width=int(self.winfo_screenwidth() * 0.7 * 0.05))
+
     def __load_userform__(self):
         """
         Loads the UserForm and their widgets
@@ -221,8 +386,8 @@ class MyUserForm(tk.Tk):
             return cal
 
         def load_teams_combobox(self, frame) -> tk.ttk.Combobox:
-            teams_options = self.controller.getTeamsNames()
-            team_combobox = tk.ttk.Combobox(frame, values=teams_options, width=20, height=15, font=30)
+            teams_options = ["Team"]
+            team_combobox = tk.ttk.Combobox(frame, values=teams_options, width=20, height=15, font=30, state='readonly')
             team_combobox.pack(side=tk.LEFT, padx=10)
             team_combobox.current(0)
 
@@ -247,102 +412,7 @@ class MyUserForm(tk.Tk):
 
             # Treeview columns headings and columns width
             treeview.column("#0", width=0, stretch=tk.NO)  # Hide the first column
-            for col in treeviewColumns:
-                treeview.heading(col, text=col)
-                treeview.column(col, anchor=tk.W, width=int(self.winfo_screenwidth() * 0.7 * 0.3))
-            treeview.column("#", anchor=tk.W, width=int(self.winfo_screenwidth() * 0.7 * 0.05))
-
-            def on_treeview_motion(event):
-                item_id = treeview.identify_row(event.y)
-                if item_id and (item_id != on_treeview_motion.last_item_id):
-                    on_treeview_motion.last_item_id = item_id
-                    item_id_column = treeview.identify_column(event.x)
-                    text = treeview.item(item_id, "values")[int(item_id_column[1:]) - 1]
-                    self.tooltip.hide_tip()
-                    self.tooltip.show_tip(text, event.x_root, event.y_root)
-                elif not item_id:
-                    self.tooltip.hide_tip()
-                    on_treeview_motion.last_item_id = None
-
-            def on_treeview_leave(event):
-                self.tooltip.hide_tip()
-
-            def copy_selection(event):
-                if self.selected_cells:
-                    selected_texts = {}
-                    for item, column in self.selected_cells:
-                        cell_value = treeview.set(item, column)
-                        if item not in selected_texts:
-                            selected_texts[item] = []
-                        selected_texts[item].append(cell_value)
-
-                    final_text = []
-                    for item in selected_texts:
-                        if len(selected_texts[item]) == 1:
-                            final_text.append(selected_texts[item][0])
-                        else:
-                            final_text.append('\t'.join(selected_texts[item]))
-                    
-                    self.clipboard_clear()
-                    self.clipboard_append('\n'.join(final_text))
-
-            def on_treeview_click(event):
-                self.start_cell = (treeview.identify_row(event.y), treeview.identify_column(event.x))
-                self.selected_cells = [self.start_cell]
-                update_selection()
-            
-            def on_treeview_drag(event):
-                end_cell = (treeview.identify_row(event.y), treeview.identify_column(event.x))
-                self.selected_cells = get_cells_in_range(self.start_cell, end_cell)
-                update_selection()
-            
-            def get_cells_in_range(start, end):
-                start_item, start_col = start
-                end_item, end_col = end
-                start_row_index = treeview.index(start_item)
-                end_row_index = treeview.index(end_item)
-                
-                if start_row_index > end_row_index:
-                    start_row_index, end_row_index = end_row_index, start_row_index
-                if start_col > end_col:
-                    start_col, end_col = end_col, start_col
-                
-                items = treeview.get_children()
-                selected = []
-                if len(items) != 0:
-                    for row_index in range(start_row_index, end_row_index + 1):
-                        for col in range(int(start_col[1:]), int(end_col[1:]) + 1):
-                            selected.append((items[row_index], f"#{col}"))
-                
-                return selected
-            
-            def update_selection():
-                try:
-                    for index, item in enumerate(treeview.get_children()):
-                        self.update_tag_color_of_a_treeview_line(self.ordersAndContactsDataframe, index)
-                    
-                    # Highlight selected cells
-                    for item, column in self.selected_cells:
-                        treeview.selection_add(item)
-                except Exception as e:
-                    self.controller.addToLog(f"Error updating selection: {e}")
-
-            # TreeviewToolTip
-            self.tooltip = TreeviewToolTip(treeview)
-            on_treeview_motion.last_item_id = None
-            self.selected_cells = []
-            self.start_cell = None
-            treeview.bind("<Motion>", on_treeview_motion)
-            treeview.bind("<Leave>", on_treeview_leave)
-            
-            # Copy selection
-            self.bind('<Control-c>', copy_selection)
-
-            # Bind mouse click to select a cell
-            treeview.bind('<Button-1>', on_treeview_click)
-
-            # Bind mouse drag to select multiple cells
-            treeview.bind('<B1-Motion>', on_treeview_drag)
+            self.__change_treeview_columns__(treeview, treeviewColumns)
 
             return treeview
 
@@ -360,23 +430,25 @@ class MyUserForm(tk.Tk):
 
             return y_scrollbar
 
-        def load_button_processOrders(self, frame):
-            processOrders_btn = create_button_template(self, frame, "Process Orders", self.__on_processOrders_btn_click__)
+        def load_button_processOrders(self, frame) -> ctk.CTkButton:
+            processOrders_btn = create_button_template(self, frame, "Process Orders")
+
+            processOrders_btn.configure(state=tk.DISABLED)
 
             return processOrders_btn
 
-        def load_button_loadOrders(self, frame):
-            loadOrders_btn = create_button_template(self, frame, "Load Orders", self.__on_loadOrders_btn_click__)
+        def load_button_loadOrders(self, frame) -> ctk.CTkButton:
+            loadOrders_btn = create_button_template(self, frame, "Load Orders")
 
             return loadOrders_btn
         
-        def load_button_config(self, frame):
-            config_btn = create_button_template(self, frame, "Config", self.__config_button_on_click__)
+        def load_button_config(self, frame) -> ctk.CTkButton:
+            config_btn = create_button_template(self, frame, "Config")
 
             return config_btn
 
-        def load_button_clear_treeview(self, frame):
-            clear_treeview_btn = create_button_template(self, frame, "Clear", self.__clear_treeview_on_click__)
+        def load_button_clear_treeview(self, frame) -> ctk.CTkButton:
+            clear_treeview_btn = create_button_template(self, frame, "Clear")
 
             return clear_treeview_btn
 
@@ -391,9 +463,9 @@ class MyUserForm(tk.Tk):
             
             return label
 
-        def create_button_template(self, frame, text, command) -> ctk.CTkButton:
-            button = ctk.CTkButton(frame, text=text, command=command, width=150, height=50, font=('Calibri', 22, 'bold'))
-            button.pack(pady=10, padx=10) # expand=True, side=tk.LEFT, 
+        def create_button_template(self, frame, text) -> ctk.CTkButton:
+            button = ctk.CTkButton(frame, text=text, width=150, height=50, font=('Calibri', 22, 'bold'))
+            button.pack(pady=10, padx=10)
             return button
 
         def load_dark_mode_image(self, frame) -> tk.Label:
@@ -402,50 +474,16 @@ class MyUserForm(tk.Tk):
             return dark_mode_image
 
         def load_log_image(self, frame) -> tk.Label:
-            
-            def on_log_motion(event):
-                self.log_tooltip.hide_tip()
-                
-                text = self.controller.get_last_n_logs(35)
-                self.log_tooltip.show_tip(text, event.x_root, event.y_root)
-
-            def on_treeview_leave(event):
-                self.log_tooltip.hide_tip()
-
-            def on_log_btn_click(event):
-                self.controller.on_log_btn_click()
-
             log_image = create_label_template(self, frame, "", font_size = 11, side=tk.RIGHT)
-            self.log_tooltip = LogToolTip(self)
-            log_image.bind("<Motion>", on_log_motion)
-            log_image.bind("<Leave>", on_treeview_leave)
-            log_image.bind("<Double-1>", on_log_btn_click)
-
             return log_image
 
         def load_open_excel_image(self, frame) -> tk.Label:
-            def on_open_excel_motion(event):
-                self.open_excel_tooltip.hide_tip()
-                
-                text = "Open Excel"
-                self.open_excel_tooltip.show_tip(text, event.x_root, event.y_root)
-
-            def on_open_excel_leave(event):
-                self.open_excel_tooltip.hide_tip()
-
-            def on_open_excel_btn_click(event):
-                self.controller.on_open_excel_double_btn_click()
-
             open_excel_image = create_label_template(self, frame, "", font_size = 11, side=tk.RIGHT)
-            self.open_excel_tooltip = LogToolTip(self)
-
-            open_excel_image.bind("<Motion>", on_open_excel_motion)
-            open_excel_image.bind("<Leave>", on_open_excel_leave)
-            open_excel_image.bind("<Double-1>", on_open_excel_btn_click)
             return open_excel_image
 
         self.frames = create_all_frames(self)
 
+        # Top widgets
         self.logo = load_top_logo_image(self, self.frames["logo"])
         self.calendar_text = create_label_template(self, self.frames["calendar_text"], "Select a date:")
         self.cal = load_calendar_datePicker(self, self.frames["calendar"])
@@ -453,28 +491,33 @@ class MyUserForm(tk.Tk):
         self.team_picker_text = create_label_template(self, self.frames["team_picker_text"], "Select a team:")
         self.team_combobox = load_teams_combobox(self, self.frames["team_picker"])
 
-
+        # Top buttons
         self.loadOrders_btn = load_button_loadOrders(self, self.frames["button_top_and_left"])
         self.processOrders_btn = load_button_processOrders(self, self.frames["button_top_and_right"])
         self.clear_treeview_btn = load_button_clear_treeview(self, self.frames["button_bottom_and_left"])
         self.config_btn = load_button_config(self, self.frames["button_bottom_and_right"])
 
+        # Bottom widgets
         self.bottom_dataFrame_description = load_dataFrame_description(self, self.frames["bottom"])
         self.dark_mode_image = load_dark_mode_image(self, self.frames["bottom"])
         self.log_image = load_log_image(self, self.frames["bottom"])
         self.open_excel_image = load_open_excel_image(self, self.frames["bottom"])
 
-        columns_names = self.controller.getEmptyOrdersAndContactsData().columns.tolist()
-        treeviewColumns = ['#'] + columns_names
+        # Treeview
+        treeviewColumns = self.representedOrdersAndContactsDataframe.columns.tolist()
         self.treeview = load_treeview(self, self.frames["mid"], treeviewColumns)
-        self.update_ordersAndContactsDataframe_and_widgets(self.ordersAndContactsDataframe)
 
+        # Scrollbars
         self.y_scrollbar = load_vertical_scrollbar(self, self.frames["vertical_scrollbar"], self.treeview)
         self.x_scrollbar = load_horizontal_scrollbar(self, self.frames["mid"], self.treeview)
 
+        # Set colors
         self.__set_colors__()
+
+        # Update represented model
+        self.update_whole_represented_ordersAndContactsDataframe(self.representedOrdersAndContactsDataframe)
     
-    def __tag_color_of_a_treeview_line__(self, parity: bool, order_done: bool, error: bool):
+    def __tag_color_of_a_treeview_line__(self, parity: bool, order_done: bool, error: bool) -> str:
         """
         Tags colors on each treeview line
 
@@ -487,22 +530,22 @@ class MyUserForm(tk.Tk):
         tag_color += ("_error" if error else "") if not order_done else ""
         return tag_color
     
-    def __tag_colors_for_each_treeview_line__(self, ordersAndContactsDataframe: pd.DataFrame):
+    def __tag_colors_for_each_treeview_line__(self) -> None:
         """
         Tags colors on each treeview line
 
         Args:
             ordersAndContactsDataframe (DataFrame): orders table
         """
-        if ordersAndContactsDataframe.empty:
+        if self.representedOrdersAndContactsDataframe.empty:
             return
 
-        for index, row in ordersAndContactsDataframe.iterrows():
+        for index, row in self.representedOrdersAndContactsDataframe.iterrows():
             row_values = [index] + list(row)
             self.treeview.insert("", "end", iid=index, values=row_values)
-            self.update_tag_color_of_a_treeview_line(ordersAndContactsDataframe, index, row['TRACKING_NUMBER'], row['RETURN_TRACKING_NUMBER'])
+            self.update_a_line_to_processed_of_represented_ordersAndContactsDataframe(index, row['TRACKING_NUMBER'], row['RETURN_TRACKING_NUMBER'])
     
-    def __set_colors__(self):
+    def __set_colors__(self) -> None:
             def changeImage(self, widget, dark_image, light_image, size):
                 if self.colors.getDarkMode():
                     logoPath = os.getcwd() + "\\media\\" + dark_image
@@ -546,7 +589,7 @@ class MyUserForm(tk.Tk):
                                 hover_color = self.colors.getPrimaryColorLight(),
                                 text_color= self.colors.getTextColor())
 
-    def __update_treeview__(self, ordersAndContactsDataframe: pd.DataFrame):
+    def __update_treeview__(self) -> None:
         """
         Updates the treeview
 
@@ -555,57 +598,57 @@ class MyUserForm(tk.Tk):
             treeview (tk.ttk.Treeview): self.treeview to show orders table
         """
         self.__clear_treeview__()
-        self.__tag_colors_for_each_treeview_line__(ordersAndContactsDataframe)
+        self.__tag_colors_for_each_treeview_line__()
     
-    def __update_bottom_dataFrame_description__(self, amount_of_total_orders: int, 
-                                                amount_of_orders_processed: int, 
-                                                amount_of_orders_ready_to_be_processed: int, 
-                                                amount_of_orders_with_errors: int):
-        text = f"Amount of total orders: {amount_of_total_orders} | "
-        text += f"Amount of orders processed: {amount_of_orders_processed} | "
-        text += f"Amount of orders ready to be processed: {amount_of_orders_ready_to_be_processed} | "
-        text += f"Amount of orders with errors: {amount_of_orders_with_errors}"
+    def __update_bottom_dataFrame_description__(self) -> None:
+        ordersAndContactsDataframe = self.representedOrdersAndContactsDataframe
+
+        amountOfTotalOrders = len(ordersAndContactsDataframe)
+        amountOfOrdersProcessed = len(ordersAndContactsDataframe[ordersAndContactsDataframe['TRACKING_NUMBER'] != ""])
+        amountOfOrdersReadyToBeProcessed = len(ordersAndContactsDataframe[(ordersAndContactsDataframe['TRACKING_NUMBER'] == "") & (ordersAndContactsDataframe['HAS_AN_ERROR'] == "No error")])
+        amountOfOrdersWithErrors = len(ordersAndContactsDataframe[(ordersAndContactsDataframe['HAS_AN_ERROR'] != "No error") & (ordersAndContactsDataframe['TRACKING_NUMBER'] == "")])
+
+        text = f"Amount of total orders: {amountOfTotalOrders} | "
+        text += f"Amount of orders processed: {amountOfOrdersProcessed} | "
+        text += f"Amount of orders ready to be processed: {amountOfOrdersReadyToBeProcessed} | "
+        text += f"Amount of orders with errors: {amountOfOrdersWithErrors}"
         
         self.bottom_dataFrame_description.config(text=text)
     
-    def __clear_treeview__(self):
+    def __clear_treeview__(self) -> None:
         """
         Clears the treeview
         """
-        if self.ordersAndContactsDataframe.empty:
+        if len(self.treeview.get_children("")) == 0:
             return
         
-        self.ordersAndContactsDataframe = self.controller.getEmptyOrdersAndContactsData()
         for item in self.treeview.get_children():
             self.treeview.delete(item)
-
-    def __on_loadOrders_btn_click__(self):
-        """
-        Loads orders table according to date and team
-
-        Args:
-            date (dt.datetime): date to process
-            team (str): team to process
-            shipdate (dt.datetime): ship date
-            self.treeview (tk.ttk.Treeview): self.treeview to show orders table
-        
-        Returns:
-            DataFrame: orders table
-        """
-
-        self.controller.on_loadOrders_btn_click()
-
-    def __on_processOrders_btn_click__(self):
-        """
-        Button to process all orders in the table
-        """
-        self.controller.on_processOrders_btn_click()
 
     def __toggle_color_btn_on_click__(self, event):
         self.__set_colors__()
 
-    def __clear_treeview_on_click__(self):
-        self.controller.on_clearOrders_btn_click()
+    def __update_tag_color_of_a_treeview_line__(self, index: int) -> None:
+        """
+        Updates tag color on each treeview line
 
-    def __config_button_on_click__(self):
-        self.controller.config_button_on_click()
+        Args:
+            index (int): row index
+            row (Series): row of the orders table
+            treeview (tk.ttk.Treeview): self.treeview to show orders table
+        """
+        try:
+            row_values = self.representedOrdersAndContactsDataframe.loc[index]
+            row_values_list = [index] + list(row_values)
+
+            self.treeview.item(index, values = row_values_list)
+
+            parity = index % 2 == 0
+            is_a_processed_order = row_values['TRACKING_NUMBER'] != ""
+            has_an_error = row_values['HAS_AN_ERROR'] != "No error"
+            tag_color = self.__tag_color_of_a_treeview_line__(parity, is_a_processed_order, has_an_error)
+            
+            self.treeview.item(index, tags=tag_color)
+
+        except Exception as e:
+            print(f"Error updating tag color of a treeview line: {e}")

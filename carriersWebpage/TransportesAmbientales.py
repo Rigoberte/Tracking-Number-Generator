@@ -41,7 +41,7 @@ class TransportesAmbientales(CarrierWebpage):
             self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[2]/h1")))
             return True
         except Exception as e:
-            Log().add_log(f"Error logging in webpage: {e}")
+            Log().add_error_log(f"Error logging in webpage: {e}")
         
         return False
     
@@ -152,8 +152,8 @@ class TransportesAmbientales(CarrierWebpage):
             tracking_number = self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:14]
             
         except Exception as e:
-            Log().add_log(f"Error completing shipping order form: {e}")
-            Log().add_log(f"Order: {reference}")
+            Log().add_error_log(f"Error completing shipping order form: {e}")
+            Log().add_error_log(f"Order: {reference}")
 
         finally:
             return tracking_number
@@ -201,8 +201,8 @@ class TransportesAmbientales(CarrierWebpage):
             
             return_tracking_number = self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:14]
         except Exception as e:
-            Log().add_log(f"Error completing shipping order return form: {e}")
-            Log().add_log(f"Order: {reference_return}")
+            Log().add_error_log(f"Error completing shipping order return form: {e}")
+            Log().add_error_log(f"Order: {reference_return}")
             return "ERROR"
             
         finally:
@@ -210,12 +210,12 @@ class TransportesAmbientales(CarrierWebpage):
     
     def printWayBillDocument(self, tracking_number: str, amount_of_copies: int) -> None:
         url_guias = f"https://sgi.tanet.com.ar/sgi/srv.SrvPdf.emitirOde+id={tracking_number[:7]}&idservicio={tracking_number[:7]}&copies={amount_of_copies}"
-        self.__print_webpage__(url_guias)
+        self.__print_webpage__(self.driver, url_guias)
 
     def printLabelDocument(self, tracking_number: str) -> None:
         url_rotulo = f"https://sgi.tanet.com.ar/sgi/srv.RotuloPdf.emitir+id={tracking_number[:7]}&idservicio={tracking_number[:7]}"
-        self.__print_webpage__(url_rotulo)
+        self.__print_webpage__(self.driver, url_rotulo)
 
     def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int) -> None:
         url_guias_return = f"https://sgi.tanet.com.ar/sgi/srv.SrvPdf.emitirOde+id={return_tracking_number[:7]}&idservicio={return_tracking_number[:7]}&copies={amount_of_copies}"
-        self.__print_webpage__(url_guias_return)
+        self.__print_webpage__(self.driver, url_guias_return)

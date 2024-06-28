@@ -27,7 +27,7 @@ class NAMETeam(Team):
             raise e
         return ordersDataFrame
     
-    def readSitesExcel(self, path_from_get_data: str, contacts_sheet: str, columns_types: dict) -> pd.DataFrame:
+    def readContactsExcel(self, path_from_get_data: str, contacts_sheet: str, columns_types: dict) -> pd.DataFrame:
         
         raise NotImplementedError("Method not implemented")
         try:

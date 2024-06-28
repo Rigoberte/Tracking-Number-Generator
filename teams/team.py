@@ -115,7 +115,7 @@ class Team(ABC):
         try:
             pass
         except Exception as e:
-            Log().add_log(f"Error applying team specific changes for orders tables: {e}")
+            Log().add_error_log(f"Error applying team specific changes for orders tables: {e}")
             return ordersDataframe
     
     @abstractmethod
@@ -145,11 +145,11 @@ class Team(ABC):
         try:
             pass
         except Exception as e:
-            Log().add_log(f"Error reading orders excel: {e}")
+            Log().add_error_log(f"Error reading orders excel: {e}")
             return self.__getEmptyOrdersDataFrame__()
     
     @abstractmethod
-    def readSitesExcel(self, path_from_get_data: str, sites_sheet: str, columns_types: dict) -> pd.DataFrame:
+    def readContactsExcel(self, path_from_get_data: str, contacts_sheet: str, columns_types: dict) -> pd.DataFrame:
         """
         Reads contacts excel
 
@@ -164,7 +164,7 @@ class Team(ABC):
         try:
             pass
         except Exception as e:
-            Log().add_log(f"Error reading contacts excel: {e}")
+            Log().add_error_log(f"Error reading contacts excel: {e}")
             return self.__getEmptyContactsDataFrame__()
 
     @abstractmethod
@@ -258,7 +258,7 @@ class Team(ABC):
         try:
             pass
         except Exception as e:
-            Log().add_log(f"Error reading not working days excel: {e}")
+            Log().add_error_log(f"Error reading not working days excel: {e}")
             return pd.DataFrame(columns=["DATE"])
 
     # Private methods
@@ -292,7 +292,7 @@ class Team(ABC):
 
             mail.Send()
         except Exception as e:
-            Log().add_log(f"Error sending email with orders to team: {e}")
+            Log().add_error_log(f"Error sending email with orders to team: {e}")
 
     def __check_if_user_and_password_are_correct__(self, carrierWebpage: CarrierWebpage, username: str, password: str) -> bool:
         return carrierWebpage.check_if_user_and_password_are_correct(username, password)

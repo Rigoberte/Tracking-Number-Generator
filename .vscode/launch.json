@@ -9,7 +9,7 @@
             "name": "Python Debugger: Module",
             "type": "debugpy",
             "request": "launch",
-            "module": "Controller",
+            "module": "main",
             "env" : {
                 "PYTHONPATH": "${workspaceFolder}"
             }

@@ -76,7 +76,8 @@ class OrderProcessor:
             mail.Send()
             
         except Exception as e:
-            Log().add_log(f"Error sending email to medical center: {e}")
+            Log().add_error_log(f"Error sending email to medical center: {e}")
+            Log().add_error_log(f"Order: {study} {site} {ivrs_number}")
 
     def processOrdersAndContactsTable(self, ordersDataFrame:pd.DataFrame) -> pd.DataFrame:
         """
@@ -111,22 +112,20 @@ class OrderProcessor:
 
             self.__export_to_excel__(ordersDataFrame)
 
-            self.queue.put("processOrdersAndContactsTable finished")
-
         except Exception as e:
-            Log().add_log(f"Error generating shipping report: {e}")
+            Log().add_error_log(f"Error generating shipping report: {e}")
 
         finally:
             try:
                 self.selectedTeam.quit_driver()
             except Exception as e:
-                Log().add_log(f"Error quitting the webpage: {e}")
+                Log().add_error_log(f"Error quitting the webpage: {e}")
             finally:
                 return ordersDataFrame
 
     # Private methods
     def __export_to_excel__(self, dataFrame: pd.DataFrame):
-        export_to_excel(dataFrame, self.folder_path_to_download)
+        export_to_excel(dataFrame, self.folder_path_to_download, "orders")
 
     def __get_shipping_tracking_number__(self, carrier_id: int, system_number: str, ivrs_number: str, 
                                     ship_date: str, ship_time_from: str, ship_time_to: str, 
@@ -213,7 +212,11 @@ class OrderProcessor:
         Args:
             ordersAndContactsDataframe (DataFrame): orders table
         """
-        email_must_be_sent = self.selectedTeam.get_data_path(["team_send_email_to_medical_centers"])
+        
+        try:
+            email_must_be_sent_to_medical_centers = self.selectedTeam.get_data_path(["team_send_email_to_medical_centers"])[0]
+        except:
+            email_must_be_sent_to_medical_centers = False
 
         for index, row in ordersAndContactsDataframe.iterrows():
             if row['TRACKING_NUMBER'] != "":
@@ -230,7 +233,7 @@ class OrderProcessor:
                 row["DELIVERY_DATE"], row["DELIVERY_TIME_FROM"], row["DELIVERY_TIME_TO"],
                 row["TYPE_OF_MATERIAL"], row["TEMPERATURE"],
                 row["CONTACTS"], row["AMOUNT_OF_BOXES_TO_SEND"],
-                row["HAS_RETURN"], row["RETURN_DELIVERY_DATE"], row["RETURN_DELIVERY_HOUR_FROM"], row["RETURN_DELIVERY_HOUR_TO"], 
+                row["HAS_RETURN"], row["RETURN_DATE"], row["RETURN_DELIVERY_HOUR_FROM"], row["RETURN_DELIVERY_HOUR_TO"], 
                 row["RETURN_TO_CARRIER_DEPOT"], row["TYPE_OF_RETURN"], row["AMOUNT_OF_BOXES_TO_RETURN"]
             )
 
@@ -243,7 +246,7 @@ class OrderProcessor:
             
             self.__printOrderDocuments__(tracking_number, return_tracking_number, row["PRINT_RETURN_DOCUMENT"])
 
-            if email_must_be_sent:
+            if email_must_be_sent_to_medical_centers:
                 try:
                     self.send_email_to_medical_center( row["STUDY"], row["SITE#"], row["IVRS_NUMBER"], 
                     row["DELIVERY_DATE"], row["DELIVERY_TIME_FROM"], row["DELIVERY_TIME_TO"], 
@@ -252,10 +255,15 @@ class OrderProcessor:
                     tracking_number, return_tracking_number,
                     row["CONTACTS"], row["MEDICAL_CENTER_EMAILS"], row["CUSTOMER_EMAIL"], row["CRA_EMAILS"], row["TEAM_EMAILS"])
                 except Exception as e:
-                    Log().add_log(f"Error sending email to medical center: {e}")
-                    Log().add_log(f"Order: {row['SYSTEM_NUMBER']} {row['IVRS_NUMBER']}")
+                    Log().add_error_log(f"Error sending email to medical center: {e}")
+                    Log().add_error_log(f"Order: {row['SYSTEM_NUMBER']} {row['IVRS_NUMBER']}")
             
-            self.__updateTreeviewLine__(index, tracking_number, return_tracking_number)
+            row_dict = row.to_dict()
+            row_dict["INDEX"] = index
+            row_dict["TRACKING_NUMBER"] = tracking_number
+            row_dict["RETURN_TRACKING_NUMBER"] = return_tracking_number
+
+            self.__updateTreeviewLine__(row_dict)
 
     def __printOrderDocuments__(self, tracking_number: str, return_tracking_number: str, print_return_document: bool) -> None:
         """
@@ -332,23 +340,20 @@ class OrderProcessor:
             )
 
         except Exception as e:
-            Log().add_log(f"Error processing order: {e}")
-            Log().add_log(f"Order: {system_number} {ivrs_number}")
+            Log().add_error_log(f"Error processing order: {e}")
+            Log().add_error_log(f"Order: {system_number} {ivrs_number}")
 
         finally:
             return tracking_number, return_tracking_number
 
-    def __updateTreeviewLine__(self, index: int, tracking_number: str, return_tracking_number: str) -> None:
+    def __updateTreeviewLine__(self, row: dict) -> None:
         """
         Updates a line in the treeview
 
         Args:
             index (int): row index
         """
-        try:
-            self.queue.put(f"update_tag_color_of_a_treeview_line({index}, {tracking_number}, {return_tracking_number})")
-        except Exception as e:
-            Log().add_log(f"Error updating treeview line: {e}")
+        self.queue.put(row)
 
     def __getEmailSourceFromTxtFile__(self, file) -> str:
             with open(file, 'r') as file:

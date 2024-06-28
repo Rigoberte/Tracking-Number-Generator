@@ -10,6 +10,8 @@ class DataRecolector:
     def __init__(self, aTeam: Team, queue: queue.Queue = queue.Queue()):
         self.selectedTeam = aTeam
         self.queue = queue
+        self.memo_of_transit_per_ship_and_delivery_dates = {}
+        self.memo_of_return_date_per_delivery_date_and_transit = {}
 
         self.columns_df = ['SYSTEM_NUMBER', 'IVRS_NUMBER', 'CUSTOMER', 'STUDY', 'SITE#',
                 'SHIP_DATE', 'SHIP_TIME_FROM', 'SHIP_TIME_TO', 
@@ -53,11 +55,14 @@ class DataRecolector:
             ordersAndContactsDataframe["HAS_AN_ERROR"] = ordersAndContactsDataframe.apply(self.__checkErrorsOnEachOrder__, axis=1)
             ordersAndContactsDataframe.fillna("", inplace=True)
 
-            self.queue.put("recolectOrdersAndContactsData finished")
+            self.queue.put(ordersAndContactsDataframe[self.columns_df])
+
+            self.memo_of_transit_per_ship_and_delivery_dates = {}
+            self.memo_of_return_date_per_delivery_date_and_transit = {}
 
             return ordersAndContactsDataframe[self.columns_df]
         except Exception as e:
-            Log().add_log(f"Error recolecting orders and contacts data: {e}")
+            Log().add_error_log(f"Error recolecting orders and contacts data: {e}")
             return self.getEmptyOrdersAndContactsData()
 
     def getEmptyOrdersAndContactsData(self) -> pd.DataFrame:
@@ -110,7 +115,7 @@ class DataRecolector:
 
         notWorkingDaysList = self.__load_not_working_days__(team)
         
-        ordersDataFrame["TRANSIT"] = ordersDataFrame.apply(lambda x: self.__calculate_transit_days_for_returns__(x["SHIP_DATE"], x["DELIVERY_DATE"]), axis=1)
+        ordersDataFrame["TRANSIT"] = ordersDataFrame.apply(lambda x: self.__calculate_transit_days_for_returns__(x["SHIP_DATE"], x["DELIVERY_DATE"], notWorkingDaysList), axis=1)
         ordersDataFrame["RETURN_DATE"] = ordersDataFrame.apply(lambda x: self.__calculate_return_date__(x["HAS_RETURN"], x["DELIVERY_DATE"], x["TRANSIT"], notWorkingDaysList), axis=1)
         
         ordersDataFrame["SHIP_DATE"] = ordersDataFrame["SHIP_DATE"].dt.strftime('%d/%m/%Y')
@@ -205,7 +210,7 @@ class DataRecolector:
         path_from_get_data, contacts_sheet = team.get_data_path(["team_excel_path", "team_contacts_sheet"])
         columns_names, columns_types = team.get_column_rename_type_config_for_contacts_table()
 
-        contactsDataFrame = team.readSitesExcel(path_from_get_data, contacts_sheet, columns_types)
+        contactsDataFrame = team.readContactsExcel(path_from_get_data, contacts_sheet, columns_types)
         contactsDataFrame.rename(columns=columns_names, inplace=True)
 
         return contactsDataFrame
@@ -248,7 +253,19 @@ class DataRecolector:
             row (Series): order row
         """
         def assertIfIsNotNull(cell: str) -> bool:
-            return cell != "" and cell != "nan"
+            if isinstance(cell, str):
+                if cell == "" or cell.lower() == "nan" or pd.isna(cell):
+                    return False
+            elif pd.isna(cell):
+                return False
+            
+            try:
+                return not np.isnan(float(cell))
+            except (ValueError, TypeError):
+                return True
+
+        def assertIfSystemNumberIsNotEmpty(row: pd.Series) -> bool:
+            return assertIfIsNotNull(row['SYSTEM_NUMBER'])
 
         def assetIfCustomerIsNotEmpty(row: pd.Series) -> bool:
             return assertIfIsNotNull(row['CUSTOMER'])
@@ -266,7 +283,15 @@ class DataRecolector:
             return assertIfIsNotNull(row['DELIVERY_DATE'])
         
         def assertIfAreValidDates(row: pd.Series) -> bool:
-            return (row['SHIP_DATE'] <= row['DELIVERY_DATE']) and (row['SHIP_DATE'] >= dt.datetime.now().strftime('%d/%m/%Y'))
+            today = dt.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+
+            shipdate = str(row['SHIP_DATE']).split("/")
+            shipdate = dt.datetime(year=int(shipdate[2]), month=int(shipdate[1]), day=int(shipdate[0]))
+
+            deliverydate = str(row['DELIVERY_DATE']).split("/")
+            deliverydate = dt.datetime(year=int(deliverydate[2]), month=int(deliverydate[1]), day=int(deliverydate[0]))
+
+            return ( today <= shipdate and shipdate <= deliverydate )
 
         def assertIfShipTimeFromIsNotEmpty(row: pd.Series) -> bool:
             return assertIfIsNotNull(row['SHIP_TIME_FROM'])
@@ -293,7 +318,7 @@ class DataRecolector:
             return row['TYPE_OF_MATERIAL'] in ["Medicine", "Ancillary", "Equipment"]
 
         def assertIfAmountOfBoxesAreValid(row: pd.Series) -> bool:
-            return row['AMOUNT_OF_BOXES_TO_SEND'] > 0
+            return type(row['AMOUNT_OF_BOXES_TO_SEND']) == int and row['AMOUNT_OF_BOXES_TO_SEND'] > 0
         
         def assertIfCarrier_IDIsNotEmpty(row: pd.Series) -> bool:
             return assertIfIsNotNull(row['CARRIER_ID'])
@@ -305,12 +330,21 @@ class DataRecolector:
             return row['TEMPERATURE'] in ["Ambient", "Controlled Ambient", "Refrigerated", "Frozen", "Refrigerated with Dry Ice", "Frozen with Liquid Nitrogen"]
         
         def assertIfNumberOfBoxesToReturnIsValid(row: pd.Series) -> bool:
-            return row['AMOUNT_OF_BOXES_TO_RETURN'] <= row['AMOUNT_OF_BOXES_TO_SEND']
+            return type(row['AMOUNT_OF_BOXES_TO_RETURN']) == int and (row['AMOUNT_OF_BOXES_TO_RETURN'] >= 0) and (row['AMOUNT_OF_BOXES_TO_RETURN'] <= row['AMOUNT_OF_BOXES_TO_SEND'])
         
         def assertIfTypeOfReturnIsValid(row: pd.Series) -> bool:
             return row['TYPE_OF_RETURN'] in ["CREDO", "DATALOGGER", "CREDO AND DATALOGGER", "NA"]
         
+        def assertIfHasReturnIsNotEmpty(row: pd.Series) -> bool:
+            return assertIfIsNotNull(row['HAS_RETURN'])
+        
+        def assertIfReturnToCarrierDepotIsNotEmpty(row: pd.Series) -> bool:
+            return assertIfIsNotNull(row['RETURN_TO_CARRIER_DEPOT'])
+        
         errors = ""
+
+        if not assertIfSystemNumberIsNotEmpty(row):
+            errors += "No system number; "
 
         if not assetIfCustomerIsNotEmpty(row):
             errors += "No customer; "
@@ -321,7 +355,8 @@ class DataRecolector:
         if not assertIfSiteIsNotEmpty(row):
             errors += "No site; "
 
-        if not assertIfShipDateIsNotEmpty(row):
+        shipDateIsNotEmpty = assertIfShipDateIsNotEmpty(row)
+        if not shipDateIsNotEmpty:
             errors += "No ship date; "
 
         if not assertIfShipTimeFromIsNotEmpty(row):
@@ -333,20 +368,21 @@ class DataRecolector:
         if not assertIfAreValidShipTimes(row):
             errors += "Invalid ship times; "
 
-        if not assertIfDeliveryDateIsNotEmpty(row):
+        deliveryDateIsNotEmpty = assertIfDeliveryDateIsNotEmpty(row)
+        if not deliveryDateIsNotEmpty:
             errors += "No delivery date; "
         
-        if not assertIfDeliveryTimeFromIsNotEmpty:
+        if not assertIfDeliveryTimeFromIsNotEmpty(row):
             errors += "No delivery time from; "
 
-        if not assertIfDeliveryTimeToIsNotEmpty:
+        if not assertIfDeliveryTimeToIsNotEmpty(row):
             errors += "No delivery time to; "
         
         if not assertIfAreValidDeliveryTimes(row):
             errors += "Invalid delivery times; "
 
-        #if not assertIfAreValidDates(row):
-        #    errors += "Invalid dates; "
+        if shipDateIsNotEmpty and deliveryDateIsNotEmpty and not assertIfAreValidDates(row):
+            errors += "Invalid dates; "
 
         if not assertIfTypeOfMaterialIsNotEmpty(row):
             errors += "No type of material; "
@@ -368,6 +404,12 @@ class DataRecolector:
 
         if not assertIfTypeOfReturnIsValid(row):
             errors += "Invalid type of return; "
+
+        if not assertIfHasReturnIsNotEmpty(row):
+            errors += "No has return; "
+
+        if not assertIfReturnToCarrierDepotIsNotEmpty(row):
+            errors += "No return to carrier depot; "
 
         if row['HAS_RETURN'] and not assertIfNumberOfBoxesToReturnIsValid(row):
             errors += "Invalid number of boxes to return; "
@@ -396,7 +438,7 @@ class DataRecolector:
         dataFrame[column] = pd.to_datetime(dataFrame[column], format='%d/%m/%Y', errors='coerce')
         return dataFrame[column]
     
-    def __calculate_transit_days_for_returns__(self, shipDate: dt.datetime, deliveryDate: dt.datetime) -> int:
+    def __calculate_transit_days_for_returns__(self, shipDate: dt.datetime, deliveryDate: dt.datetime, notWorkingDaysList: list) -> int:
         """
         Calculates the transit days
 
@@ -404,10 +446,41 @@ class DataRecolector:
             shipDate (dt.datetime): ship date
             deliveryDate (dt.datetime): delivery date
         """
-        if deliveryDate is None or shipDate is None:
+        if deliveryDate is None or shipDate is None or pd.isna(deliveryDate) or pd.isna(shipDate):
             return 1
         
-        return max((deliveryDate - shipDate).days, 1)
+        if (shipDate, deliveryDate) in self.memo_of_transit_per_ship_and_delivery_dates:
+            return self.memo_of_transit_per_ship_and_delivery_dates[(shipDate, deliveryDate)]
+        
+        amount_of_days_until_next_working_day = self.__amount_of_days_until_next_working_day__(shipDate + dt.timedelta(days=1) , notWorkingDaysList)
+
+        transitWithOutWeekend = (deliveryDate - shipDate).days - amount_of_days_until_next_working_day
+
+        self.memo_of_transit_per_ship_and_delivery_dates[(shipDate, deliveryDate)] = max(transitWithOutWeekend, 1)
+
+        return self.memo_of_transit_per_ship_and_delivery_dates[(shipDate, deliveryDate)]
+
+    def __is_a_working_day__(self, date: dt.datetime, notWorkingDaysList: list) -> bool:
+        """
+        Checks if a date is a working day
+
+        Args:
+            date (dt.datetime): date to process
+        """
+        return date.weekday() <= 4 and date not in notWorkingDaysList
+
+    def __amount_of_days_until_next_working_day__(self, date: dt.datetime, notWorkingDaysList: list) -> int:
+        """
+        Returns the amount of days until the next working day
+
+        Args:
+            date (dt.datetime): date to process
+        """
+        days = 0
+        while not self.__is_a_working_day__(date + dt.timedelta(days=days), notWorkingDaysList):
+            days += 1
+
+        return days
 
     def __calculate_return_date__(self, hasReturn: bool, deliveryDate: dt.datetime, transitDays: int, notWorkingDaysList: list) -> dt.datetime:
         """
@@ -423,11 +496,17 @@ class DataRecolector:
         if pd.isna(deliveryDate) or np.isnan(transitDays):
             return None
         
-        nextWorkingDay = self.__nextWorkingDay__(deliveryDate + dt.timedelta(days=1), notWorkingDaysList)
+        if (deliveryDate, transitDays) in self.memo_of_return_date_per_delivery_date_and_transit:
+            return self.memo_of_return_date_per_delivery_date_and_transit[(deliveryDate, transitDays)]
+        
+        nextWorkingDay = self.__nextWorkingDay__(deliveryDate, notWorkingDaysList)
 
-        nextWorkingDayWithTransitDays = self.__nextWorkingDay__(nextWorkingDay + dt.timedelta(days=transitDays-1), notWorkingDaysList)
+        #next WorkingDay With Transit Days
+        returnDate = self.__nextWorkingDay__(nextWorkingDay + dt.timedelta(days=transitDays), notWorkingDaysList)
 
-        return nextWorkingDayWithTransitDays
+        self.memo_of_return_date_per_delivery_date_and_transit[(deliveryDate, transitDays)] = returnDate
+
+        return self.memo_of_return_date_per_delivery_date_and_transit[(deliveryDate, transitDays)]
 
     def __nextWorkingDay__(self, date: dt.datetime, notWorkingDaysList: list) -> dt.datetime:
         """
@@ -436,8 +515,8 @@ class DataRecolector:
         Args:
             date (dt.datetime): date to process
         """
-        while date.weekday() > 4 or date in notWorkingDaysList:
-            date += dt.timedelta(days=1)
+        
+        date += dt.timedelta(days= self.__amount_of_days_until_next_working_day__(date, notWorkingDaysList) )
 
         return date
 
@@ -497,8 +576,16 @@ class DataRecolector:
                                     right_on=["STUDY", "SITE#", "TYPE_OF_MATERIAL_CAN_RECEIVE"], 
                                     how="left")
 
-        ordersAndContactsDataframe["DELIVERY_TIME_FROM"] = ordersAndContactsDataframe["DELIVERY_TIME_FROM_x"].replace('', '00:00').fillna(ordersAndContactsDataframe["DELIVERY_TIME_FROM_y"])
-        ordersAndContactsDataframe["DELIVERY_TIME_TO"] = ordersAndContactsDataframe["DELIVERY_TIME_TO_x"].replace('', '00:00').fillna(ordersAndContactsDataframe["DELIVERY_TIME_TO_y"])
+        ordersAndContactsDataframe["DELIVERY_TIME_FROM"] = ordersAndContactsDataframe.apply(
+            lambda row: row["DELIVERY_TIME_FROM_y"] if row["DELIVERY_TIME_FROM_x"] in ['', '00:00', None] else row["DELIVERY_TIME_FROM_x"],
+            axis=1
+        )
+
+
+        ordersAndContactsDataframe["DELIVERY_TIME_TO"] = ordersAndContactsDataframe.apply(
+            lambda row: row["DELIVERY_TIME_TO_y"] if row["DELIVERY_TIME_TO_x"] in ['', '00:00', None] else row["DELIVERY_TIME_TO_x"],
+            axis=1
+        )
 
         ordersAndContactsDataframe = ordersAndContactsDataframe.drop(columns=["DELIVERY_TIME_FROM_x", "DELIVERY_TIME_TO_x", "DELIVERY_TIME_FROM_y", "DELIVERY_TIME_TO_y"])
 

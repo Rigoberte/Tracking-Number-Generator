@@ -1,200 +1,124 @@
 import pandas as pd
-import datetime as dt
-import time
-import os
-
-from userForms.mains.mainUserForm import MyUserForm
-from userForms.logins.logInUserForm import LogInUserForm
-from userForms.mains.logConsole import LogConsole
-from dataRecolector.dataRecolector import DataRecolector
-from orderProcessor.orderProcessor import OrderProcessor
-from teams.team import Team
-from teams.team_factory import TeamFactory
-from logClass.log import Log
-from dataPathController.dataPathController import DataPathController
-from userForms.mains.configUserForm import ConfigUserForm
-from utils.utils import getFolderPathToDownload, create_folder
+import queue
 
 class Controller:
-    def __init__(self):
-        self.selected_team = TeamFactory().create_team("No Selected Team", "")
-        self.ordersAndContactsDataframe = self.getEmptyOrdersAndContactsData()
-        Log().add_log("Application started")
+    def __init__(self, model, view):
+        self.model = model
+        self.view = view
 
     def showMainUserForm(self) -> None:
-        self.mainUserForm = MyUserForm(self)
-        self.mainUserForm.show_userform()
+        self.view.get_main_userform_root().after(100, self.check_queue)
+        self.view.show_mainUserForm_and_connect_with_controller(controller=self)
 
     def destroyMainUserForm(self) -> None:
-        self.mainUserForm.hide_userform()
-
-    def showLogInUserForm(self) -> None:
-        self.logInUserForm = LogInUserForm(self)
-        self.logInUserForm.show_userform()
+        self.view.destroyMainUserForm()
 
     def destroyLogInUserForm(self) -> None:
-        self.logInUserForm.hide_userform()
+        self.view.hide_userform()
 
     def on_log_btn_click(self) -> None:
-        LogConsole(self).show_userform()
+        self.view.on_log_btn_click(controller=self)
 
     def on_loadOrders_btn_click(self) -> None:
-        selected_team_name = self.mainUserForm.getSelectedTeamName()
-        selected_date = self.mainUserForm.getSelectedDate()
+        selected_team_name = self.view.get_selected_team_name()
+        selected_date = self.view.get_selected_date()
 
-        self.__loadOrdersAndCalculateTime__(selected_team_name, selected_date)
-        self.mainUserForm.update_ordersAndContactsDataframe_and_widgets(self.ordersAndContactsDataframe)
+        self.model.on_loadOrders_btn_click(selected_team_name, selected_date)
 
     def on_clearOrders_btn_click(self) -> None:
-        self.ordersAndContactsDataframe = self.getEmptyOrdersAndContactsData()
-        self.mainUserForm.update_ordersAndContactsDataframe_and_widgets(self.ordersAndContactsDataframe)
-        Log().add_log("Orders table cleaned")
+        self.model.on_clearOrders_btn_click()
+        self.view.on_clearOrders_btn_click()
 
     def on_processOrders_btn_click(self) -> None:
-        self.showLogInUserForm()
+        self.view.on_processOrders_btn_click(self)
 
     def validate_login(self) -> None:
-        username = self.logInUserForm.get_username()
-        password = self.logInUserForm.get_password()
+        username = self.view.get_username_from_logInUserForm()
+        password = self.view.get_password_from_logInUserForm()
 
-        self.selected_team.build_driver()
-        if self.selected_team.check_if_user_and_password_are_correct(username, password):
+        if self.model.validate_login(username, password):
             # WebDriver keeps built
             self.on_login_successful()
         else:
-            self.logInUserForm.clear_password_entry()
-            self.selected_team.quit_driver()
             self.on_login_failed()
 
     def on_login_failed(self) -> None:
-        self.logInUserForm.show_login_failed()
+        self.model.on_login_failed()
+        self.view.on_login_failed()
 
     def on_login_successful(self) -> None:
-        self.destroyLogInUserForm()
-        
-        self.ordersAndContactsDataframe = self.__processOrdersAndCalculateTime__(
-                                        self.selected_team, self.selected_date,
-                                        self.folder_path_to_download, self.ordersAndContactsDataframe)
+        self.view.destroyLogInUserForm()
+        self.model.on_login_successful()
 
-        self.mainUserForm.update_ordersAndContactsDataframe_and_widgets(self.ordersAndContactsDataframe)
-
-    def update_tag_color_of_a_treeview_line(self, index: int, tracking_number: str, return_tracking_number: str) -> None:
-        self.mainUserForm.update_tag_color_of_a_treeview_line(self.ordersAndContactsDataframe, index, tracking_number, return_tracking_number)
-        self.mainUserForm.increase_amount_of_orders_processed()
+    def update_a_line_to_processed_of_represented_ordersAndContactsDataframe(self, index: int, tracking_number: str, return_tracking_number: str) -> None:
+        self.view.update_a_line_to_processed_of_represented_ordersAndContactsDataframe(index, tracking_number, return_tracking_number)
 
     def getEmptyOrdersAndContactsData(self) -> pd.DataFrame:
-        no_selected_team = TeamFactory().create_team("No Selected Team", "")
-        return DataRecolector(no_selected_team).getEmptyOrdersAndContactsData()
+        return self.model.getEmptyOrdersAndContactsData()
 
     def getTeamsNames(self) -> list:
-        return ["Eli Lilly Argentina", "GPM Argentina", "Test_5_ordenes"]
+        return self.model.getTeamsNames()
 
-    def addToLog(self, text: str) -> None:
-        Log().add_log(text)
+    def add_error_log(self, text: str) -> None:
+        self.model.add_error_log(text)
 
-    def get_last_n_logs(self, n: int) -> list:
-        return Log().print_last_n_logs(n)
+    def add_warning_log(self, text: str) -> None:
+        self.model.add_warning_log(text)
+
+    def add_info_log(self, text: str) -> None:
+        self.model.add_info_log(text)
+
+    def print_logs(self) -> pd.DataFrame:
+        return self.model.print_logs()
+
+    def print_last_n_logs(self, n: int) -> pd.DataFrame:
+        return self.model.print_last_n_logs(n)
 
     def config_button_on_click(self) -> None:
-        self.configUserForm = ConfigUserForm(self)
-        self.configUserForm.show_userform()
+        self.view.config_button_on_click(controller = self)
+        self.update_widgets_from_configUserForm()
+
+    def update_widgets_from_configUserForm(self) -> None:
+        team_name = self.view.get_selected_team_name_on_config()
+        config = self.get_config_of_a_team(team_name)
+        self.view.update_widgets_from_configUserForm(config)
 
     def get_config_of_a_team(self, teamName: str) -> str:
-        return DataPathController().get_config_of_a_team(teamName)
+        return self.model.get_config_of_a_team(teamName)
     
     def on_click_save_config_button(self) -> None:
-        teamName = self.configUserForm.getSelectedTeamName()
-        team_excel_path = self.configUserForm.getTeamExcelPath()
-        team_orders_sheet = self.configUserForm.getTeamOrdersSheet()
-        team_contacts_sheet = self.configUserForm.getTeamContactsSheet()
-        team_not_working_days_sheet = self.configUserForm.getTeamNotWorkingDaysSheet()
-        team_send_email_to_medical_centers = self.configUserForm.getSendEmailVar()
+        teamName = self.view.get_selected_team_name_on_config()
+        team_excel_path = self.view.get_team_excel_path_from_configUserForm()
+        team_orders_sheet = self.view.get_team_orders_sheet_from_configUserForm()
+        team_contacts_sheet = self.view.get_team_contacts_sheet_from_configUserForm()
+        team_not_working_days_sheet = self.view.get_team_not_working_days_sheet_from_configUserForm()
+        team_send_email_to_medical_centers = self.view.get_team_send_email_to_medical_centers_from_configUserForm()
 
-        DataPathController().redefine_a_config_of_a_team(teamName, 
-            {
-            "team_excel_path": team_excel_path,
-            "team_orders_sheet": team_orders_sheet,
-            "team_contacts_sheet": team_contacts_sheet,
-            "team_not_working_days_sheet": team_not_working_days_sheet,
-            "team_send_email_to_medical_centers": team_send_email_to_medical_centers
-            }
-        )
+        self.model.on_click_save_config_button(
+            teamName,
+            team_excel_path,
+            team_orders_sheet,
+            team_contacts_sheet,
+            team_not_working_days_sheet,
+            team_send_email_to_medical_centers)
 
     def on_open_excel_double_btn_click(self) -> None:
-        temporal_selected_team_name = self.mainUserForm.getSelectedTeamName()
-        temporal_selected_team = TeamFactory().create_team(temporal_selected_team_name, "")
+        temporal_selected_team_name = self.view.get_selected_team_name()
+        self.model.on_open_excel_double_btn_click(temporal_selected_team_name)
 
-        excel_dataPath = temporal_selected_team.get_data_path(["team_excel_path"])
-
+    def on_export_logs_to_csv(self) -> None:
         try:
-            if excel_dataPath[0] == "" or not os.path.exists(excel_dataPath[0]) or not excel_dataPath[0].endswith(".xlsx"):
-                Log().add_log("Excel file path not found")
-                return
-                
-            os.startfile(excel_dataPath[0])
+            self.model.on_export_logs_to_csv()
+            self.view.show_success_export_to_csv()
         except Exception as e:
-            Log().add_log(f"Error opening Excel file: {e}")
+            self.add_error_log(f"Error exporting logs to csv: {e}")
+            self.view.show_failure_export_to_csv()
 
-    def __loadOrders__(self, selected_team_name: str, selected_date: str) -> pd.DataFrame:
-        self.folder_path_to_download = getFolderPathToDownload(selected_team_name, selected_date.replace("/", "_"))
-        self.selected_team = TeamFactory().create_team(selected_team_name, self.folder_path_to_download)
-
-        self.selected_date = dt.datetime.strptime(selected_date, '%Y-%m-%d')
-        self.ordersAndContactsDataframe = DataRecolector(self.selected_team).recolectOrdersAndContactsData(self.selected_date)
-
-        return self.ordersAndContactsDataframe
-
-    def __loadOrdersAndCalculateTime__(self, selected_team_name: str, selected_date: str) -> pd.DataFrame:
-        Log().add_separator()
-        Log().add_log(f"Start loading orders for {selected_team_name} team")
-        
-        time0 = time.time()
-        ordersAndContactsDataframe = self.__loadOrders__(selected_team_name, selected_date)
-        time1 = time.time()
-        total_time = time1 - time0
-        total_time_with_2_decimals = round(total_time, 2)
-
-        Log().add_log(f"End loading orders")
-        Log().add_log(f"Total loading time: {total_time_with_2_decimals} s")
-
-        return ordersAndContactsDataframe
-
-    def __processOrders__(self, selected_team: Team, selected_date: dt.datetime, folder_path_to_download: str, ordersAndContactsDataframe: pd.DataFrame) -> pd.DataFrame:
-        create_folder(folder_path_to_download)
-
-        ordersAndContactsDataframe = OrderProcessor(folder_path_to_download, selected_team, self).processOrdersAndContactsTable(ordersAndContactsDataframe)
-        
-        selected_date_str = selected_date.strftime("%Y-%m-%d")
-        
-        selected_team.sendEmailWithOrdersToTeam(folder_path_to_download, selected_date_str)
-
-        return ordersAndContactsDataframe
-
-    def __processOrdersAndCalculateTime__(self, selected_team: Team, selected_date: dt.datetime, folder_path_to_download: str, ordersAndContactsDataframe: pd.DataFrame) -> pd.DataFrame:
-        amountOfOrdersToProcess = len(ordersAndContactsDataframe[(ordersAndContactsDataframe["TRACKING_NUMBER"] == "") & (ordersAndContactsDataframe["HAS_AN_ERROR"] == "No error")])
-        
-        Log().add_log(f"Start processing orders")
-        
-        time0 = time.time()
-        self.ordersAndContactsDataframe = self.__processOrders__(
-                                        selected_team, selected_date,
-                                        folder_path_to_download, ordersAndContactsDataframe)
-        time1 = time.time()
-        total_time = time1 - time0
-        total_time_with_2_decimals = round(total_time, 2)
-        
-        Log().add_log(f"End processing orders")
-        Log().add_log(f"Total processing time: {total_time_with_2_decimals} s for {amountOfOrdersToProcess} orders")
-
-        if amountOfOrdersToProcess == 0:
-            avarage_time_with_2_decimals = 0.00
-        else:
-            avarage_time_with_2_decimals = round(total_time / amountOfOrdersToProcess, 2)
-
-        Log().add_log(f"Average processing time: {avarage_time_with_2_decimals} s")
-
-        return ordersAndContactsDataframe
-    
-# Initializer
-if __name__ == "__main__":
-    Controller().showMainUserForm()
+    def check_queue(self) -> None:
+        try:
+            while True:
+                task = self.model.queue.get_nowait()
+                self.view.queue_action(task)
+        except queue.Empty:
+            pass
+        self.view.get_main_userform_root().after(100, self.check_queue)

@@ -7,7 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from carriersWebpage.carrierWebPage import CarrierWebpage
 from logClass.log import Log
 
-class CARRIER_NAME(CarrierWebpage):
+class CarrierWebpageForTesting(CarrierWebpage):
     def __init__(self, folder_path_to_download: str = ""):
         """
         Class constructor for Transportes Ambientales
@@ -18,10 +18,10 @@ class CARRIER_NAME(CarrierWebpage):
         self.folder_path_to_download = folder_path_to_download
 
     def build_driver(self) -> None:
-        self.driver, self.wait = self.__build_driver__(self.folder_path_to_download)
+        pass
 
     def quit_driver(self) -> None:
-        self.__quit_driver__(self.driver)
+        pass
 
     def check_if_user_and_password_are_correct(self, username: str, password: str) -> bool:
         """
@@ -32,15 +32,10 @@ class CARRIER_NAME(CarrierWebpage):
             username (str): username
             password (str): password
         """
-        self.driver.get("www.google.com")
-        
         self.complete_login_form(username, password)
 
         try:
-            # here you should check if the login was successful 
-            raise NotImplementedError("Method not implemented")
-
-            return True
+            return username == "username" and password == "password"
         except Exception as e:
             Log().add_error_log(f"Error logging in webpage: {e}")
         
@@ -56,8 +51,7 @@ class CARRIER_NAME(CarrierWebpage):
             username (str): username
             password (str): password
         """
-        # here you should complete the login form
-        raise NotImplementedError("Method not implemented")
+        pass
 
     def complete_shipping_order_form(self, carrier_id: str, reference: str, 
                                 ship_date: str, ship_time_from: str, ship_time_to: str, 
@@ -65,13 +59,23 @@ class CARRIER_NAME(CarrierWebpage):
                                 type_of_material: str, temperature: str,
                                 contacts: str, amount_of_boxes: int) -> str:
         tracking_number = ""
-        url = "www.google.com"
 
         try:
-            self.driver.get(url)
-
-            # Here you should complete the shipping order form
-            raise NotImplementedError("Method not implemented")
+            if (ship_date == ""):
+                raise Exception("Ship date is empty")
+            
+            if (delivery_date == ""):
+                raise Exception("Delivery date is empty")
+            
+            if (type_of_material == ""):
+                raise Exception("Type of material is empty")
+            
+            if (temperature == ""):
+                raise Exception("Temperature is empty")
+            
+            time.sleep(2) # Simulate time to complete form
+            
+            tracking_number = f"sucessful tracking number for order {reference}"
             
         except Exception as e:
             Log().add_error_log(f"Error completing shipping order form: {e}")
@@ -86,12 +90,18 @@ class CARRIER_NAME(CarrierWebpage):
                                             contacts: str, amount_of_boxes_to_return: int,
                                             return_to_carrier_depot: bool, tracking_number: str) -> str:
         return_tracking_number = ""
-        url_return = "www.google.com"
 
         try:
             
-            # Here you should complete the shipping order return form
-            raise NotImplementedError("Method not implemented")
+            if (delivery_date == ""):
+                raise Exception("Delivery date is empty")
+            
+            if (type_of_return == ""):
+                raise Exception("Type of return is empty")
+            
+            time.sleep(2) # Simulate time to complete form
+            
+            return_tracking_number = f"sucessful return tracking number for order {reference_return}"
 
         except Exception as e:
             Log().add_error_log(f"Error completing shipping order return form: {e}")
@@ -102,25 +112,10 @@ class CARRIER_NAME(CarrierWebpage):
             return return_tracking_number
     
     def printWayBillDocument(self, tracking_number: str, amount_of_copies: int) -> None:
-        url_guias = "www.google.com"
-
-        # Here you should print way bill document
-        raise NotImplementedError("Method not implemented")
-    
-        self.__print_webpage__(url_guias)
+        pass
 
     def printLabelDocument(self, tracking_number: str) -> None:
-        url_rotulo = "www.google.com"
-
-        # Here you should print label document
-        raise NotImplementedError("Method not implemented")
-    
-        self.__print_webpage__(url_rotulo)
+        pass
 
     def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int) -> None:
-        url_guias_return = "www.google.com"
-
-        # Here you should print return way bill document
-        raise NotImplementedError("Method not implemented")
-    
-        self.__print_webpage__(url_guias_return)
+        pass

@@ -3,44 +3,56 @@ import tkinter as tk
 import tkinter.ttk as ttk
 
 class ConfigUserForm(tk.Tk):
-    def __init__(self, controller=None):
+    def __init__(self):
         super().__init__()
-        self.controller = controller
-
+        
         self.title("Config")
         self.geometry("800x300")
 
-        self.send_email_var = tk.BooleanVar()
+        self.send_email_var = tk.IntVar()
+        self.__create_widgets__()
 
-    def getSelectedTeamName(self) -> str:
+    def get_selected_team_name(self) -> str:
         return self.teams_combobox.get()
     
-    def getTeamExcelPath(self) -> str:
+    def get_team_excel_path(self) -> str:
         return self.team_excel_path.get()
     
-    def getTeamOrdersSheet(self) -> str:
+    def get_team_orders_sheet(self) -> str:
         return self.team_orders_sheet.get()
     
-    def getTeamContactsSheet(self) -> str:
+    def get_team_contacts_sheet(self) -> str:
         return self.team_contacts_sheet.get()
     
-    def getTeamNotWorkingDaysSheet(self) -> str:
+    def get_team_not_working_days_sheet(self) -> str:
         return self.team_not_working_days_sheet.get()
     
-    def getSendEmailVar(self) -> bool:
-        return self.send_email_var.get()
+    def get_team_send_email_to_medical_centers(self) -> bool:
+        return self.send_email_var.get() == 1
 
     def show_userform(self) -> None:
-        self.__create_widgets__()
-        self.__update_widgets__()
         self.mainloop()
 
     def hide_userform(self) -> None:
         self.destroy()
 
-    def __set_configs__(self, team_name: str) -> None:
-        config = self.__get_config_of_a_team__(team_name)
+    def connect_with_controller(self, controller) -> None:
+        self.teams_combobox['values'] = controller.getTeamsNames()
+        self.teams_combobox.current(0)
+
+        def __on_click_teams_combobox__(event):
+            controller.update_widgets_from_configUserForm()
+
+        self.teams_combobox.bind("<<ComboboxSelected>>", __on_click_teams_combobox__)
         
+        self.save_button.configure(command=controller.on_click_save_config_button)
+
+        controller.update_widgets_from_configUserForm()
+
+    def update_widgets(self, config: dict) -> None:
+        self.__set_configs__(config)
+
+    def __set_configs__(self, config: dict) -> None:
         self.team_excel_path.delete(0, tk.END)
         self.team_excel_path.insert(0, config["team_excel_path"])
 
@@ -53,17 +65,8 @@ class ConfigUserForm(tk.Tk):
         self.team_not_working_days_sheet.delete(0, tk.END)
         self.team_not_working_days_sheet.insert(0, config["team_not_working_days_sheet"])
 
-        self.send_email_var.set(config["team_send_email_to_medical_centers"])
-
-    def __update_widgets__(self) -> None:
-        team_name = self.teams_combobox.get()
-        self.__set_configs__(team_name)
-
-    def __on_click_teams_combobox__(self, event) -> None:
-        self.__update_widgets__()
-
-    def __get_config_of_a_team__(self, team_name: str) -> None:
-        return self.controller.get_config_of_a_team(team_name)
+        self.send_email_var.set(1 if config['team_send_email_to_medical_centers'] else 0)
+        self.send_email_toggle_button.invoke()
 
     def __create_frames__(self) -> dict:
         frames = {}
@@ -123,11 +126,9 @@ class ConfigUserForm(tk.Tk):
     def __create_widgets__(self) -> None:
         frames = self.__create_frames__()
         
-        teams = self.controller.getTeamsNames()
-
-        self.teams_combobox = ttk.Combobox(frames["top_frame"], values=teams)
+        self.teams_combobox = ttk.Combobox(frames["top_frame"], values=[""])
         self.teams_combobox.pack(fill=tk.X, expand=True, side=tk.RIGHT)
-        self.teams_combobox.set(teams[0])
+        self.teams_combobox.set("")
 
         self.team_excel_path = self.__create_entry_with_label__(frames["excel_path_frame"], "Excel path", "", and_button_to_open_file_dialog=True)
 
@@ -137,16 +138,8 @@ class ConfigUserForm(tk.Tk):
 
         self.team_not_working_days_sheet = self.__create_entry_with_label__(frames["not_working_days_sheet_frame"], "Not working days sheet", "")
 
-        self.teams_combobox.bind("<<ComboboxSelected>>", self.__on_click_teams_combobox__)
-
         self.send_email_toggle_button = ttk.Checkbutton(frames["send_email_button_frame"], text="Send email", variable=self.send_email_var)
         self.send_email_toggle_button.pack(fill=tk.X)
 
-        save_button = ctk.CTkButton(frames["bottom_bottom_frame"], text="Save", command=self.__on_click_save__)
-        save_button.pack(fill=tk.X)
-
-    def __on_click_save__(self) -> None:
-        self.controller.on_click_save_config_button()
-    
-if __name__ == "__main__":
-    ConfigUserForm().show_userform()
+        self.save_button = ctk.CTkButton(frames["bottom_bottom_frame"], text="Save")
+        self.save_button.pack(fill=tk.X)

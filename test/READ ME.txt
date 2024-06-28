@@ -1,0 +1,3 @@
+I add some test in the team called "Team Test" which has a Carrier Webpage Object Simulator for testing.
+
+In the next update i will add all the tests. I would have liked to have developed this system using TDD but I learned TDD during the second half of the development

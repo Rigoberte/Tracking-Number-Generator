@@ -15,12 +15,12 @@
 
     + Implementar coordinacion de cada envio, y que no tome el horario automatico -- Solucionado
 
-    + Agregar Condicion Hielo Seco: 
-    ---- En TranspostesAmbientales: - Solucionado
+    + Agregar Condicion Hielo Seco: -- Listo 
         ["Ambient", "Controlled Ambient", "Refrigerated", "Frozen", "Refrigerated with Dry Ice", "Frozen with Liquid Nitrogen"]
-    ---- Ver convenciones -- Solucionado
+        En TranspostesAmbientales: - Solucionado
+        Ver convenciones -- Solucionado
 
-    + Agregar Frozen
+    + Agregar Frozen -- Listo
         *Ver retornos segun los que vayan a TA y las cajas frozen (20M) que vuelven a FCS - Solucionado
 
     + Si Lilly cambia la temp a amb controlado, no crea el retorno -- Lo dejo asi a proposito
@@ -30,22 +30,45 @@
         
         -- Agregar enviar o no enviar email como una opción en config -- Listo
 
-    + Reimplementar tipo de material Equipment y material tipo 2
+    + Reimplementar tipo de material Equipment y material tipo 2 -- Listo
 
-    + Agrego boton para abrir y/o actualizar el excel desde la app?
+    + Agrego boton para abrir y/o actualizar el excel desde la app? -- Listo
+
+    + Sacar responsabilidades al Controller (opcional) -- Listo
+    
+    + Implementar multi Thredering -- Listo
+
+    + Arreglar assertIfAreValidDates -- mirar justo en el cambio de mes -- Listo
+
+    + Bloquear widgets -- Listo
+
+    + Copiar al LogConsole
+
+    + Exportar Logs
+
+    + precondiccion: No deberia de poder tocar procesar sin antes cargar la tabla
+
+    + los retornos en fin de semana de por medio tienen q retornar el lunes (o siguiente dia habil)
+
 *A medio hacer --------------------------------------------------------------------------------------------------
     + Que pasa si necesitamos que las cajas tienen q empezar a venir a Fisher? Lo dejo como una opción a completar en el excel (que de momento siempre esté en la opcion que vaya a TA) ??
+
+    + Arreglar send_email 
+        - En config -- Listo
+        - En modelo al procesar
+
+    + typo de material, diferencia tipo de materail 1 de 2 al agregar contactos?
+
+    + Crear tests y objetos simuladores
+
+*No iniciado --------------------------------------------------------------------------------------------------
+    + Separar utils (opcional) - mejor, pq puedo hacer que Log utilice un util
+
+    + Emails de cada equipo se cambian desde config
 
 *Ideas descartadas --------------------------------------------------------------------------------------------------
     + Diferenciar horario de entrega segun el dia de entrega - No aplica
 
-    + Clase aparte de emailSender
+    + Clase aparte de emailSender, no son polimorficos
 
-*No iniciado --------------------------------------------------------------------------------------------------
-    + Sacar responsabilidades al Controller (opcional)
-
-    + Separar utils (opcional)
-
-    + Arreglar assertIfAreValidDates -- mirar justo en el cambio de mes
-
-    + Implementar multi Thredering
+    + Ver error al cerrar config

@@ -2,12 +2,11 @@ import tkinter as tk
 from tkinter import messagebox
 
 class LogInUserForm(tk.Tk):
-    def __init__(self, controller = None):
+    def __init__(self):
         super().__init__()
         self.title("Login Form")
         self.geometry("300x150")
-
-        self.controller = controller
+        self.__load_userform__(self)
     
     def get_username(self) -> str:
         return self.username_entry.get()
@@ -19,14 +18,10 @@ class LogInUserForm(tk.Tk):
         self.password_entry.delete(0, 'end')
 
     def show_userform(self) -> None:
-        self.__load_userform__(self)
         self.mainloop()
 
     def hide_userform(self) -> None:
         self.destroy()
-
-    def validate_login(self) -> None:
-        self.controller.validate_login()
 
     def show_login_failed(self) -> None:
         messagebox.showerror("Login Failed", "Username or Password incorrect")
@@ -44,15 +39,18 @@ class LogInUserForm(tk.Tk):
         self.password_entry = tk.Entry(root, show="*")
         self.password_entry.pack(pady=5)
 
-        def password_entry_on_return(event):
-            self.validate_login()
-        
-        self.password_entry.bind("<Return>", password_entry_on_return)
-        
         # Login Button
-        self.login_button = tk.Button(root, text="Login", command=self.validate_login)
+        self.login_button = tk.Button(root, text="Login")
         self.login_button.pack(pady=5)
         
         # Exit Button
         self.exit_button = tk.Button(root, text="Exit", command=root.quit)
         self.exit_button.pack(pady=5)
+
+    def connect_with_controller(self, controller) -> None:
+        def on_login_btn_click(event):
+            controller.validate_login()
+
+        self.password_entry.bind("<Return>", on_login_btn_click)
+
+        self.login_button.configure(command=controller.validate_login)

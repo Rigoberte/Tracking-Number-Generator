@@ -5,3 +5,4 @@ tkinter >= 8.6
 customtkinter >= 0.0.1
 tkcalendar >= 1.6.1
 PIL >= 8.0.1
+win32com.client >= 1.0.1

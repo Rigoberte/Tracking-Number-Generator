@@ -24,7 +24,7 @@ class EliLillyArgentinaTeam(Team):
             raise e
         return ordersDataFrame
     
-    def readSitesExcel(self, path_from_get_data: str, contacts_sheet: str, columns_types: dict) -> pd.DataFrame:
+    def readContactsExcel(self, path_from_get_data: str, contacts_sheet: str, columns_types: dict) -> pd.DataFrame:
         try:
             contactsDataFrame = pd.read_excel(path_from_get_data, sheet_name=contacts_sheet, dtype=columns_types, header=0)
         except Exception as e:

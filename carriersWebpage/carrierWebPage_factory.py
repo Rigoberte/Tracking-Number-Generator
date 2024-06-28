@@ -24,6 +24,10 @@ class CarrierWebPageFactory:
                 from .TransportesAmbientales import TransportesAmbientales
                 return TransportesAmbientales(folder_path_to_download)
             
+            case "Carrier Webpage For Testing":
+                from .CarrierWebpageForTesting import CarrierWebpageForTesting
+                return CarrierWebpageForTesting(folder_path_to_download)
+            
             case _:
                 from .NoCarrier import NoCarrier
                 return NoCarrier(folder_path_to_download)
@@ -35,4 +39,4 @@ class CarrierWebPageFactory:
         Returns:
             list: carrier webpage names
         """
-        return ["Transportes Ambientales"]
+        return ["Transportes Ambientales", "Carrier Webpage For Testing"]

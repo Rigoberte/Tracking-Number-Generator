@@ -50,7 +50,7 @@ def renameAllReturnFiles(ordersAndContactsDataframe: pd.DataFrame, folder_path_t
     for index, row in dataFrameWithReturnTrackingNumbers.iterrows():
         __renameReturnPDFFile__(row["RETURN_TRACKING_NUMBER"], folder_path_to_download)
 
-def export_to_excel(dataFrame: pd.DataFrame, folder_path_to_download: str):
+def export_to_excel(dataFrame: pd.DataFrame, folder_path_to_download: str, filename: str):
     """
     Exports the orders table to an excel file
 
@@ -58,10 +58,10 @@ def export_to_excel(dataFrame: pd.DataFrame, folder_path_to_download: str):
         dataFrame (DataFrame): orders table
     """
     if not dataFrame.empty:
-        dataframe_name = "orders_" + dt.datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
+        dataframe_name = filename + "_" + dt.datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
         dataFrame.to_excel(folder_path_to_download + "\\" + dataframe_name, index=False)
     else:
-        Log().add_log("Empty DataFrame")
+        Log().add_warning_log("Empty DataFrame")
 
 def zip_folder(folder_path: str, zip_path: str):
         shutil.make_archive(zip_path, 'zip', folder_path)
@@ -78,4 +78,4 @@ def __renameReturnPDFFile__(return_tracking_number: str, folder_path_to_download
         new_pdf_path = folder_path_to_download + "\\JOB " + return_tracking_number + " RETORNO DE CREDO.pdf"
         os.rename(pdf_path, new_pdf_path)
     except Exception as e:
-        Log().add_log(f"Error renaming return file: {e}")
+        Log().add_error_log(f"Error renaming return file: {e}")
