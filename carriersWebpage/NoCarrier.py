@@ -5,15 +5,17 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 
 from .carrierWebPage import CarrierWebpage
+from logClass.log import Log
 
 class NoCarrier(CarrierWebpage):
-    def __init__(self, folder_path_to_download: str = ""):
+    def __init__(self, folder_path_to_download: str, log: Log):
         """
         Class constructor for NoCarrier
 
         Args:
             driver (webdriver): selenium driver
         """
+        super().__init__(log)
         self.folder_path_to_download = folder_path_to_download
 
     def build_driver(self) -> None:

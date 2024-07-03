@@ -1,21 +1,17 @@
-import os
-
 import pandas as pd
 import datetime as dt
 from typing import Tuple
 
 from .team import Team
+from logClass.log import Log
 
 class EliLillyArgentinaTeam(Team):
-    def __init__(self, folder_path_to_download: str = ""):
+    def __init__(self, folder_path_to_download: str, log : Log):
+        super().__init__(log)
         self.carrierWebpage = self.__build_carrier_Webpage__("Transportes Ambientales", folder_path_to_download)
 
     def getTeamName(self) -> str:
         return "Eli Lilly Argentina"
-
-    def getTeamEmail(self) -> str:
-        return "guido.hendl@thermofisher.com; florencia.acosta@thermofisher.com"
-        return "AR.Lilly.logistics@fishersci.com"
 
     def readOrdersExcel(self, path_from_get_data: str, orders_sheet: str, columns_types: dict) -> pd.DataFrame:
         try:
@@ -58,9 +54,9 @@ class EliLillyArgentinaTeam(Team):
                         "AWB": "TRACKING_NUMBER", "Shipper return AWB": "RETURN_TRACKING_NUMBER"}
         columns_types = {"CT-WIN": str, "IVRS": str, 
                         "Trial Alias": str, "Site ": str, 
-                        "Order received": str, "Ship date": dt.datetime,
+                        "Order received": str, 
                         "Horario de Despacho": str,
-                        "Dia de entrega": dt.datetime, "Destination": str,
+                        "Destination": str,
                         "CONDICION": str, "TT4": str, 
                         "AWB": str, "Shipper return AWB": str}
         return columns_names, columns_types
@@ -135,7 +131,7 @@ class EliLillyArgentinaTeam(Team):
 
     def get_column_rename_type_config_for_not_working_days_table(self) -> Tuple[dict, dict]:
         columns_names = {"date" : "DATE"}
-        columns_types = {"date": dt.datetime}
+        columns_types = {"date": 'datetime64[ns]'}
         return columns_names, columns_types
     
     def readNotWorkingDaysExcel(self, path_from_get_data: str, not_working_days_sheet: str, columns_types: dict) -> pd.DataFrame:

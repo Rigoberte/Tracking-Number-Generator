@@ -7,9 +7,11 @@ from teams.team import Team
 from logClass.log import Log
 
 class DataRecolector:
-    def __init__(self, aTeam: Team, queue: queue.Queue = queue.Queue()):
+    def __init__(self, aTeam: Team, queue: queue.Queue = queue.Queue(), log: Log = Log()):
         self.selectedTeam = aTeam
         self.queue = queue
+        self.log = log
+        
         self.memo_of_transit_per_ship_and_delivery_dates = {}
         self.memo_of_return_date_per_delivery_date_and_transit = {}
 
@@ -34,7 +36,7 @@ class DataRecolector:
                 "DELIVERY_TIME_FROM", "DELIVERY_TIME_TO", 
                 "CONTACTS", "TYPE_OF_MATERIAL_CAN_RECEIVE", 
                 "MEDICAL_CENTER_EMAILS", "CUSTOMER_EMAIL", "CRA_EMAILS", "TEAM_EMAILS"]
-    
+        
     def recolectOrdersAndContactsData(self, shipdate: dt.datetime) -> pd.DataFrame:
         """
         Process all orders in the table
@@ -62,10 +64,10 @@ class DataRecolector:
 
             return ordersAndContactsDataframe[self.columns_df]
         except Exception as e:
-            Log().add_error_log(f"Error recolecting orders and contacts data: {e}")
-            return self.getEmptyOrdersAndContactsData()
+            self.log.add_error_log(f"Error recolecting orders and contacts data: {e}")
+            return self.get_empty_ordersAndContactsData()
 
-    def getEmptyOrdersAndContactsData(self) -> pd.DataFrame:
+    def get_empty_ordersAndContactsData(self) -> pd.DataFrame:
         """
         Returns an empty orders table
 
@@ -315,7 +317,7 @@ class DataRecolector:
             return assertIfIsNotNull(row['TYPE_OF_MATERIAL'])
         
         def assertIfTypeOfMaterialIsValid(row: pd.Series) -> bool:
-            return row['TYPE_OF_MATERIAL'] in ["Medicine", "Ancillary", "Equipment"]
+            return row['TYPE_OF_MATERIAL'] in ["Medicine", "Ancillary Type 1", "Ancillary Type 2", "Equipment"]
 
         def assertIfAmountOfBoxesAreValid(row: pd.Series) -> bool:
             return type(row['AMOUNT_OF_BOXES_TO_SEND']) == int and row['AMOUNT_OF_BOXES_TO_SEND'] > 0
@@ -557,7 +559,7 @@ class DataRecolector:
         df_filtered = df_filtered.drop(columns='Option')
 
         #Change MEDICINES to Medicine and ANCILLARIES to Ancillary
-        types_of_materials = {"MEDICINES": "Medicine", "ANCILLARIES_TYPE1": "Ancillary", "ANCILLARIES_TYPE2": "Ancillary", "EQUIPMENT": "Equipment"}
+        types_of_materials = {"MEDICINES": "Medicine", "ANCILLARIES_TYPE1": "Ancillary Type 1", "ANCILLARIES_TYPE2": "Ancillary Type 2", "EQUIPMENTS": "Equipment"}
 
         df_filtered["TYPE_OF_MATERIAL_CAN_RECEIVE"] = df_filtered["TYPE_OF_MATERIAL_CAN_RECEIVE"].replace(types_of_materials)
 

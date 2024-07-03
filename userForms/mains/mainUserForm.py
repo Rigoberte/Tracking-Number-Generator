@@ -7,7 +7,7 @@ from PIL import Image, ImageTk
 import os
 
 from ..tooltips.treeviewTooltip import TreeviewToolTip
-from ..tooltips.logTooltip import LogToolTip
+from ..tooltips.bottomBarToolTip import BottomBarToolTip
 from ..chroma import Chroma
 
 class MyUserForm(tk.Tk):
@@ -139,10 +139,10 @@ class MyUserForm(tk.Tk):
         self.clear_treeview_btn.configure(command=controller.on_clearOrders_btn_click)
         self.config_btn.configure(command=controller.config_button_on_click)
 
-        self.team_combobox['values'] = controller.getTeamsNames()
+        self.team_combobox['values'] = controller.get_team_names()
         self.team_combobox.current(0)
 
-        self.__change_treeview_columns__(self.treeview, controller.getEmptyOrdersAndContactsData().columns.tolist())
+        self.__change_treeview_columns__(self.treeview, controller.get_empty_ordersAndContactsData().columns.tolist())
 
         def on_log_motion(event):
             self.log_tooltip.hide_tip()
@@ -163,7 +163,7 @@ class MyUserForm(tk.Tk):
         def on_log_btn_click(event):
             controller.on_log_btn_click()
 
-        self.log_tooltip = LogToolTip(self)
+        self.log_tooltip = BottomBarToolTip(self)
         self.log_image.bind("<Motion>", on_log_motion)
         self.log_image.bind("<Leave>", on_treeview_leave)
         self.log_image.bind("<Double-1>", on_log_btn_click)
@@ -180,7 +180,7 @@ class MyUserForm(tk.Tk):
         def on_open_excel_btn_click(event):
             controller.on_open_excel_double_btn_click()
 
-        self.open_excel_tooltip = LogToolTip(self)
+        self.open_excel_tooltip = BottomBarToolTip(self)
 
         self.open_excel_image.bind("<Motion>", on_open_excel_motion)
         self.open_excel_image.bind("<Leave>", on_open_excel_leave)
@@ -287,7 +287,8 @@ class MyUserForm(tk.Tk):
             columns_names (list): columns names
             treeview (tk.ttk.Treeview): self.treeview to show orders table
         """
-        treeview["columns"] = ['#'] + columns_names
+        columns_names = ['#'] + columns_names # Please do not merge this line with the next one
+        treeview["columns"] = columns_names
         treeview.delete(*treeview.get_children())
         
         for col in columns_names:

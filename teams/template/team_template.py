@@ -5,19 +5,17 @@ import datetime as dt
 from typing import Tuple
 
 from .team import Team
+from logClass.log import Log
 
 class NAMETeam(Team):
-    def __init__(self, folder_path_to_download: str = ""):
+    def __init__(self, folder_path_to_download: str, log : Log):
         raise NotImplementedError("Method not implemented")
+        super().__init__(log)
         self.carrierWebpage = self.__build_carrier_Webpage__("CARRIER NAME", folder_path_to_download)
 
     def getTeamName(self) -> str:
         raise NotImplementedError("Method not implemented")
         return "TEAM NAME"
-
-    def getTeamEmail(self) -> str:
-        raise NotImplementedError("Method not implemented")
-        return "TEAM_EMAIL@MAIL.com"
 
     def readOrdersExcel(self, path_from_get_data: str, orders_sheet: str, columns_types: dict) -> pd.DataFrame:
         raise NotImplementedError("Method not implemented")

@@ -1,27 +1,24 @@
-import os
-
 import pandas as pd
 import datetime as dt
 from typing import Tuple
 
 from .team import Team
+from logClass.log import Log
 
 class GPMArgentinaTeam(Team):
-    def __init__(self, folder_path_to_download: str = ""):
+    def __init__(self, folder_path_to_download: str, log : Log):
+        super().__init__(log)
         self.carrierWebpage = self.__build_carrier_Webpage__("Transportes Ambientales", folder_path_to_download)
 
     def getTeamName(self) -> str:
         return "GPM Argentina"
-
-    def getTeamEmail(self) -> str:
-        return "inaki.costa@thermofisher.com"
 
     def get_column_rename_type_config_for_contacts_table(self) -> Tuple[dict, dict]:
         columns_names = {"STUDY" : "STUDY", "Site": "SITE#", "Site ID": "CARRIER_ID",
                         "CONTACTOS" : "CONTACTS", "EMAILS": "MEDICAL_CENTER_EMAILS", 
                         "Emails2": "CUSTOMER_EMAIL", "Emails3": "CRA_EMAILS"}
         columns_types = {"STUDY": str, "Site": str, "Site ID": str, "CONTACTOS": str,
-                        "EMAILS": str, "DELIVERY_TIME_FROM": dt.datetime, "DELIVERY_TIME_TO": dt.datetime,
+                        "EMAILS": str,
                         "CAN_RECEIVE_MEDICINES": str, "CAN_RECEIVE_ANCILLARIES_TYPE1": str,
                         "CAN_RECEIVE_ANCILLARIES_TYPE2": str, "CAN_RECEIVE_EQUIPMENTS": str,
                         "CUSTOMER_EMAIL": str}
@@ -43,8 +40,6 @@ class GPMArgentinaTeam(Team):
     def get_column_rename_type_config_for_orders_tables(self) -> Tuple[dict, dict]:
         columns_names = {}
         columns_types = {"SYSTEM_NUMBER": str, "IVRS_NUMBER": str,"STUDY": str, "SITE#": str, 
-                            "SHIP_DATE": dt.datetime, "SHIP_TIME_FROM": dt.datetime, "SHIP_TIME_TO": dt.datetime,
-                            "DELIVERY_DATE": dt.datetime, "DELIVERY_TIME_FROM": dt.datetime, "DELIVERY_TIME_TO": dt.datetime,
                             "TYPE_OF_MATERIAL": str, "TEMPERATURE": str, 
                             "AMOUNT_OF_BOXES_TO_SEND": str, 
                             "HAS_RETURN": bool, 
@@ -52,7 +47,7 @@ class GPMArgentinaTeam(Team):
                             "DISPOSABLE_BOXES": str, 
                             "TRACKING_NUMBER": str, 
                             "RETURN_TRACKING_NUMBER": str, "PRINT_RETURN_DOCUMENT": bool, 
-                            "CONTACTS": str, "CARRIER_ID": str}
+                            "CONTACTS": str, "CARRIER_ID": str, "RETURN_TO_CARRIER_DEPOT": bool}
         return columns_names, columns_types
 
     def apply_team_specific_changes_for_orders_tables(self, ordersDataFrame: pd.DataFrame) -> pd.DataFrame:
@@ -63,8 +58,11 @@ class GPMArgentinaTeam(Team):
                         "Refrigerado con Hielo Seco": "Refrigerated with Dry Ice", "RHS" : "Refrigerated with Dry Ice",
                         "Congelado con Nitrogeno Liquido": "Frozen with Liquid Nitrogen", "FNL": "Frozen with Liquid Nitrogen"}
         ordersDataFrame["TEMPERATURE"] = ordersDataFrame["TEMPERATURE"].replace(temperatures)
-        
-        ordersDataFrame["PRINT_RETURN_DOCUMENT"] = False
+
+        types_of_material = {"MED": "Medicine", "ANC": "Ancillaries Type 1",
+                            "ANC1": "Ancillary Type 1", "ANC2": "Ancillary Type 2",
+                            "EQUIP": "Equipment"}
+        ordersDataFrame["TYPE_OF_MATERIAL"] = ordersDataFrame["TYPE_OF_MATERIAL"].replace(types_of_material)
         
         ordersDataFrame["DISPOSABLE_BOXES"] = ordersDataFrame["DISPOSABLE_BOXES"].replace("", 0).fillna(0).astype(int)
         ordersDataFrame["AMOUNT_OF_BOXES_TO_RETURN"] = ordersDataFrame["AMOUNT_OF_BOXES_TO_SEND"] - ordersDataFrame["DISPOSABLE_BOXES"]
@@ -135,7 +133,7 @@ class GPMArgentinaTeam(Team):
 
     def get_column_rename_type_config_for_not_working_days_table(self) -> Tuple[dict, dict]:
         columns_names = {"Date" : "DATE"}
-        columns_types = {"Date": dt.datetime}
+        columns_types = {"Date": 'datetime64[ns]'}
         return columns_names, columns_types
     
     def readNotWorkingDaysExcel(self, path_from_get_data: str, not_working_days_sheet: str, columns_types: dict) -> pd.DataFrame:

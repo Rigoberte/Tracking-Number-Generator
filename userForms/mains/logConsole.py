@@ -23,17 +23,41 @@ class LogConsole(tk.Tk):
 
     def connect_with_controller(self, controller):
         self.logs_df = controller.print_logs()
+        self.logs_text_label = tk.Text(self.frames["main"], wrap=tk.WORD)
 
         for index, row in self.logs_df.iterrows():
-            self.logs_text += row["Date and Time"] + " - " + row["Type"] + ": " + row["Text"] + "\n"
+            if row["Text"] == "":
+                continue
 
-        self.logs_text_label = tk.Text(self.frames["main"], wrap=tk.WORD)
+            if row["Type"] == "Separator":
+                self.logs_text_label.insert(tk.END, "\n" + row["Text"] + "\n\n\n")
+                continue
+            else:
+                text_with_color = row["Date and Time"] + " - " + row["Type"]
+            
+            if row["Type"] == "Info":
+                color_tag = "blue"
+            elif row["Type"] == "Warning":
+                color_tag = "orange"
+            elif row["Type"] == "Error":
+                color_tag = "red"
+
+            self.logs_text_label.tag_config(color_tag, foreground=color_tag)
+            self.logs_text_label.insert(tk.END, text_with_color, color_tag)
+            self.logs_text_label.insert(tk.END, "\n" + row["Text"] + "\n\n")
+
+        self.scrollbar = tk.Scrollbar(self.frames["main"], orient="vertical", command=self.logs_text_label.yview, bg="black", troughcolor="black", relief="flat")
+        self.scrollbar.pack(side="right", fill="y")
+        
         self.logs_text_label.pack(fill=tk.BOTH, expand=True)
-        self.logs_text_label.insert(tk.END, self.logs_text)
         self.logs_text_label.config(state=tk.DISABLED)
-
         self.logs_text_label.config(bg="black", fg="white")
         self.logs_text_label.config(font=("Courier", 14))
+        self.logs_text_label.config(highlightthickness=0)
+        self.logs_text_label.config(yscrollcommand=self.scrollbar.set)
+
+        # Go to the end of the text
+        self.logs_text_label.see(tk.END)
 
         def on_export_logs_to_csv(event):
             controller.on_export_logs_to_csv()

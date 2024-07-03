@@ -3,20 +3,19 @@ import datetime as dt
 from typing import Tuple
 
 from .team import Team
+from logClass.log import Log
 
-next_weekday = dt.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) + dt.timedelta(days= 7 - dt.datetime.today().weekday())
+next_weekday = dt.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) + dt.timedelta(days= 1 if dt.datetime.today().weekday() < 4 else 7 - dt.datetime.today().weekday())
 RELATIVE_DATE = next_weekday
 
 class TestTeam(Team):
-    def __init__(self, folder_path_to_download: str = ""):
+    def __init__(self, folder_path_to_download: str, log : Log):
+        super().__init__(log)
         self.carrierWebpage = self.__build_carrier_Webpage__("Carrier Webpage For Testing", folder_path_to_download)
 
     def getTeamName(self) -> str:
-        return "Test_5_ordenes"
+        return "Team_for_testings"
     
-    def getTeamEmail(self) -> str:
-        return "inaki.costa@thermofisher.com"
-
     def get_column_rename_type_config_for_contacts_table(self) -> Tuple[dict, dict]:
         columns_names = {}
         columns_types = {"STUDY": str, "SITE#": str, "CARRIER_ID": str, "DELIVERY_TIME_FROM": dt.datetime, "DELIVERY_TIME_TO": dt.datetime}
@@ -60,49 +59,7 @@ class TestTeam(Team):
     
     def readContactsExcel(self, path_from_get_data: str, contacts_sheet: str, columns_types: dict) -> pd.DataFrame:
         try:
-            contacts_df = pd.DataFrame(columns=["STUDY", "SITE#", "CARRIER_ID", "DELIVERY_TIME_FROM", "DELIVERY_TIME_TO", "CONTACTS", "CAN_RECEIVE_MEDICINES", "CAN_RECEIVE_ANCILLARIES_TYPE1", "CAN_RECEIVE_ANCILLARIES_TYPE2", "CAN_RECEIVE_EQUIPMENTS"])
-
-            contact1 = {
-                "STUDY": "TEST",
-                "SITE#": "01",
-                "CARRIER_ID": "5616",
-                "DELIVERY_TIME_FROM": "10:00:00",
-                "DELIVERY_TIME_TO": "12:00:00",
-                "CONTACTS": "Contact 1",
-                "CAN_RECEIVE_MEDICINES": "x",
-                "CAN_RECEIVE_ANCILLARIES_TYPE1": "x",
-                "CAN_RECEIVE_ANCILLARIES_TYPE2": "",
-                "CAN_RECEIVE_EQUIPMENTS": ""
-            }
-            contacts_df = self.__append_a_line_to_dataframe__(contacts_df, contact1)
-
-            contact2 = {
-                "STUDY": "TEST",
-                "SITE#": "02",
-                "CARRIER_ID": "5617",
-                "DELIVERY_TIME_FROM": "14:00:00",
-                "DELIVERY_TIME_TO": "16:00:00",
-                "CONTACTS": "Contact 2",
-                "CAN_RECEIVE_MEDICINES": "x",
-                "CAN_RECEIVE_ANCILLARIES_TYPE1": "",
-                "CAN_RECEIVE_ANCILLARIES_TYPE2": "x",
-                "CAN_RECEIVE_EQUIPMENTS": ""
-            }
-            contacts_df = self.__append_a_line_to_dataframe__(contacts_df, contact2)
-
-            contact3 = {
-                "STUDY": "TEST",
-                "SITE#": "03",
-                "CARRIER_ID": "5618",
-                "DELIVERY_TIME_FROM": "08:00:00",
-                "DELIVERY_TIME_TO": "10:00:00",
-                "CONTACTS": "Contact 3",
-                "CAN_RECEIVE_MEDICINES": "x",
-                "CAN_RECEIVE_ANCILLARIES_TYPE1": "",
-                "CAN_RECEIVE_ANCILLARIES_TYPE2": "",
-                "CAN_RECEIVE_EQUIPMENTS": "x"
-            }
-            contacts_df = self.__append_a_line_to_dataframe__(contacts_df, contact3)
+            contacts_df = self.__get_contacts_for_testing__()
 
             return contacts_df
         except Exception as e:
@@ -155,22 +112,18 @@ class TestTeam(Team):
     
     def readNotWorkingDaysExcel(self, path_from_get_data: str, not_working_days_sheet: str, columns_types: dict) -> pd.DataFrame:
         try:
-            notWorkingDaysDataFrame = pd.DataFrame(columns=["DATE"])
+            notWorkingDaysData = {"DATE": [RELATIVE_DATE + dt.timedelta(days=4)]}
+            notWorkingDaysDataFrame = pd.DataFrame(notWorkingDaysData)
         except Exception as e:
             raise e
         return notWorkingDaysDataFrame
-    
-    def __append_a_line_to_dataframe__(self, dataFrame: pd.DataFrame, line: dict) -> pd.DataFrame:
-        order_df = pd.DataFrame([line])
-        ordersDataFrame = pd.concat([dataFrame, order_df], ignore_index=True)
-        return ordersDataFrame
     
     def __get_order_template__(self, 
                         system_number = "1",
                         ivrs_number = "IVRS_NUMBER__01",
                         customer = "CUSTOMER__01",
                         study = "TEST",
-                        site = "01",
+                        site = "Only Medicines",
                         ship_date = RELATIVE_DATE,
                         ship_time_from = "19:00:00",
                         delivery_date = (RELATIVE_DATE + dt.timedelta(days=1)),
@@ -243,14 +196,6 @@ class TestTeam(Team):
         
         orders.append(orderWithOutMaterial)
 
-        """orderWithOutDeliveryTimeFrom = self.__get_order_template__(delivery_time_from="",
-                                                        ivrs_number="ORDER WITHOUT DELIVERY TIME FROM")
-        orders.append(orderWithOutDeliveryTimeFrom)
-
-        orderWithOutDeliveryTimeTo = self.__get_order_template__(delivery_time_to="",
-                                                        ivrs_number="ORDER WITHOUT DELIVERY TIME TO")
-        orders.append(orderWithOutDeliveryTimeTo)"""
-
         orderWithOutTemperature = self.__get_order_template__(temperature="",
                                                         ivrs_number="ORDER WITHOUT TEMPERATURE")
         orders.append(orderWithOutTemperature)
@@ -272,15 +217,9 @@ class TestTeam(Team):
         orders.append(orderWithOutReturnType)
 
         
-        
         orderWithDeliveryDateEarlierThanShipDate = self.__get_order_template__(delivery_date=(RELATIVE_DATE - dt.timedelta(days=1)),
                                                         ivrs_number="ORDER WITH DELIVERY DATE EARLIER THAN SHIP DATE")
         orders.append(orderWithDeliveryDateEarlierThanShipDate)
-
-        """orderWithDeliveryTimeToEarlierThanDeliveryTimeFrom = self.__get_order_template__(delivery_time_to="08:00:00",
-                                                                                        delivery_time_from="10:00:00",
-                                                        ivrs_number="ORDER WITH DELIVERY TIME TO EARLIER THAN DELIVERY TIME FROM")
-        orders.append(orderWithDeliveryTimeToEarlierThanDeliveryTimeFrom)"""
 
         orderWithAnotherTypeOfMaterial = self.__get_order_template__(type_of_material="TEST",
                                                         ivrs_number="ORDER WITH ANOTHER TYPE OF MATERIAL")
@@ -292,7 +231,7 @@ class TestTeam(Team):
 
         """orderWithAmountOfBoxesToSendNotInteger = self.__get_order_template__(amount_of_boxes_to_send="TEST",
                                                         ivrs_number="ORDER WITH AMOUNT OF BOXES TO SEND NOT INTEGER")
-        orders.append(orderWithAmountOfBoxesToSendNotInteger)"""
+        orders.append(orderWithAmountOfBoxesToSendNotInteger)""" # When excel loads, if finds an non-integer value, it will throw an error
 
         orderWithAmountOfBoxesToSendNegative = self.__get_order_template__(amount_of_boxes_to_send=-1,
                                                         ivrs_number="ORDER WITH AMOUNT OF BOXES TO SEND NEGATIVE")
@@ -300,7 +239,7 @@ class TestTeam(Team):
 
         """orderWithAmountOfBoxesToReturnNotInteger = self.__get_order_template__(amount_of_boxes_to_return="TEST",
                                                         ivrs_number="ORDER WITH AMOUNT OF BOXES TO RETURN NOT INTEGER")
-        orders.append(orderWithAmountOfBoxesToReturnNotInteger)"""
+        orders.append(orderWithAmountOfBoxesToReturnNotInteger)""" # When excel loads, if finds an non-integer value, it will throw an error
 
         orderWithAmountOfBoxesToReturnNegative = self.__get_order_template__(amount_of_boxes_to_return=-1,
                                                         ivrs_number="ORDER WITH AMOUNT OF BOXES TO RETURN NEGATIVE")
@@ -331,6 +270,153 @@ class TestTeam(Team):
                                                         return_tracking_number="RETURN_TRACKING_NUMBER__01")
         orders.append(orderWithOnlyReturnNumber)
 
+        orderWithOnlyMedicines = self.__get_order_template__(ivrs_number="ORDER WITH ONLY MEDICINES",
+                                                        site="Only Medicines",
+                                                        type_of_material="Medicine")
+        orders.append(orderWithOnlyMedicines)
+
+        orderWithOnlyAncillariesType1 = self.__get_order_template__(ivrs_number="ORDER WITH ONLY ANCILLARIES TYPE 1",
+                                                        site="Only Ancillaries Type 1",
+                                                        type_of_material="Ancillary Type 1")
+        
+        orders.append(orderWithOnlyAncillariesType1)
+        
+        orderWithOnlyAncillariesType2 = self.__get_order_template__(ivrs_number="ORDER WITH ONLY ANCILLARIES TYPE 2",
+                                                        site="Only Ancillaries Type 2",
+                                                        type_of_material="Ancillary Type 2")
+        orders.append(orderWithOnlyAncillariesType2)
+
+        orderWithOnlyEquipments = self.__get_order_template__(ivrs_number="ORDER WITH ONLY EQUIPMENTS",
+                                                        site="Only Equipments",
+                                                        type_of_material="Equipment")
+        orders.append(orderWithOnlyEquipments)
+
+        orderWithAncillariesType1AndGeneralContactsForAncillaries = self.__get_order_template__(ivrs_number="ORDER WITH ANCILLARIES TYPE AND GENERAL CONTACTS FOR ANCILLARIES",
+                                                        site="Receive Ancillaries",
+                                                        type_of_material="Ancillary Type 1")
+        orders.append(orderWithAncillariesType1AndGeneralContactsForAncillaries)
+
+        orderWithAncillariesType2AndGeneralContactsForAncillaries = self.__get_order_template__(ivrs_number="ORDER WITH ANCILLARIES TYPE AND GENERAL CONTACTS FOR ANCILLARIES",
+                                                        site="Receive Ancillaries",
+                                                        type_of_material="Ancillary Type 2")
+        orders.append(orderWithAncillariesType2AndGeneralContactsForAncillaries)
+
+        orderWithAllMaterialsAndGeneralContactsForAll = self.__get_order_template__(ivrs_number="ORDER WITH ALL MATERIALS AND GENERAL CONTACTS FOR ALL",
+                                                        site="Receive All",
+                                                        type_of_material="Medicine")
+        orders.append(orderWithAllMaterialsAndGeneralContactsForAll)
+
+        orderWithOutDeliveryTimeFrom = self.__get_order_template__(site = "Without Delivery Time From",
+                                                        ivrs_number="ORDER WITHOUT DELIVERY TIME FROM")
+        orders.append(orderWithOutDeliveryTimeFrom)
+
+        orderWithOutDeliveryTimeTo = self.__get_order_template__(site = "Without Delivery Time To",
+                                                        ivrs_number="ORDER WITHOUT DELIVERY TIME TO")
+        orders.append(orderWithOutDeliveryTimeTo)
+
+        orderWithDeliveryTimeToEarlierThanDeliveryTimeFrom = self.__get_order_template__(site = "With Delivery Time To Earlier Than Delivery Time From",
+                                                        ivrs_number="ORDER WITH DELIVERY TIME TO EARLIER THAN DELIVERY TIME FROM")
+        orders.append(orderWithDeliveryTimeToEarlierThanDeliveryTimeFrom)
+
+        orderWithNotWorkingDay = self.__get_order_template__(ivrs_number="ORDER WITH NOT WORKING DAY, SHOULD RETURN ON 5TH DAY or more",
+                                                        delivery_date=(RELATIVE_DATE + dt.timedelta(days=2)))
+        orders.append(orderWithNotWorkingDay)
+
         ordersDataFrame = pd.DataFrame(orders)
 
         return ordersDataFrame
+    
+    def __get_contact_template__(self, 
+                        study = "TEST",
+                        site = "01",
+                        carrier_id = "5616",
+                        delivery_time_from = "10:00:00",
+                        delivery_time_to = "12:00:00",
+                        contacts = "Contact 1",
+                        can_receive_medicines = "",
+                        can_receive_ancillaries_type1 = "",
+                        can_receive_ancillaries_type2 = "",
+                        can_receive_equipments = "",
+                        medical_center_emails = "",
+                        customer_email = "inaki.costa@thermofisher.com",
+                        cra_emails = "inaki.costa@thermofisher.com",
+                        team_emails = "inaki.costa@thermofisher.com"):
+
+
+        order = {
+                    "STUDY": study,
+                    "SITE#": site,
+                    "CARRIER_ID": carrier_id,
+                    "DELIVERY_TIME_FROM" : delivery_time_from,
+                    "DELIVERY_TIME_TO" : delivery_time_to,
+                    "CONTACTS" : contacts,
+                    "CAN_RECEIVE_MEDICINES" : can_receive_medicines,
+                    "CAN_RECEIVE_ANCILLARIES_TYPE1" : can_receive_ancillaries_type1,
+                    "CAN_RECEIVE_ANCILLARIES_TYPE2" : can_receive_ancillaries_type2,
+                    "CAN_RECEIVE_EQUIPMENTS" : can_receive_equipments,
+                    "MEDICAL_CENTER_EMAILS": medical_center_emails, 
+                    "CUSTOMER_EMAIL": customer_email,
+                    "CRA_EMAILS": cra_emails,
+                    "TEAM_EMAILS": team_emails
+                }
+    
+        return order
+    
+    def __get_contacts_for_testing__(self):
+        
+        contacts = []
+
+        contactToReceiveOnlyMedicines = self.__get_contact_template__(site="Only Medicines",
+                                                contacts="Contact to Receive Only Medicines",
+                                                can_receive_medicines="x")
+        contacts.append(contactToReceiveOnlyMedicines)
+
+        contactToReceiveOnlyAncillariesType1 = self.__get_contact_template__(site="Only Ancillaries Type 1",
+                                                contacts="Contact to Receive Only Ancillaries Type 1",
+                                                can_receive_ancillaries_type1="x")
+        contacts.append(contactToReceiveOnlyAncillariesType1)
+
+        contactToReceiveOnlyAncillariesType2 = self.__get_contact_template__(site="Only Ancillaries Type 2",
+                                                contacts="Contact to Receive Only Ancillaries Type 2",
+                                                can_receive_ancillaries_type2="x")
+        contacts.append(contactToReceiveOnlyAncillariesType2)
+
+        contactToReceiveOnlyEquipments = self.__get_contact_template__(site="Only Equipments",
+                                                contacts="Contact to Receive Only Equipments",
+                                                can_receive_equipments="x")
+        
+        contacts.append(contactToReceiveOnlyEquipments)
+
+        contactToReceiveAll = self.__get_contact_template__(site="Receive All",
+                                                contacts="Contact to Receive All",
+                                                can_receive_medicines="x",
+                                                can_receive_ancillaries_type1="x",
+                                                can_receive_ancillaries_type2="x",
+                                                can_receive_equipments="x")
+        contacts.append(contactToReceiveAll)
+
+        contactToReceiveAncillaries = self.__get_contact_template__(site="Receive Ancillaries",
+                                                contacts="Contact to Receive Ancillaries",
+                                                can_receive_ancillaries_type1="x",
+                                                can_receive_ancillaries_type2="x")
+        contacts.append(contactToReceiveAncillaries)
+
+        contactsWithOutDeliveryTimeFrom = self.__get_contact_template__( site = "Without Delivery Time From",
+                                                        delivery_time_from="",
+                                                        contacts="Contact Without Delivery Time From")
+        contacts.append(contactsWithOutDeliveryTimeFrom)
+
+        contactsWithOutDeliveryTimeTo = self.__get_contact_template__( site = "Without Delivery Time To",
+                                                        delivery_time_to="",
+                                                        contacts="Contact Without Delivery Time To")
+        contacts.append(contactsWithOutDeliveryTimeTo)
+
+        contactsWithDeliveryTimeToEarlierThanDeliveryTimeFrom = self.__get_contact_template__( site = "With Delivery Time To Earlier Than Delivery Time From",
+                                                                                        delivery_time_from="10:00:00",
+                                                                                        delivery_time_to="08:00:00",
+                                                        contacts="Contact With Delivery Time To Earlier Than Delivery Time From")
+        contacts.append(contactsWithDeliveryTimeToEarlierThanDeliveryTimeFrom)
+
+        contacts_df = pd.DataFrame(contacts)
+
+        return contacts_df

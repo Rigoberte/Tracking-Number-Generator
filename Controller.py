@@ -6,22 +6,21 @@ class Controller:
         self.model = model
         self.view = view
 
-    def showMainUserForm(self) -> None:
+    # Show and destroy userforms
+    def show_mainUserForm(self) -> None:
         self.view.get_main_userform_root().after(100, self.check_queue)
-        self.view.show_mainUserForm_and_connect_with_controller(controller=self)
+        self.view.show_mainUserForm(controller=self)
 
-    def destroyMainUserForm(self) -> None:
-        self.view.destroyMainUserForm()
+    def destroy_mainUserForm(self) -> None:
+        self.view.destroy_mainUserForm()
 
-    def destroyLogInUserForm(self) -> None:
-        self.view.hide_userform()
-
+    # MainUserForm methods
     def on_log_btn_click(self) -> None:
         self.view.on_log_btn_click(controller=self)
 
     def on_loadOrders_btn_click(self) -> None:
-        selected_team_name = self.view.get_selected_team_name()
-        selected_date = self.view.get_selected_date()
+        selected_team_name = self.view.get_selected_team_name_from_mainUserForm()
+        selected_date = self.view.get_selected_date_from_mainUserForm()
 
         self.model.on_loadOrders_btn_click(selected_team_name, selected_date)
 
@@ -32,67 +31,29 @@ class Controller:
     def on_processOrders_btn_click(self) -> None:
         self.view.on_processOrders_btn_click(self)
 
-    def validate_login(self) -> None:
-        username = self.view.get_username_from_logInUserForm()
-        password = self.view.get_password_from_logInUserForm()
-
-        if self.model.validate_login(username, password):
-            # WebDriver keeps built
-            self.on_login_successful()
-        else:
-            self.on_login_failed()
-
-    def on_login_failed(self) -> None:
-        self.model.on_login_failed()
-        self.view.on_login_failed()
-
-    def on_login_successful(self) -> None:
-        self.view.destroyLogInUserForm()
-        self.model.on_login_successful()
+    def config_button_on_click(self) -> None:
+        self.view.config_button_on_click(controller = self)
+        self.update_widgets_from_configUserForm()
+    
+    def on_open_excel_double_btn_click(self) -> None:
+        temporal_selected_team_name = self.view.get_selected_team_name_from_mainUserForm()
+        self.model.on_open_excel_double_btn_click(temporal_selected_team_name)
 
     def update_a_line_to_processed_of_represented_ordersAndContactsDataframe(self, index: int, tracking_number: str, return_tracking_number: str) -> None:
         self.view.update_a_line_to_processed_of_represented_ordersAndContactsDataframe(index, tracking_number, return_tracking_number)
 
-    def getEmptyOrdersAndContactsData(self) -> pd.DataFrame:
-        return self.model.getEmptyOrdersAndContactsData()
-
-    def getTeamsNames(self) -> list:
-        return self.model.getTeamsNames()
-
-    def add_error_log(self, text: str) -> None:
-        self.model.add_error_log(text)
-
-    def add_warning_log(self, text: str) -> None:
-        self.model.add_warning_log(text)
-
-    def add_info_log(self, text: str) -> None:
-        self.model.add_info_log(text)
-
-    def print_logs(self) -> pd.DataFrame:
-        return self.model.print_logs()
-
-    def print_last_n_logs(self, n: int) -> pd.DataFrame:
-        return self.model.print_last_n_logs(n)
-
-    def config_button_on_click(self) -> None:
-        self.view.config_button_on_click(controller = self)
-        self.update_widgets_from_configUserForm()
-
-    def update_widgets_from_configUserForm(self) -> None:
-        team_name = self.view.get_selected_team_name_on_config()
-        config = self.get_config_of_a_team(team_name)
-        self.view.update_widgets_from_configUserForm(config)
-
-    def get_config_of_a_team(self, teamName: str) -> str:
-        return self.model.get_config_of_a_team(teamName)
+    def get_selected_team_name_on_mainUserForm(self) -> str:
+        return self.view.get_selected_team_name_from_mainUserForm()
     
+    # ConfigUserForm methods
     def on_click_save_config_button(self) -> None:
-        teamName = self.view.get_selected_team_name_on_config()
+        teamName = self.view.get_selected_team_name_from_configUserForm()
         team_excel_path = self.view.get_team_excel_path_from_configUserForm()
         team_orders_sheet = self.view.get_team_orders_sheet_from_configUserForm()
         team_contacts_sheet = self.view.get_team_contacts_sheet_from_configUserForm()
         team_not_working_days_sheet = self.view.get_team_not_working_days_sheet_from_configUserForm()
         team_send_email_to_medical_centers = self.view.get_team_send_email_to_medical_centers_from_configUserForm()
+        team_email = self.view.get_team_email_from_configUserForm()
 
         self.model.on_click_save_config_button(
             teamName,
@@ -100,12 +61,15 @@ class Controller:
             team_orders_sheet,
             team_contacts_sheet,
             team_not_working_days_sheet,
-            team_send_email_to_medical_centers)
+            team_send_email_to_medical_centers,
+            team_email)
 
-    def on_open_excel_double_btn_click(self) -> None:
-        temporal_selected_team_name = self.view.get_selected_team_name()
-        self.model.on_open_excel_double_btn_click(temporal_selected_team_name)
+    def update_widgets_from_configUserForm(self) -> None:
+        team_name = self.view.get_selected_team_name_from_configUserForm()
+        config = self.model.get_config_of_a_team(team_name)
+        self.view.update_widgets_from_configUserForm(config)
 
+    # ConfigUserForm buttons methods
     def on_export_logs_to_csv(self) -> None:
         try:
             self.model.on_export_logs_to_csv()
@@ -114,9 +78,40 @@ class Controller:
             self.add_error_log(f"Error exporting logs to csv: {e}")
             self.view.show_failure_export_to_csv()
 
+    # LogInUserForm buttons methods
+    def validate_login(self) -> None:
+        username = self.view.get_username_from_logInUserForm()
+        password = self.view.get_password_from_logInUserForm()
+
+        if self.model.validate_login(username, password):
+            # WebDriver keeps built
+            self.model.on_login_failed()
+            self.view.on_login_failed()
+        else:
+            self.view.destroy_logInUserForm()
+            self.model.on_login_successful()
+
+    # Getters from Model
+    def get_empty_ordersAndContactsData(self) -> pd.DataFrame:
+        return self.model.get_empty_ordersAndContactsData()
+
+    def get_team_names(self) -> list:
+        return self.model.get_team_names()
+
+    # Log methods
+    def print_logs(self) -> pd.DataFrame:
+        return self.model.print_logs()
+
+    def print_last_n_logs(self, n: int) -> pd.DataFrame:
+        return self.model.print_last_n_logs(n)
+
+    # Check if there are tasks in the queue
     def check_queue(self) -> None:
         try:
             while True:
+                if self.model.queue.empty():
+                    break
+                
                 task = self.model.queue.get_nowait()
                 self.view.queue_action(task)
         except queue.Empty:

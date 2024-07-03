@@ -14,8 +14,8 @@ class TreeviewToolTip:
         tw.wm_overrideredirect(1)
         
         label = tk.Label(tw, text=text, justify=tk.LEFT,
-                         background="#ffffe0", relief=tk.SOLID, borderwidth=1,
-                         font=("tahoma", "8", "normal"))
+                        background="#ffffe0", relief=tk.SOLID, borderwidth=1,
+                        font=("tahoma", "8", "normal"))
         label.pack(ipadx=1)
 
         screen_x = self.widget.winfo_pointerx()

@@ -11,10 +11,11 @@ class CarrierWebpage(ABC):
     """
     Abstract class for carriers webpages
     """
-    def __init__(self):
+    def __init__(self, log: Log):
         """
         Class constructor
         """
+        self.log = log
         pass
 
     # Methods of Super class
@@ -46,7 +47,10 @@ class CarrierWebpage(ABC):
             username (str): username
             password (str): password
         """
-        pass
+        try:
+            pass
+        except Exception as e:
+            self.log.add_error_log(f"Error logging in webpage: {e}")
 
     @abstractmethod
     def complete_shipping_order_form(self, carrier_id: str, reference: str, 
@@ -75,7 +79,11 @@ class CarrierWebpage(ABC):
         Returns:
             str: tracking number
         """
-        pass
+        try:
+            pass
+        except Exception as e:
+            self.log.add_error_log(f"Error completing shipping order form: {e}")
+            self.log.add_error_log(f"Order: {reference}")
 
     @abstractmethod
     def complete_shipping_order_return_form(self, carrier_id: str, reference_return: str,
@@ -102,7 +110,12 @@ class CarrierWebpage(ABC):
         Returns:
             str: return tracking number
         """
-        pass
+        try:
+            pass
+        except Exception as e:
+            self.log.add_error_log(f"Error completing shipping order return form: {e}")
+            self.log.add_error_log(f"Order: {reference_return}")
+            return "ERROR"
     
     @abstractmethod
     def printWayBillDocument(self, tracking_number: str, amount_of_copies: int) -> None:
@@ -150,10 +163,10 @@ class CarrierWebpage(ABC):
             driver.implicitly_wait(5)
 
         except Exception as e:
-            Log().add_error_log(f"Error printing documents: {e}")
+            self.log.add_error_log(f"Error printing documents: {e}")
     
     def __quit_driver__(self, driver) -> None:
         try:
             driver.quit()
         except Exception as e:
-            Log().add_error_log(f"Error quitting driver: {e}")
+            self.log.add_error_log(f"Error quitting driver: {e}")

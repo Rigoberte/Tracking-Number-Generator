@@ -8,13 +8,14 @@ from carriersWebpage.carrierWebPage import CarrierWebpage
 from logClass.log import Log
 
 class CARRIER_NAME(CarrierWebpage):
-    def __init__(self, folder_path_to_download: str = ""):
+    def __init__(self, folder_path_to_download: str, log: Log):
         """
         Class constructor for Transportes Ambientales
 
         Args:
             driver (webdriver): selenium driver
         """
+        super().__init__(log)
         self.folder_path_to_download = folder_path_to_download
 
     def build_driver(self) -> None:
@@ -42,7 +43,7 @@ class CARRIER_NAME(CarrierWebpage):
 
             return True
         except Exception as e:
-            Log().add_error_log(f"Error logging in webpage: {e}")
+            raise Exception(e)
         
         return False
     
@@ -74,8 +75,7 @@ class CARRIER_NAME(CarrierWebpage):
             raise NotImplementedError("Method not implemented")
             
         except Exception as e:
-            Log().add_error_log(f"Error completing shipping order form: {e}")
-            Log().add_error_log(f"Order: {reference}")
+            raise Exception(e)
 
         finally:
             return tracking_number
@@ -94,9 +94,7 @@ class CARRIER_NAME(CarrierWebpage):
             raise NotImplementedError("Method not implemented")
 
         except Exception as e:
-            Log().add_error_log(f"Error completing shipping order return form: {e}")
-            Log().add_error_log(f"Order: {reference_return}")
-            return "ERROR"
+            raise Exception(e)
             
         finally:
             return return_tracking_number

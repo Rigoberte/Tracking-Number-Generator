@@ -1,20 +1,17 @@
-import os
-
 import pandas as pd
 import datetime as dt
 from typing import Tuple
 
 from .team import Team
+from logClass.log import Log
 
 class NoSelectedTeam(Team):
-    def __init__(self, folder_path_to_download: str = ""):
+    def __init__(self, folder_path_to_download: str, log : Log):
+        super().__init__(log)
         self.carrierWebpage = self.__build_carrier_Webpage__("", folder_path_to_download)
 
     def getTeamName(self) -> str:
         return "No Selected Team"
-    
-    def getTeamEmail(self) -> str:
-        return ""
     
     def get_column_rename_type_config_for_contacts_table(self) -> Tuple[dict, dict]:
         return {}, {}

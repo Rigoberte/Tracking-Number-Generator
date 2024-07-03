@@ -8,13 +8,14 @@ from carriersWebpage.carrierWebPage import CarrierWebpage
 from logClass.log import Log
 
 class CarrierWebpageForTesting(CarrierWebpage):
-    def __init__(self, folder_path_to_download: str = ""):
+    def __init__(self, folder_path_to_download: str, log: Log):
         """
         Class constructor for Transportes Ambientales
 
         Args:
             driver (webdriver): selenium driver
         """
+        super().__init__(log)
         self.folder_path_to_download = folder_path_to_download
 
     def build_driver(self) -> None:
@@ -36,10 +37,12 @@ class CarrierWebpageForTesting(CarrierWebpage):
 
         try:
             return username == "username" and password == "password"
-        except Exception as e:
-            Log().add_error_log(f"Error logging in webpage: {e}")
         
-        return False
+        except Exception as e:
+            raise Exception(e)
+        
+        finally:
+            return False
     
     def complete_login_form(self, username: str, password: str) -> None:
         """
@@ -73,13 +76,12 @@ class CarrierWebpageForTesting(CarrierWebpage):
             if (temperature == ""):
                 raise Exception("Temperature is empty")
             
-            time.sleep(2) # Simulate time to complete form
+            time.sleep(0.5) # Simulate time to complete form
             
             tracking_number = f"sucessful tracking number for order {reference}"
             
         except Exception as e:
-            Log().add_error_log(f"Error completing shipping order form: {e}")
-            Log().add_error_log(f"Order: {reference}")
+            raise Exception(e)
 
         finally:
             return tracking_number
@@ -99,14 +101,12 @@ class CarrierWebpageForTesting(CarrierWebpage):
             if (type_of_return == ""):
                 raise Exception("Type of return is empty")
             
-            time.sleep(2) # Simulate time to complete form
+            time.sleep(0.5) # Simulate time to complete form
             
             return_tracking_number = f"sucessful return tracking number for order {reference_return}"
 
         except Exception as e:
-            Log().add_error_log(f"Error completing shipping order return form: {e}")
-            Log().add_error_log(f"Order: {reference_return}")
-            return "ERROR"
+            raise Exception(e)
             
         finally:
             return return_tracking_number

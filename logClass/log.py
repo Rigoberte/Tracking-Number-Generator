@@ -1,20 +1,7 @@
 import datetime as dt
 import pandas as pd
 
-class SingletonMeta(type):
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        """
-        Possible changes to the value of the `__init__` argument do not affect
-        the returned instance.
-        """
-        if cls not in cls._instances:
-            instance = super().__call__(*args, **kwargs)
-            cls._instances[cls] = instance
-        return cls._instances[cls]
-
-class Log(metaclass=SingletonMeta):
+class Log():
     def __init__(self):
         self.logs = pd.DataFrame(columns=["Date and Time", "Text", "Type"])
 
@@ -58,6 +45,7 @@ class Log(metaclass=SingletonMeta):
         date_and_time = dt.datetime.now()
 
         log = {"Date and Time": date_and_time, "Text": text, "Type": type}
-        log_df = pd.DataFrame(log, index=[0])
+        log_df = pd.DataFrame(log, index=[0]).dropna(axis=1, how='all')
 
-        self.logs = pd.concat([self.logs, log_df], ignore_index=True)
+        if not log_df.empty:
+            self.logs = pd.concat([self.logs, log_df], ignore_index=True)

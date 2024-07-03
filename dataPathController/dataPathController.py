@@ -24,7 +24,8 @@ class DataPathController:
             "team_orders_sheet": "",
             "team_contacts_sheet": "",
             "team_not_working_days_sheet": "",
-            "team_send_email_to_medical_centers": False
+            "team_send_email_to_medical_centers": False,
+            "team_email": ""
         }
 
         with open(self.file, "w") as f:

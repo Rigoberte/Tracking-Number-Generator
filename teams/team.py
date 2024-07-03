@@ -3,25 +3,27 @@ import win32com.client as win32
 import pandas as pd
 from abc import ABC, abstractmethod
 from typing import Tuple
+import time
 
 from carriersWebpage.carrierWebPage import CarrierWebpage
 from carriersWebpage.carrierWebPage_factory import CarrierWebPageFactory
 from .team_factory import TeamFactory
 from logClass.log import Log
-from utils.utils import zip_folder
+from utils.zip_folder import zip_folder
 from dataPathController.dataPathController import DataPathController
 
 class Team(ABC):
     """
     Abstract class for teams
     """
-    def __init__(self):
+    def __init__(self, log: Log):
         """
         Class constructor for teams
         """
+        self.log = log
         pass
 
-    def getTeamsNames(self) -> list:
+    def get_team_names(self) -> list:
         """
         Gets teams names
         """
@@ -41,7 +43,8 @@ class Team(ABC):
                         "team_orders_sheet",
                         "team_contacts_sheet",
                         "team_not_working_days_sheet",
-                        "team_send_email_to_medical_centers"]
+                        "team_send_email_to_medical_centers",
+                        "team_email"]
 
         result = []
         config = DataPathController().get_config_of_a_team(self.getTeamName())
@@ -51,18 +54,17 @@ class Team(ABC):
         
         return result
     
+    def getTeamEmail(self) -> str:
+        """
+        Gets team email
+        """
+        return self.get_data_path(["team_email"])[0]
+    
     # Methods to be implemented by each sub class
     @abstractmethod
     def getTeamName(self) -> str:
         """
         Gets team name
-        """
-        pass
-    
-    @abstractmethod
-    def getTeamEmail(self) -> str:
-        """
-        Gets team email
         """
         pass
 
@@ -115,7 +117,7 @@ class Team(ABC):
         try:
             pass
         except Exception as e:
-            Log().add_error_log(f"Error applying team specific changes for orders tables: {e}")
+            self.log.add_error_log(f"Error applying team specific changes for orders tables: {e}")
             return ordersDataframe
     
     @abstractmethod
@@ -145,7 +147,7 @@ class Team(ABC):
         try:
             pass
         except Exception as e:
-            Log().add_error_log(f"Error reading orders excel: {e}")
+            self.log.add_error_log(f"Error reading orders excel: {e}")
             return self.__getEmptyOrdersDataFrame__()
     
     @abstractmethod
@@ -164,7 +166,7 @@ class Team(ABC):
         try:
             pass
         except Exception as e:
-            Log().add_error_log(f"Error reading contacts excel: {e}")
+            self.log.add_error_log(f"Error reading contacts excel: {e}")
             return self.__getEmptyContactsDataFrame__()
 
     @abstractmethod
@@ -258,7 +260,7 @@ class Team(ABC):
         try:
             pass
         except Exception as e:
-            Log().add_error_log(f"Error reading not working days excel: {e}")
+            self.log.add_error_log(f"Error reading not working days excel: {e}")
             return pd.DataFrame(columns=["DATE"])
 
     # Private methods
@@ -279,6 +281,8 @@ class Team(ABC):
             # Ruta del archivo ZIP con extensión
             zip_file_with_extension = zip_path + '.zip'
 
+            time.sleep(1)
+
             outlook = win32.Dispatch('outlook.application')
 
             mail = outlook.CreateItem(0)
@@ -290,9 +294,11 @@ class Team(ABC):
                 # Adjuntar el archivo ZIP
             mail.Attachments.Add(zip_file_with_extension)
 
+            time.sleep(1)
+
             mail.Send()
         except Exception as e:
-            Log().add_error_log(f"Error sending email with orders to team: {e}")
+            self.log.add_error_log(f"Error sending email with orders to team: {e}")
 
     def __check_if_user_and_password_are_correct__(self, carrierWebpage: CarrierWebpage, username: str, password: str) -> bool:
         return carrierWebpage.check_if_user_and_password_are_correct(username, password)
@@ -304,7 +310,7 @@ class Team(ABC):
         carrierWebpage.quit_driver()
 
     def __build_carrier_Webpage__(self, carrierWebpage_name: str, folder_path_to_download: str) -> CarrierWebpage:
-        return CarrierWebPageFactory().create_carrier_webpage(carrierWebpage_name, folder_path_to_download)
+        return CarrierWebPageFactory().create_carrier_webpage(carrierWebpage_name, folder_path_to_download, self.log)
 
     def __complete_shipping_order_form__(self, carrierWebpage: CarrierWebpage, carrier_id: str, reference: str,
                                     ship_date: str, ship_time_from: str, ship_time_to: str,
@@ -340,11 +346,11 @@ class Team(ABC):
     def __getEmptyOrdersDataFrame__(self) -> pd.DataFrame:
         from dataRecolector.dataRecolector import DataRecolector
         
-        noSelectedTeam = CarrierWebPageFactory().create_carrier_webpage("NoCarrier", "")
-        return DataRecolector(noSelectedTeam).getEmptyOrdersData()
+        noSelectedTeam = CarrierWebPageFactory().create_carrier_webpage("NoCarrier", "", self.log)
+        return DataRecolector(noSelectedTeam, log= self.log).getEmptyOrdersData()
     
     def __getEmptyContactsDataFrame__(self) -> pd.DataFrame:
         from dataRecolector.dataRecolector import DataRecolector
 
-        noSelectedTeam = CarrierWebPageFactory().create_carrier_webpage("NoCarrier", "")
-        return DataRecolector(noSelectedTeam).getEmptyContactsData()
+        noSelectedTeam = CarrierWebPageFactory().create_carrier_webpage("NoCarrier", "", self.log)
+        return DataRecolector(noSelectedTeam, log= self.log).getEmptyContactsData()

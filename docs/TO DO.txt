@@ -50,25 +50,37 @@
 
     + los retornos en fin de semana de por medio tienen q retornar el lunes (o siguiente dia habil)
 
-*A medio hacer --------------------------------------------------------------------------------------------------
-    + Que pasa si necesitamos que las cajas tienen q empezar a venir a Fisher? Lo dejo como una opción a completar en el excel (que de momento siempre esté en la opcion que vaya a TA) ??
-
     + Arreglar send_email 
         - En config -- Listo
-        - En modelo al procesar
+        - En modelo al procesar -- Listo
 
-    + typo de material, diferencia tipo de materail 1 de 2 al agregar contactos?
-
+    + tipo de material, diferencia tipo de material 1 de 2 al agregar contactos? Solucionado
+    
     + Crear tests y objetos simuladores
 
-*No iniciado --------------------------------------------------------------------------------------------------
+    + Emails de cada equipo se cambian desde config
+    
+    + Sacar Singleton de Logs
+
     + Separar utils (opcional) - mejor, pq puedo hacer que Log utilice un util
 
-    + Emails de cada equipo se cambian desde config
+    + rename ToolTips
+
+    + Que pasa si necesitamos que las cajas tienen q empezar a venir a Fisher? Lo dejo como una opción a completar en el excel (que de momento siempre esté en la opcion que vaya a TA) ??
+
+*A medio hacer --------------------------------------------------------------------------------------------------
+    
+    + Cambiar carga de ordenes a HTTP
+
+*No iniciado --------------------------------------------------------------------------------------------------
+    
+    + Ver error al cerrar config y logConsole
+
+    + remover las instrucciones del queue, solo dejar pandasObjects
+
+    + Actualizar imagenes de TFS
 
 *Ideas descartadas --------------------------------------------------------------------------------------------------
     + Diferenciar horario de entrega segun el dia de entrega - No aplica
 
-    + Clase aparte de emailSender, no son polimorficos
-
-    + Ver error al cerrar config
+    + Clase aparte de emailSender

@@ -1,3 +1,5 @@
+from logClass.log import Log
+
 class CarrierWebPageFactory:
     """
     Factory class to create carrier webpages
@@ -8,7 +10,7 @@ class CarrierWebPageFactory:
         """
         pass
 
-    def create_carrier_webpage(self, carrier_name: str, folder_path_to_download: str):
+    def create_carrier_webpage(self, carrier_name: str, folder_path_to_download: str = "", log: Log = Log()):
         """
         Creates a carrier webpage
 
@@ -22,15 +24,15 @@ class CarrierWebPageFactory:
         match carrier_name:
             case "Transportes Ambientales":
                 from .TransportesAmbientales import TransportesAmbientales
-                return TransportesAmbientales(folder_path_to_download)
+                return TransportesAmbientales(folder_path_to_download, log)
             
             case "Carrier Webpage For Testing":
                 from .CarrierWebpageForTesting import CarrierWebpageForTesting
-                return CarrierWebpageForTesting(folder_path_to_download)
+                return CarrierWebpageForTesting(folder_path_to_download, log)
             
             case _:
                 from .NoCarrier import NoCarrier
-                return NoCarrier(folder_path_to_download)
+                return NoCarrier(folder_path_to_download, log)
             
     def get_carrier_webpage_names(self) -> list:
         """

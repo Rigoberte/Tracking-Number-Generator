@@ -1,6 +1,6 @@
 import tkinter as tk
 
-class LogToolTip:
+class BottomBarToolTip:
     def __init__(self, widget):
         self.widget = widget
         self.tip_window = None
@@ -9,13 +9,13 @@ class LogToolTip:
     def show_tip(self, text, x, y):
         if self.tip_window or not text:
             return
-         
+        
         self.tip_window = tw = tk.Toplevel(self.widget)
         tw.wm_overrideredirect(1)
         
         label = tk.Label(tw, text=text, justify=tk.LEFT,
-                         background="#ffffe0", relief=tk.SOLID, borderwidth=1,
-                         font=("tahoma", "8", "normal"))
+                        background="#ffffe0", relief=tk.SOLID, borderwidth=1,
+                        font=("tahoma", "8", "normal"))
         label.pack(ipadx=1)
 
         screen_x = self.widget.winfo_pointerx()

@@ -8,13 +8,14 @@ from carriersWebpage.carrierWebPage import CarrierWebpage
 from logClass.log import Log
 
 class TransportesAmbientales(CarrierWebpage):
-    def __init__(self, folder_path_to_download: str = ""):
+    def __init__(self, folder_path_to_download: str, log: Log):
         """
         Class constructor for Transportes Ambientales
 
         Args:
             driver (webdriver): selenium driver
         """
+        super().__init__(log)
         self.folder_path_to_download = folder_path_to_download
 
     def build_driver(self) -> None:
@@ -37,11 +38,11 @@ class TransportesAmbientales(CarrierWebpage):
         self.complete_login_form(username, password)
 
         try:
-            time.sleep(1)
+            time.sleep(0.5)
             self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[2]/h1")))
             return True
         except Exception as e:
-            Log().add_error_log(f"Error logging in webpage: {e}")
+            raise Exception(e)
         
         return False
     
@@ -136,13 +137,30 @@ class TransportesAmbientales(CarrierWebpage):
             observaciones_textbox.clear()
             observaciones_textbox.send_keys(comments)
 
-            if contacts != "" and contacts != "No contact":
-                self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").clear()
-                self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input[1]").send_keys(contacts)
+            # Get value if contacts is empty
+            if contacts == "" or contacts == "No contact":
+                contacts = self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input").get_attribute("value")
+            
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input").clear()
 
-            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[12]/td/input").send_keys(amount_of_boxes)
+            contacts = contacts.replace(" / ", ", ")
+            contacts = contacts.replace("/ ", ", ")
+            contacts = contacts.replace(" /", ", ")
+            contacts = contacts.replace(" , ", ", ")
+            contacts = contacts.replace("; ", ", ")
+            contacts = contacts.replace(" ; ", ", ")
+            contacts = contacts.replace(";", ", ")
 
-            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/button").click()
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input").send_keys(contacts)
+
+
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/input").send_keys(amount_of_boxes)
+
+            time.sleep(0.5)
+
+            self.driver.find_element(By.XPATH, '//*[@id="btn_Grabar_F8_"]').click()
+
+            time.sleep(0.5)
 
             # Wait for the webpage to load and get the tracking number
             self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))
@@ -150,10 +168,49 @@ class TransportesAmbientales(CarrierWebpage):
             self.driver.implicitly_wait(5)
 
             tracking_number = self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:14]
+
+
+            """
+            url = f"https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarEnvio+idubicacion={carrier_id}"
+
+            headers = {
+                "Authorization": "Bearer TOKEN",
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+
+            order_parameters = {
+                "reference": reference,
+                "ship_date": ship_date,
+                "ship_time_from": ship_time_from,
+                "ship_time_to": ship_time_to,
+                "delivery_date": delivery_date,
+                "delivery_time_from": delivery_time_from,
+                "delivery_time_to": delivery_time_to,
+                "type_of_material": type_of_material,
+                "temperature": temperature,
+                "contacts": contacts,
+                "amount_of_boxes": amount_of_boxes
+            }
+
+            response = requests.post(url, headers=headers, data=json.dumps(data))
+            numero_de_servicio = ""
+
+            if response.status_code == 201:
+                respuesta_json = response.json()
+                numero_de_servicio = respuesta_json.get("JOB_NUMBER")
+                mensaje = respuesta_json.get("mensaje")
+                print(f"Servicio creado exitosamente. Número de servicio: {numero_de_servicio}")
+                print(f"Mensaje: {mensaje}")
+
+            else:
+                raise Exception("{response.status_code} - {response.text}")
+
+            return numero_de_servicio
+            """
             
         except Exception as e:
-            Log().add_error_log(f"Error completing shipping order form: {e}")
-            Log().add_error_log(f"Order: {reference}")
+            raise Exception(e)
 
         finally:
             return tracking_number
@@ -187,12 +244,14 @@ class TransportesAmbientales(CarrierWebpage):
             for i in range(0, it_tipo_retorno):
                 self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[9]/td/select").send_keys(Keys.DOWN)
 
-            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[12]/td/input[1]").send_keys(contacts)
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[12]/td/input").send_keys(contacts)
             
-            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/input").clear()
-            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[13]/td/input").send_keys(amount_of_boxes_to_return)
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[14]/td/input").clear()
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[14]/td/input").send_keys(amount_of_boxes_to_return)
 
-            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[14]/td/button").click()
+            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[15]/td/button").click()
+            
+            time.sleep(0.5)
             
             # Wait for the webpage to load and get the return tracking number
             self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))
@@ -200,10 +259,9 @@ class TransportesAmbientales(CarrierWebpage):
             self.driver.implicitly_wait(5)
             
             return_tracking_number = self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:14]
+        
         except Exception as e:
-            Log().add_error_log(f"Error completing shipping order return form: {e}")
-            Log().add_error_log(f"Order: {reference_return}")
-            return "ERROR"
+            raise Exception(e)
             
         finally:
             return return_tracking_number
