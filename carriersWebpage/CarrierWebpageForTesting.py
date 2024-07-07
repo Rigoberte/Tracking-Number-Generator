@@ -111,11 +111,11 @@ class CarrierWebpageForTesting(CarrierWebpage):
         finally:
             return return_tracking_number
     
-    def printWayBillDocument(self, tracking_number: str, amount_of_copies: int) -> None:
+    def print_wayBill_document(self, tracking_number: str, amount_of_copies: int) -> None:
         pass
 
-    def printLabelDocument(self, tracking_number: str) -> None:
+    def print_label_document(self, tracking_number: str) -> None:
         pass
 
-    def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int) -> None:
+    def print_return_wayBill_document(self, return_tracking_number: str, amount_of_copies: int) -> None:
         pass

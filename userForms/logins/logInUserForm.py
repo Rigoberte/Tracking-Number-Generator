@@ -49,8 +49,10 @@ class LogInUserForm(tk.Tk):
 
     def connect_with_controller(self, controller) -> None:
         def on_login_btn_click(event):
-            controller.validate_login()
+            if self.get_username() != "" and self.get_password() != "":
+                controller.validate_login()
 
+        self.username_entry.bind("<Return>", on_login_btn_click)
         self.password_entry.bind("<Return>", on_login_btn_click)
 
         self.login_button.configure(command=controller.validate_login)

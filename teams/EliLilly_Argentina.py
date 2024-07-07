@@ -10,7 +10,7 @@ class EliLillyArgentinaTeam(Team):
         super().__init__(log)
         self.carrierWebpage = self.__build_carrier_Webpage__("Transportes Ambientales", folder_path_to_download)
 
-    def getTeamName(self) -> str:
+    def get_team_name(self) -> str:
         return "Eli Lilly Argentina"
 
     def readOrdersExcel(self, path_from_get_data: str, orders_sheet: str, columns_types: dict) -> pd.DataFrame:
@@ -86,7 +86,7 @@ class EliLillyArgentinaTeam(Team):
 
         return ordersDataFrame
 
-    def sendEmailWithOrdersToTeam(self, folder_path_with_orders_files: str, date: str):
+    def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str):
         self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "inaki.costa@thermofisher")
 
     def build_driver(self):
@@ -120,13 +120,13 @@ class EliLillyArgentinaTeam(Team):
                                             contacts, amount_of_boxes_to_return,
                                             return_to_TA, tracking_number)
     
-    def printWayBillDocument(self, tracking_number: str, amount_of_copies: int):
+    def print_wayBill_document(self, tracking_number: str, amount_of_copies: int):
         self.__printWayBillDocument__(self.carrierWebpage, tracking_number, amount_of_copies)
 
-    def printLabelDocument(self, tracking_number: str):
+    def print_label_document(self, tracking_number: str):
         self.__printLabelDocument__(self.carrierWebpage, tracking_number)
 
-    def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int):
+    def print_return_wayBill_document(self, return_tracking_number: str, amount_of_copies: int):
         self.__printReturnWayBillDocument__(self.carrierWebpage, return_tracking_number, amount_of_copies)
 
     def get_column_rename_type_config_for_not_working_days_table(self) -> Tuple[dict, dict]:

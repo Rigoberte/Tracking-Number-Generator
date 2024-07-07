@@ -85,11 +85,11 @@ class Controller:
 
         if self.model.validate_login(username, password):
             # WebDriver keeps built
+            self.model.on_login_successful()
+            self.view.destroy_logInUserForm()
+        else:
             self.model.on_login_failed()
             self.view.on_login_failed()
-        else:
-            self.view.destroy_logInUserForm()
-            self.model.on_login_successful()
 
     # Getters from Model
     def get_empty_ordersAndContactsData(self) -> pd.DataFrame:

@@ -13,7 +13,7 @@ class NAMETeam(Team):
         super().__init__(log)
         self.carrierWebpage = self.__build_carrier_Webpage__("CARRIER NAME", folder_path_to_download)
 
-    def getTeamName(self) -> str:
+    def get_team_name(self) -> str:
         raise NotImplementedError("Method not implemented")
         return "TEAM NAME"
 
@@ -61,7 +61,7 @@ class NAMETeam(Team):
         raise NotImplementedError("Method not implemented")
         return ordersDataFrame
 
-    def sendEmailWithOrdersToTeam(self, folder_path_with_orders_files: str, date: str) -> None:
+    def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str) -> None:
         self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "inaki.costa@thermofisher")
 
     def build_driver(self) -> None:
@@ -95,13 +95,13 @@ class NAMETeam(Team):
                                             contacts, amount_of_boxes_to_return,
                                             return_to_TA, tracking_number)
     
-    def printWayBillDocument(self, tracking_number: str, amount_of_copies: int) -> None:
+    def print_wayBill_document(self, tracking_number: str, amount_of_copies: int) -> None:
         self.__printWayBillDocument__(self.carrierWebpage, tracking_number, amount_of_copies)
 
-    def printLabelDocument(self, tracking_number: str = "") -> None:
+    def print_label_document(self, tracking_number: str = "") -> None:
         self.__printLabelDocument__(self.carrierWebpage, tracking_number)
 
-    def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int) -> None:
+    def print_return_wayBill_document(self, return_tracking_number: str, amount_of_copies: int) -> None:
         self.__printReturnWayBillDocument__(self.carrierWebpage, return_tracking_number, amount_of_copies)
 
     def get_column_rename_type_config_for_not_working_days_table(self) -> Tuple[dict, dict]:

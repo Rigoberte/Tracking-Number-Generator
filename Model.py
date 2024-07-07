@@ -130,7 +130,7 @@ class Model:
         self.selected_team = TeamFactory().create_team(selected_team_name, self.folder_path_to_download, self.log)
 
         self.selected_date = dt.datetime.strptime(selected_date, '%Y-%m-%d')
-        self.ordersAndContactsDataframe = DataRecolector(self.selected_team, self.queue, self.log).recolectOrdersAndContactsData(self.selected_date)
+        self.ordersAndContactsDataframe = DataRecolector(self.selected_team, self.queue, self.log).recolect_orders_and_contacts_dataFrame(self.selected_date)
 
     def __loadOrdersAndCalculateTime__(self, selected_team_name: str, selected_date: str) -> None:
         self.queue.put("BLOCK MAIN USERFORM WIDGETS")
@@ -151,11 +151,11 @@ class Model:
     def __processOrders__(self, selected_team: Team, selected_date: dt.datetime, folder_path_to_download: str, ordersAndContactsDataframe: pd.DataFrame) -> pd.DataFrame:
         create_folder(folder_path_to_download)
 
-        ordersAndContactsDataframe = OrderProcessor(folder_path_to_download, selected_team, self.queue, self.log).processOrdersAndContactsTable(ordersAndContactsDataframe)
+        ordersAndContactsDataframe = OrderProcessor(folder_path_to_download, selected_team, self.queue, self.log).process_orders_and_contacts_dataFrame(ordersAndContactsDataframe)
         
         selected_date_str = selected_date.strftime("%Y-%m-%d")
         
-        selected_team.sendEmailWithOrdersToTeam(folder_path_to_download, selected_date_str)
+        selected_team.send_email_to_team_with_orders(folder_path_to_download, selected_date_str)
 
         return ordersAndContactsDataframe
 

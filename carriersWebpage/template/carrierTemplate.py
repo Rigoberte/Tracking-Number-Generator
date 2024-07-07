@@ -99,7 +99,7 @@ class CARRIER_NAME(CarrierWebpage):
         finally:
             return return_tracking_number
     
-    def printWayBillDocument(self, tracking_number: str, amount_of_copies: int) -> None:
+    def print_wayBill_document(self, tracking_number: str, amount_of_copies: int) -> None:
         url_guias = "www.google.com"
 
         # Here you should print way bill document
@@ -107,7 +107,7 @@ class CARRIER_NAME(CarrierWebpage):
     
         self.__print_webpage__(url_guias)
 
-    def printLabelDocument(self, tracking_number: str) -> None:
+    def print_label_document(self, tracking_number: str) -> None:
         url_rotulo = "www.google.com"
 
         # Here you should print label document
@@ -115,7 +115,7 @@ class CARRIER_NAME(CarrierWebpage):
     
         self.__print_webpage__(url_rotulo)
 
-    def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int) -> None:
+    def print_return_wayBill_document(self, return_tracking_number: str, amount_of_copies: int) -> None:
         url_guias_return = "www.google.com"
 
         # Here you should print return way bill document

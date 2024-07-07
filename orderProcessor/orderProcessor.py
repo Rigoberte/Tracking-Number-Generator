@@ -28,7 +28,7 @@ class OrderProcessor:
         self.queue = queue
         self.log = log
     
-    def processOrdersAndContactsTable(self, ordersDataFrame:pd.DataFrame) -> pd.DataFrame:
+    def process_orders_and_contacts_dataFrame(self, ordersDataFrame:pd.DataFrame) -> pd.DataFrame:
         """
         Process all orders in the table
         
@@ -57,7 +57,7 @@ class OrderProcessor:
 
             time.sleep(2) # Wait for the download to finish
 
-            self.__renameAllReturnFiles__(ordersDataFrame)
+            self.__rename_all_return_files__(ordersDataFrame)
 
             self.__export_to_excel__(ordersDataFrame)
 
@@ -154,7 +154,7 @@ class OrderProcessor:
         
             return return_tracking_number
     
-    def __renameAllReturnFiles__(self, ordersAndContactsDataframe: pd.DataFrame) -> None:
+    def __rename_all_return_files__(self, ordersAndContactsDataframe: pd.DataFrame) -> None:
         dataFrameWithReturnTrackingNumbers = ordersAndContactsDataframe[(ordersAndContactsDataframe["RETURN_TRACKING_NUMBER"] != "") & (ordersAndContactsDataframe["PRINT_RETURN_DOCUMENT"])][["RETURN_TRACKING_NUMBER"]]
     
         if dataFrameWithReturnTrackingNumbers.empty:
@@ -205,7 +205,7 @@ class OrderProcessor:
             ordersAndContactsDataframe.loc[index, "TRACKING_NUMBER"] = tracking_number
             ordersAndContactsDataframe.loc[index, "RETURN_TRACKING_NUMBER"] = return_tracking_number
             
-            self.__printOrderDocuments__(tracking_number, return_tracking_number, row["PRINT_RETURN_DOCUMENT"])
+            self.__print_order_documents__(tracking_number, return_tracking_number, row["PRINT_RETURN_DOCUMENT"])
 
             if email_must_be_sent_to_medical_centers:
                 try:
@@ -224,9 +224,9 @@ class OrderProcessor:
             row_dict["TRACKING_NUMBER"] = tracking_number
             row_dict["RETURN_TRACKING_NUMBER"] = return_tracking_number
 
-            self.__updateTreeviewLine__(row_dict)
+            self.__update_treeview_line_from_main_userform__(row_dict)
 
-    def __printOrderDocuments__(self, tracking_number: str, return_tracking_number: str, print_return_document: bool) -> None:
+    def __print_order_documents__(self, tracking_number: str, return_tracking_number: str, print_return_document: bool) -> None:
         """
         Prints the order documents
 
@@ -236,13 +236,13 @@ class OrderProcessor:
             print_return_document (bool): if True, prints the return document
         """
         if tracking_number != "":
-            self.selectedTeam.printWayBillDocument(tracking_number, 4)
-            self.selectedTeam.printLabelDocument(tracking_number)
+            self.selectedTeam.print_wayBill_document(tracking_number, 4)
+            self.selectedTeam.print_label_document(tracking_number)
         else:
             return
         
         if print_return_document and return_tracking_number != "" and return_tracking_number != "Error":
-            self.selectedTeam.printReturnWayBillDocument(return_tracking_number, 1)
+            self.selectedTeam.print_return_wayBill_document(return_tracking_number, 1)
 
     def __get_tracking_numbers_from_carrier__(self, carrier_id: int, system_number: str, ivrs_number: str, 
         ship_date: str, ship_time_from: str, ship_time_to: str, 
@@ -307,7 +307,7 @@ class OrderProcessor:
         finally:
             return tracking_number, return_tracking_number
 
-    def __updateTreeviewLine__(self, row: dict) -> None:
+    def __update_treeview_line_from_main_userform__(self, row: dict) -> None:
         """
         Updates a line in the treeview
 
@@ -316,11 +316,11 @@ class OrderProcessor:
         """
         self.queue.put(row)
 
-    def __getEmailSourceFromTxtFile__(self, file) -> str:
+    def __get_email_source_from_TXT_file__(self, file) -> str:
             with open(file, 'r') as file:
                 return file.read()
             
-    def __replaceEmailValues__(self, emailSource: str, study: str, site: str, ivrs_number: str,
+    def __replace_email_values__(self, emailSource: str, study: str, site: str, ivrs_number: str,
         delivery_date: str, delivery_time_from: str, delivery_time_to: str,
         type_of_material: str, temperature: str, amount_of_boxes: int,
         hasReturn: bool, type_of_return: str, amount_of_boxes_to_return: int,
@@ -389,8 +389,8 @@ class OrderProcessor:
             team_emails = team_emails if team_emails != "" else ""
             mail.CC = customer_emails + CRAs_emails + team_emails
 
-            emailSource = self.__getEmailSourceFromTxtFile__("media/email.txt")
-            emailSource = self.__replaceEmailValues__(emailSource, study, site, ivrs_number, 
+            emailSource = self.__get_email_source_from_TXT_file__("media/email.txt")
+            emailSource = self.__replace_email_values__(emailSource, study, site, ivrs_number, 
                                                     delivery_date, delivery_time_from, delivery_time_to, 
                                                     type_of_material, temperature, amount_of_boxes, 
                                                     hasReturn, type_of_return, amount_of_boxes_to_return, 

@@ -25,32 +25,13 @@ class LogConsole(tk.Tk):
         self.logs_df = controller.print_logs()
         self.logs_text_label = tk.Text(self.frames["main"], wrap=tk.WORD)
 
-        for index, row in self.logs_df.iterrows():
-            if row["Text"] == "":
-                continue
-
-            if row["Type"] == "Separator":
-                self.logs_text_label.insert(tk.END, "\n" + row["Text"] + "\n\n\n")
-                continue
-            else:
-                text_with_color = row["Date and Time"] + " - " + row["Type"]
-            
-            if row["Type"] == "Info":
-                color_tag = "blue"
-            elif row["Type"] == "Warning":
-                color_tag = "orange"
-            elif row["Type"] == "Error":
-                color_tag = "red"
-
-            self.logs_text_label.tag_config(color_tag, foreground=color_tag)
-            self.logs_text_label.insert(tk.END, text_with_color, color_tag)
-            self.logs_text_label.insert(tk.END, "\n" + row["Text"] + "\n\n")
+        self.__insert_a_logs_into_label__(self.logs_df)
 
         self.scrollbar = tk.Scrollbar(self.frames["main"], orient="vertical", command=self.logs_text_label.yview, bg="black", troughcolor="black", relief="flat")
         self.scrollbar.pack(side="right", fill="y")
         
         self.logs_text_label.pack(fill=tk.BOTH, expand=True)
-        self.logs_text_label.config(state=tk.DISABLED)
+        #self.logs_text_label.config(state=tk.DISABLED)
         self.logs_text_label.config(bg="black", fg="white")
         self.logs_text_label.config(font=("Courier", 14))
         self.logs_text_label.config(highlightthickness=0)
@@ -63,6 +44,23 @@ class LogConsole(tk.Tk):
             controller.on_export_logs_to_csv()
 
         self.export_to_csv_label.bind("<Double-1>", on_export_logs_to_csv)
+        
+        def on_visibility(event):
+            current_quantity_of_logs = len(self.logs_df)
+
+            logs = controller.print_logs()
+            
+            if len(logs) > current_quantity_of_logs:
+                new_logs = logs.iloc[current_quantity_of_logs:]
+
+                self.__insert_a_logs_into_label__(new_logs)
+
+                self.logs_df = logs
+        
+        #update logs when windows is visible
+        self.bind("<Visibility>", on_visibility)
+        self.bind("<FocusIn>", on_visibility)
+        self.bind("<Enter>", on_visibility)
 
     def show_success_export_to_csv(self):
         messagebox.showinfo("Success", "Logs exported to .CSV")
@@ -102,3 +100,29 @@ class LogConsole(tk.Tk):
         self.export_to_csv_label.pack(expand=True)
 
         self.config(bg="black")
+
+    def __insert_a_logs_into_label__(self, new_logs):
+        self.logs_text_label.config(state=tk.NORMAL)
+
+        for index, row in new_logs.iterrows():
+            if row["Text"] == "":
+                continue
+
+            if row["Type"] == "Separator":
+                self.logs_text_label.insert(tk.END, "\n" + row["Text"] + "\n\n\n")
+                continue
+            else:
+                text_with_color = row["Date and Time"] + " - " + row["Type"]
+            
+            if row["Type"] == "Info":
+                color_tag = "blue"
+            elif row["Type"] == "Warning":
+                color_tag = "orange"
+            elif row["Type"] == "Error":
+                color_tag = "red"
+
+            self.logs_text_label.tag_config(color_tag, foreground=color_tag)
+            self.logs_text_label.insert(tk.END, text_with_color, color_tag)
+            self.logs_text_label.insert(tk.END, "\n" + row["Text"] + "\n\n")
+
+        self.logs_text_label.config(state=tk.DISABLED)

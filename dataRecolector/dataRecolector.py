@@ -37,7 +37,7 @@ class DataRecolector:
                 "CONTACTS", "TYPE_OF_MATERIAL_CAN_RECEIVE", 
                 "MEDICAL_CENTER_EMAILS", "CUSTOMER_EMAIL", "CRA_EMAILS", "TEAM_EMAILS"]
         
-    def recolectOrdersAndContactsData(self, shipdate: dt.datetime) -> pd.DataFrame:
+    def recolect_orders_and_contacts_dataFrame(self, shipdate: dt.datetime) -> pd.DataFrame:
         """
         Process all orders in the table
 
@@ -76,7 +76,7 @@ class DataRecolector:
         """
         return pd.DataFrame(columns=self.columns_df)
 
-    def getEmptyOrdersData(self) -> pd.DataFrame:
+    def get_empty_orders_dataFrame(self) -> pd.DataFrame:
         """
         Returns an empty orders table
 
@@ -85,7 +85,7 @@ class DataRecolector:
         """
         return pd.DataFrame(columns=self.columns_for_orders)
     
-    def getEmptyContactsData(self) -> pd.DataFrame:
+    def get_empty_contacts_dataFrame(self) -> pd.DataFrame:
         """
         Returns an empty contacts table
 

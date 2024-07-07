@@ -41,11 +41,11 @@ class NoCarrier(CarrierWebpage):
                                             return_to_carrier_depot: bool, tracking_number: str) -> str:
         return ""
     
-    def printWayBillDocument(self, tracking_number: str, amount_of_copies: int) -> None:
+    def print_wayBill_document(self, tracking_number: str, amount_of_copies: int) -> None:
         return ""
     
-    def printLabelDocument(self, tracking_number: str) -> None:
+    def print_label_document(self, tracking_number: str) -> None:
         return ""
     
-    def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int) -> None:
+    def print_return_wayBill_document(self, return_tracking_number: str, amount_of_copies: int) -> None:
         return ""

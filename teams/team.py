@@ -47,7 +47,7 @@ class Team(ABC):
                         "team_email"]
 
         result = []
-        config = DataPathController().get_config_of_a_team(self.getTeamName())
+        config = DataPathController().get_config_of_a_team(self.get_team_name())
         for var in vars_to_returns:
             if var in possible_vars:
                 result.append(config[var])
@@ -62,7 +62,7 @@ class Team(ABC):
     
     # Methods to be implemented by each sub class
     @abstractmethod
-    def getTeamName(self) -> str:
+    def get_team_name(self) -> str:
         """
         Gets team name
         """
@@ -121,7 +121,7 @@ class Team(ABC):
             return ordersDataframe
     
     @abstractmethod
-    def sendEmailWithOrdersToTeam(self, folder_path_with_orders_files: str, date: str):
+    def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str):
         """
         Sends an email with the orders table to the team
 
@@ -213,21 +213,21 @@ class Team(ABC):
         pass
 
     @abstractmethod
-    def printWayBillDocument(self, tracking_number: str, amount_of_copies: int) -> None:
+    def print_wayBill_document(self, tracking_number: str, amount_of_copies: int) -> None:
         """
         Prints way bill document
         """
         pass
 
     @abstractmethod
-    def printLabelDocument(self, tracking_number: str) -> None:
+    def print_label_document(self, tracking_number: str) -> None:
         """
         Prints label document
         """
         pass
 
     @abstractmethod
-    def printReturnWayBillDocument(self, return_tracking_number: str, amount_of_copies: int) -> None:
+    def print_return_wayBill_document(self, return_tracking_number: str, amount_of_copies: int) -> None:
         """
         Prints return way bill document
         """
@@ -270,7 +270,7 @@ class Team(ABC):
             parent_folder = os.path.dirname(folder_path_with_orders_files)
             
             # Nombre del archivo ZIP sin extensión
-            zip_filename = 'orders_' + self.getTeamName() + '_' + date
+            zip_filename = 'orders_' + self.get_team_name() + '_' + date
             
             # Ruta completa del archivo ZIP
             zip_path = os.path.join(parent_folder, zip_filename)
@@ -288,7 +288,7 @@ class Team(ABC):
             mail = outlook.CreateItem(0)
             mail.To = emails_of_team
             mail.Cc = emails_of_admin
-            mail.Subject = f"Ordenes de envio con despacho {date} - {self.getTeamName()}"
+            mail.Subject = f"Ordenes de envio con despacho {date} - {self.get_team_name()}"
             mail.Body = "Adjunto encontrarán las órdenes para el día de la fecha."
 
                 # Adjuntar el archivo ZIP
@@ -335,22 +335,22 @@ class Team(ABC):
                                                 return_to_TA, tracking_number)
     
     def __printWayBillDocument__(self, carrierWebpage: CarrierWebpage, tracking_number: str, amount_of_copies: int) -> None:
-        carrierWebpage.printWayBillDocument(tracking_number, amount_of_copies)
+        carrierWebpage.print_wayBill_document(tracking_number, amount_of_copies)
 
     def __printLabelDocument__(self, carrierWebpage: CarrierWebpage, tracking_number: str) -> None:
-        carrierWebpage.printLabelDocument(tracking_number)
+        carrierWebpage.print_label_document(tracking_number)
 
     def __printReturnWayBillDocument__(self, carrierWebpage: CarrierWebpage, return_tracking_number: str, amount_of_copies: int) -> None:
-        carrierWebpage.printReturnWayBillDocument(return_tracking_number, amount_of_copies)
+        carrierWebpage.print_return_wayBill_document(return_tracking_number, amount_of_copies)
 
     def __getEmptyOrdersDataFrame__(self) -> pd.DataFrame:
         from dataRecolector.dataRecolector import DataRecolector
         
         noSelectedTeam = CarrierWebPageFactory().create_carrier_webpage("NoCarrier", "", self.log)
-        return DataRecolector(noSelectedTeam, log= self.log).getEmptyOrdersData()
+        return DataRecolector(noSelectedTeam, log= self.log).get_empty_orders_dataFrame()
     
     def __getEmptyContactsDataFrame__(self) -> pd.DataFrame:
         from dataRecolector.dataRecolector import DataRecolector
 
         noSelectedTeam = CarrierWebPageFactory().create_carrier_webpage("NoCarrier", "", self.log)
-        return DataRecolector(noSelectedTeam, log= self.log).getEmptyContactsData()
+        return DataRecolector(noSelectedTeam, log= self.log).get_empty_contacts_dataFrame()
