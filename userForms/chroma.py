@@ -20,7 +20,7 @@ class Chroma:
         self.dark = not self.dark
         if self.dark:
             self.body_color = '#121212'
-            self.sidebar_color = '#3A3B3C'
+            self.sidebar_color = '#2B2B2B'
             self.primary_color = '#3700B3' 
             self.primary_color_light = '#BB86FC'
             self.toggle_color = '#3700B3'

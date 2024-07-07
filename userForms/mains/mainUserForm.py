@@ -561,7 +561,9 @@ class MyUserForm(tk.Tk):
                 widget.image = imagen_tk
 
             def changeAllImages(self):
-                changeImage(self, self.logo, "TMO_logo.png", "TMO_logo_light.png", (284, 61))
+                changeImage(self, self.logo, "TMO_logo_dark.png", "TMO_logo_light.png", (284, 61))
+                self.logo.configure(bg=self.colors.getSidebarColor())
+                
                 changeImage(self, self.dark_mode_image, "moon-regular-24.png", "sun-solid-24.png", (24, 24))
                 changeImage(self, self.log_image, "message-alt-detail-regular-24.png", "message-alt-detail-solid-24.png", (24, 24))
                 changeImage(self, self.open_excel_image, "data-regular-24.png", "data-solid-24.png", (24, 24))
