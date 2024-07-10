@@ -163,7 +163,7 @@ class CarrierWebpage(ABC):
             driver.implicitly_wait(5)
 
         except Exception as e:
-            self.log.add_error_log(f"Error printing documents: {e}")
+            self.log.add_warning_log(f"Error printing documents: {e}")
     
     def __quit_driver__(self, driver) -> None:
         try:

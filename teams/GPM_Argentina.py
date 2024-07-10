@@ -70,7 +70,7 @@ class GPMArgentinaTeam(Team):
         ordersDataFrame["HAS_RETURN"] = (ordersDataFrame["AMOUNT_OF_BOXES_TO_RETURN"] > 0) & (ordersDataFrame["TEMPERATURE"] != "Ambient")
         ordersDataFrame.loc[ordersDataFrame["HAS_RETURN"], "TYPE_OF_RETURN"] = "CREDO"
 
-        ordersDataFrame["RETURN_TO_CARRIER_DEPOT"] = ordersDataFrame["HAS_RETURN"] & (ordersDataFrame["TEMPERATURE"] != "Frozen")
+        ordersDataFrame["RETURN_TO_CARRIER_DEPOT"] = ordersDataFrame["HAS_RETURN"]
 
         return ordersDataFrame
 

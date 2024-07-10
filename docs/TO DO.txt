@@ -68,6 +68,8 @@
 
     + Que pasa si necesitamos que las cajas tienen q empezar a venir a Fisher? Lo dejo como una opción a completar en el excel (que de momento siempre esté en la opcion que vaya a TA) ??
 
+    + Actualizar imagenes de TFS
+
 *A medio hacer --------------------------------------------------------------------------------------------------
     
     + Cambiar carga de ordenes a HTTP
@@ -76,11 +78,9 @@
     
     + Ver error al cerrar config y logConsole
 
-    + remover las instrucciones del queue, solo dejar pandasObjects
-
-    + Actualizar imagenes de TFS
-
 *Ideas descartadas --------------------------------------------------------------------------------------------------
     + Diferenciar horario de entrega segun el dia de entrega - No aplica
 
     + Clase aparte de emailSender
+
+    + remover las instrucciones del queue, solo dejar pandasObjects - Necesito saber cuando se termina de ejecutar los Threderings

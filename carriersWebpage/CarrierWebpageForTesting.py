@@ -36,13 +36,14 @@ class CarrierWebpageForTesting(CarrierWebpage):
         self.complete_login_form(username, password)
 
         try:
-            return username == "username" and password == "password"
+            result = username == "username" and password == "password"
         
         except Exception as e:
+            result = False
             raise Exception(e)
         
         finally:
-            return False
+            return result
     
     def complete_login_form(self, username: str, password: str) -> None:
         """

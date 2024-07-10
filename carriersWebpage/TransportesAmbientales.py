@@ -156,9 +156,22 @@ class TransportesAmbientales(CarrierWebpage):
 
             time.sleep(0.5)
 
-            self.driver.find_element(By.XPATH, '//*[@id="btn_Grabar_F8_"]').click()
+            try:
+                # Sometimes the button is not found by ID, so we try different XPATHs
+                buttonToConfirmOrder = self.driver.find_element(By.XPATH, '//*[@id="btn_Grabar_F8_"]')
+            except:
+                try:
+                    buttonToConfirmOrder = self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[14]/td/button")
+                except:
+                    try:
+                        buttonToConfirmOrder = self.driver.find_element(By.ID, "btn_Grabar_F8_")
+                    except:
+                        raise Exception("'Grabar' Button not found")
 
+            self.driver.implicitly_wait(5)                    
             time.sleep(0.5)
+
+            buttonToConfirmOrder.click()
 
             # Wait for the webpage to load and get the tracking number
             self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))
@@ -169,6 +182,9 @@ class TransportesAmbientales(CarrierWebpage):
 
 
             """
+            # To avoid using selenium and avoid web scraping, we will change the code with something similar to this:
+            # (this code is not tested and the web service is not implemented on carrier webpage yet. It will be implemented around August 15, 2024)
+
             url = f"https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarEnvio+idubicacion={carrier_id}"
 
             headers = {
@@ -196,11 +212,9 @@ class TransportesAmbientales(CarrierWebpage):
 
             if response.status_code == 201:
                 respuesta_json = response.json()
-                numero_de_servicio = respuesta_json.get("JOB_NUMBER")
-                mensaje = respuesta_json.get("mensaje")
+                numero_de_servicio = respuesta_json.get("TRACKING_NUMBER")
                 print(f"Servicio creado exitosamente. Número de servicio: {numero_de_servicio}")
-                print(f"Mensaje: {mensaje}")
-
+                
             else:
                 raise Exception("{response.status_code} - {response.text}")
 
@@ -247,9 +261,21 @@ class TransportesAmbientales(CarrierWebpage):
             self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[14]/td/input").clear()
             self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[14]/td/input").send_keys(amount_of_boxes_to_return)
 
-            self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[15]/td/button").click()
+            try:
+                buttonToConfirmOrder = self.driver.find_element(By.XPATH, '//*[@id="btn_Grabar_F8_"]')
+            except:
+                try:
+                    buttonToConfirmOrder = self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[15]/td/button")
+                except:
+                    try:
+                        buttonToConfirmOrder = self.driver.find_element(By.ID, "btn_Grabar_F8_")
+                    except:
+                        raise Exception("'Grabar' Button not found")
             
+            self.driver.implicitly_wait(5)
             time.sleep(0.5)
+
+            buttonToConfirmOrder.click()
             
             # Wait for the webpage to load and get the return tracking number
             self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption")))

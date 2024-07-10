@@ -164,7 +164,7 @@ class OrderProcessor:
             try:
                 renameReturnPDFFile(row["RETURN_TRACKING_NUMBER"], self.folder_path_to_download)
             except Exception as e:
-                self.log.add_error_log(f"Error renaming return file: {e}")
+                self.log.add_warning_log(f"Error renaming return file: {e}")
 
     def __process_all_shipping_orders__(self, ordersAndContactsDataframe: pd.DataFrame) -> None:
         """
@@ -216,8 +216,8 @@ class OrderProcessor:
                     tracking_number, return_tracking_number,
                     row["CONTACTS"], row["MEDICAL_CENTER_EMAILS"], row["CUSTOMER_EMAIL"], row["CRA_EMAILS"], row["TEAM_EMAILS"])
                 except Exception as e:
-                    self.log.add_error_log(f"Error sending email to medical center: {e}")
-                    self.log.add_error_log(f"Order: {row['SYSTEM_NUMBER']} {row['IVRS_NUMBER']}")
+                    self.log.add_warning_log(f"Error sending email to medical center: {e}")
+                    self.log.add_warning_log(f"Order: {row['SYSTEM_NUMBER']} {row['IVRS_NUMBER']}")
             
             row_dict = row.to_dict()
             row_dict["INDEX"] = index
