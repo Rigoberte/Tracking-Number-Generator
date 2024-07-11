@@ -295,7 +295,7 @@ class TransportesAmbientales(CarrierWebpage):
         self.__print_webpage__(self.driver, url_guias)
 
     def print_label_document(self, tracking_number: str) -> None:
-        url_rotulo = f"https://sgi.tanet.com.ar/sgi/srv.RotuloPdf.emitir+id={tracking_number[:7]}&idservicio={tracking_number[:7]}"
+        url_rotulo = f"https://sgi.tanet.com.ar/sgi/srv.RotuloFCSPdf.emitir+id={tracking_number[:7]}&idservicio={tracking_number[:7]}"
         self.__print_webpage__(self.driver, url_rotulo)
 
     def print_return_wayBill_document(self, return_tracking_number: str, amount_of_copies: int) -> None:
