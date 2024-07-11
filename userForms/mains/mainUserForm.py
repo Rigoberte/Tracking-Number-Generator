@@ -398,6 +398,7 @@ class MyUserForm(tk.Tk):
             style = tk.ttk.Style()
             style.configure("mystyle.Treeview", highlightthickness=0, bd=0, font=('Calibri', 13)) # Font of the body
             style.configure("mystyle.Treeview.Heading", font=('Calibri', 13,'bold')) # Font of the headings
+            style.configure("mystyle.Treeview", rowheight=25)
             style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})]) # Remove the borders
             
             treeview = tk.ttk.Treeview(frame, columns=treeviewColumns , show='headings', style="mystyle.Treeview")
@@ -547,7 +548,7 @@ class MyUserForm(tk.Tk):
             self.update_a_line_to_processed_of_represented_ordersAndContactsDataframe(index, row['TRACKING_NUMBER'], row['RETURN_TRACKING_NUMBER'])
     
     def __set_colors__(self) -> None:
-            def changeImage(self, widget, dark_image, light_image, size):
+            def changeImage(self, widget, dark_image, light_image, size, bg_color):
                 if self.colors.getDarkMode():
                     logoPath = os.getcwd() + "\\media\\" + dark_image
                 else:
@@ -559,14 +560,14 @@ class MyUserForm(tk.Tk):
                 
                 widget.configure(image=imagen_tk)
                 widget.image = imagen_tk
+                widget.configure(bg=bg_color)
 
             def changeAllImages(self):
-                changeImage(self, self.logo, "TMO_logo_dark.png", "TMO_logo_light.png", (284, 61))
-                self.logo.configure(bg=self.colors.getSidebarColor())
+                changeImage(self, self.logo, "TMO_logo_dark.png", "TMO_logo_light.png", (284, 61), self.colors.getSidebarColor())
                 
-                changeImage(self, self.dark_mode_image, "moon-regular-24.png", "sun-solid-24.png", (24, 24))
-                changeImage(self, self.log_image, "message-alt-detail-regular-24.png", "message-alt-detail-solid-24.png", (24, 24))
-                changeImage(self, self.open_excel_image, "data-regular-24.png", "data-solid-24.png", (24, 24))
+                changeImage(self, self.dark_mode_image, "moon-regular-24.png", "sun-solid-24.png", (24, 24), self.colors.getBodyColor())
+                changeImage(self, self.log_image, "message-alt-detail-regular-24.png", "message-alt-detail-solid-24.png", (24, 24), self.colors.getBodyColor())
+                changeImage(self, self.open_excel_image, "data-regular-24.png", "data-solid-24.png", (24, 24), self.colors.getBodyColor())
             
             self.colors.toggle()
             self.frames["top"].configure(bg_color=self.colors.getTextColor(),
@@ -590,7 +591,7 @@ class MyUserForm(tk.Tk):
             for button in buttons:
                 button.configure(fg_color=self.colors.getPrimaryColor(),
                                 hover_color = self.colors.getPrimaryColorLight(),
-                                text_color= self.colors.getTextColor())
+                                text_color= self.colors.getTextColorForButtons())
 
     def __update_treeview__(self) -> None:
         """
