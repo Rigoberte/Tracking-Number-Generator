@@ -11,10 +11,6 @@ class LogConsole(tk.Tk):
 
         self.__create_widgets__()
 
-    def copy(self, event):
-        self.clipboard_clear()
-        self.clipboard_append(self.logs_text_label.selection_get())
-
     def show_userform(self):
         self.mainloop()
 
