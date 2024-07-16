@@ -1,3 +1,5 @@
+import os
+
 import tkinter as tk
 from tkinter import messagebox
 
@@ -6,6 +8,8 @@ class LogInUserForm(tk.Tk):
         super().__init__()
         self.title("Login Form")
         self.geometry("300x150")
+        self.iconbitmap(os.getcwd() + "\\media\\icon.ico")
+        
         self.__load_userform__(self)
     
     def get_username(self) -> str:

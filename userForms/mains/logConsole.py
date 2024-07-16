@@ -1,3 +1,5 @@
+import os
+
 import tkinter as tk
 import customtkinter as ctk
 from tkinter import messagebox
@@ -6,6 +8,7 @@ class LogConsole(tk.Tk):
         super().__init__()
         self.title("Log Console")
         self.geometry("800x600")
+        self.iconbitmap(os.getcwd() + "\\media\\icon.ico")
 
         self.logs_text = ""
 

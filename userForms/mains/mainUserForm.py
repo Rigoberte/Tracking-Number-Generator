@@ -23,6 +23,7 @@ class MyUserForm(tk.Tk):
 
         self.title("Tracking Number Generator")
         self.state("zoomed")
+        self.iconbitmap(os.getcwd() + "\\media\\icon.ico")
 
         self.colors = Chroma()
         

@@ -1,3 +1,5 @@
+import os
+
 import customtkinter as ctk
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -8,6 +10,7 @@ class ConfigUserForm(tk.Tk):
         
         self.title("Config")
         self.geometry("800x300")
+        self.iconbitmap(os.getcwd() + "\\media\\icon.ico")
 
         self.send_email_var = tk.IntVar()
         self.__create_widgets__()

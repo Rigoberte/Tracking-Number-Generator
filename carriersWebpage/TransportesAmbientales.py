@@ -232,7 +232,7 @@ class TransportesAmbientales(CarrierWebpage):
                                             return_time_to: str, type_of_return: str,
                                             contacts: str, amount_of_boxes_to_return: int,
                                             return_to_carrier_depot: bool, tracking_number: str) -> str:
-        return_tracking_number = ""
+        return_tracking_number = "ERROR"
         url_return = f"https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarRetorno+idsp={tracking_number[:7]}&idubicacion={carrier_id}"
         url_return += "&returnToTa=true" if return_to_carrier_depot else ""
 
