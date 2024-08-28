@@ -142,12 +142,7 @@ class TransportesAmbientales(CarrierWebpage):
             
             self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input").clear()
 
-            replacements = [" / ", "/ ", " /", "/", 
-                            " ; ", "; ", " ;", ";", 
-                            " , ", ", ", " ,", ",",
-                            " - ", "- ", " -", "-"]
-            for replacement in replacements:
-                contacts = contacts.replace(replacement, ", ")
+            contacts = self.__standarize_contacts__(contacts)
 
             self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[4]/table/tbody/tr[11]/td/input").send_keys(contacts)
 
@@ -232,7 +227,7 @@ class TransportesAmbientales(CarrierWebpage):
                                             return_time_to: str, type_of_return: str,
                                             contacts: str, amount_of_boxes_to_return: int,
                                             return_to_carrier_depot: bool, tracking_number: str) -> str:
-        return_tracking_number = "ERROR"
+        return_tracking_number = ""
         url_return = f"https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarRetorno+idsp={tracking_number[:7]}&idubicacion={carrier_id}"
         url_return += "&returnToTa=true" if return_to_carrier_depot else ""
 
@@ -285,6 +280,7 @@ class TransportesAmbientales(CarrierWebpage):
             return_tracking_number = self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:14]
         
         except Exception as e:
+            return_tracking_number = "ERROR"
             raise Exception(e)
             
         finally:
@@ -301,3 +297,18 @@ class TransportesAmbientales(CarrierWebpage):
     def print_return_wayBill_document(self, return_tracking_number: str, amount_of_copies: int) -> None:
         url_guias_return = f"https://sgi.tanet.com.ar/sgi/srv.SrvPdf.emitirOde+id={return_tracking_number[:7]}&idservicio={return_tracking_number[:7]}&copies={amount_of_copies}"
         self.__print_webpage__(self.driver, url_guias_return)
+
+    def __standarize_contacts__(self, contacts: str) -> str:
+        replacements = [" / ", "/ ", " /", "/", 
+                        " ; ", "; ", " ;", ";", 
+                        " , ", ", ", " ,", ",",
+                        " - ", "- ", " -", "-"]
+        for replacement in replacements:
+            contacts = contacts.replace(replacement, ", ")
+
+        contacts = contacts.title()
+        contacts = contacts.strip()
+        if contacts[-1:] == ",":
+            contacts = contacts[:-1]
+
+        return contacts
