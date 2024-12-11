@@ -61,8 +61,10 @@ class NAMETeam(Team):
         raise NotImplementedError("Method not implemented")
         return ordersDataFrame
 
-    def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str) -> None:
-        self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "inaki.costa@thermofisher")
+    def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str,
+                totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int) -> None:
+        self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "inaki.costa@thermofisher",
+                    totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed)
 
     def build_driver(self) -> None:
         self.__build_driver__(self.carrierWebpage)

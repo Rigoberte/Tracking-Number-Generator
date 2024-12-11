@@ -1,0 +1,78 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns:m="http://schemas.microsoft.com/office/2004/12/omml" xmlns="http://www.w3.org/TR/REC-html40"><head><meta http-equiv=Content-Type content="text/html; charset=iso-8859-1"><meta name=Generator content="Microsoft Word 15 (filtered medium)"><!--[if !mso]><style>v\:* {behavior:url(#default#VML);}
+o\:* {behavior:url(#default#VML);}
+w\:* {behavior:url(#default#VML);}
+.shape {behavior:url(#default#VML);}
+</style><![endif]--><style><!--
+/* Font Definitions */
+@font-face
+	{font-family:"Cambria Math";
+	panose-1:2 4 5 3 5 4 6 3 2 4;}
+@font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;}
+@font-face
+	{font-family:"Calibri Light";
+	panose-1:2 15 3 2 2 2 4 3 2 4;}
+@font-face
+	{font-family:Aptos;}
+/* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0in;
+	font-size:11.0pt;
+	font-family:"Calibri",sans-serif;
+	mso-ligatures:standardcontextual;
+	mso-fareast-language:EN-US;}
+span.EmailStyle17
+	{mso-style-type:personal-compose;
+	font-family:"Calibri Light",sans-serif;
+	color:windowtext;}
+.MsoChpDefault
+	{mso-style-type:export-only;
+	font-size:11.0pt;
+	mso-fareast-language:EN-US;}
+@page WordSection1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.0in 1.0in 1.0in;}
+div.WordSection1
+	{page:WordSection1;}
+--></style><!--[if gte mso 9]><xml>
+<o:shapedefaults v:ext="edit" spidmax="1026" />
+</xml><![endif]--><!--[if gte mso 9]><xml>
+<o:shapelayout v:ext="edit">
+<o:idmap v:ext="edit" data="1" />
+</o:shapelayout></xml><![endif]--></head>
+<body lang=ES-MX link="#467886" vlink="#96607D" style='word-wrap:break-word'>
+	<div class=WordSection1>
+		<p class=MsoNormal style='margin-bottom:12.0pt'>
+		<span lang=EN-US style='mso-fareast-language:ES-MX'>
+			<img width=267 height=67 style='width:2.7777in;height:.6944in' id="_x0000_i1028" src="|VAR_TMO_LOGO|">
+			<o:p></o:p>
+		</span>
+		</p>
+	<table class=MsoNormalTable border=0 cellspacing=0 cellpadding=0 width=640 style='width:480.0pt;border-collapse:collapse'>
+	<tr style='height:14.5pt'><td width=251 nowrap style='width:188.5pt;border-top:solid #AEAAAA 1.0pt;border-left:solid #AEAAAA 1.0pt;border-bottom:none;border-right:none;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>TEAM<o:p></o:p></span></b></p></td><td width=389 nowrap style='width:291.5pt;border-top:solid #AEAAAA 1.0pt;border-left:none;border-bottom:none;border-right:solid #AEAAAA 1.0pt;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_SELECTED_TEAM|<o:p></o:p></span></p></td></tr>
+
+	<tr style='height:14.5pt'><td width=251 nowrap style='width:188.5pt;border:none;border-left:solid #AEAAAA 1.0pt;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>SHIP DATE<o:p></o:p></span></b></p></td><td width=389 nowrap style='width:291.5pt;border:none;border-right:solid #AEAAAA 1.0pt;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><span lang=EN-US style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_SHIP_DATE|<o:p></o:p></span></p></td></tr>
+
+	<tr style='height:14.5pt'><td width=251 nowrap style='width:188.5pt;border:none;border-left:solid #AEAAAA 1.0pt;background:white;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>TOTAL AMOUNT OF ORDERS<o:p></o:p></span></b></p></td><td width=389 nowrap style='width:291.5pt;border:none;border-right:solid #AEAAAA 1.0pt;background:white;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><span lang=EN-US style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_TOTAL_AMOUNT_OF_ORDERS|<o:p></o:p></span></p></td></tr>
+
+	<tr style='height:14.5pt'><td width=251 nowrap style='width:188.5pt;border:none;border-left:solid #AEAAAA 1.0pt;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>AMOUNT OF ORDERS PROCESSED<o:p></o:p></span></b></p></td><td width=389 nowrap style='width:291.5pt;border:none;border-right:solid #AEAAAA 1.0pt;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><span lang=EN-US style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_AMOUNT_OF_ORDERS_PROCESSED|<o:p></o:p></span></p></td></tr>
+
+	<tr style='height:14.5pt'><td width=251 nowrap style='width:188.5pt;border-top:none;border-left:solid #AEAAAA 1.0pt;border-bottom:solid #BFBFBF 1.0pt;border-right:none;background:white;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'>
+
+	<p class=MsoNormal><b><span lang=EN-US style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>AMOUNT OF ORDERS NOT PROCESSED<o:p></o:p></span></b></p></td><td width=389 nowrap style='width:291.5pt;border-top:none;border-left:none;border-bottom:solid #BFBFBF 1.0pt;border-right:solid #AEAAAA 1.0pt;background:white;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'>
+	<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_AMOUNT_OF_ORDERS_NOT_PROCESSED|<o:p></o:p></span></p></td></tr>
+
+	</table>
+
+	<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'><o:p>&nbsp;</o:p></span></p>
+	<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri Light",sans-serif'>Please find attached the orders for the aforementioned ship date.<o:p></o:p></span></p>
+	<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri Light",sans-serif'><o:p>&nbsp;</o:p></span></p>
+	<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri Light",sans-serif'>For any additional questions, please contact us as soon as possible. Best regards,<o:p></o:p></span></p>
+	<p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif'><o:p>&nbsp;</o:p></span></p>
+	<p class=MsoNormal><b><span lang=EN-US style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>Client Services Department</span></b><span lang=EN-US style='font-family:"Arial",sans-serif;mso-fareast-language:ES-MX'><br></span><span lang=EN-US style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>Thermo Fisher Bot</span><b><span lang=EN-US style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'><o:p></o:p></span></b></p>
+	<p class=MsoNormal><span lang=EN-US style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>Clinical Trials Services<br>Thermo Fisher Scientific<o:p></o:p></span></p>
+	<p class=MsoNormal><span style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>Av. Del Campo 1550/60, Ciudad Aut�noma de Buenos Aires, CP1427</span><span style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'> <o:p></o:p></span></p>
+	<p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'><o:p>&nbsp;</o:p></span></p>
+	<p class=MsoNormal><span lang=EN-US style='font-size:9.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>WORLDWIDE CONFIDENTIALITY NOTE: Dissemination, distribution or copying of this e-mail or the information herein by anyone other than the intended recipient, or an employee or agent of a system responsible for delivering the message to the intended recipient, is prohibited. If you are not the intended recipient, please inform the sender and delete all copies.<o:p></o:p></span></p>
+</div></body></html>

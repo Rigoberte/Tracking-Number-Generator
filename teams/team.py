@@ -121,13 +121,17 @@ class Team(ABC):
             return ordersDataframe
     
     @abstractmethod
-    def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str):
+    def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str,
+                totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int):
         """
         Sends an email with the orders table to the team
 
         Args:
             folder_path_with_orders_files (str): folder path with orders files
             date (str): date
+            totalAmountOfOrders (int): total amount of orders
+            amountOfOrdersProcessed (int): amount of orders processed
+            amountOfOrdersReadyToBeProcessed (int): amount of orders ready to be processed
         """
         pass
 
@@ -264,7 +268,11 @@ class Team(ABC):
             return pd.DataFrame(columns=["DATE"])
 
     # Private methods
-    def __sendEmailWithOrdersToTeam__(self, folder_path_with_orders_files: str, date: str, emails_of_team: str, emails_of_admin: str):
+    def __sendEmailWithOrdersToTeam__(self, 
+            folder_path_with_orders_files: str, date: str, 
+            emails_of_team: str, emails_of_admin: str,
+            totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int):
+        
         try:
             # Obtener la carpeta padre
             parent_folder = os.path.dirname(folder_path_with_orders_files)
@@ -288,10 +296,14 @@ class Team(ABC):
             mail = outlook.CreateItem(0)
             mail.To = emails_of_team
             mail.Cc = emails_of_admin
-            mail.Subject = f"Ordenes de envio con despacho {date} - {self.get_team_name()}"
-            mail.Body = "Adjunto encontrarán las órdenes para el día de la fecha."
+            mail.Subject = f"Shipping orders with dispatch date {date} - {self.get_team_name()}"
+            
+            emailSource = self.__get_email_source_from_TXT_file__("media/email_to_team.txt")
+            emailSource = self.__replace_email_values__(emailSource, self.get_team_name(), date, 
+                        totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed)
+            mail.HTMLBody = emailSource
 
-                # Adjuntar el archivo ZIP
+            # Adjuntar el archivo ZIP
             mail.Attachments.Add(zip_file_with_extension)
 
             time.sleep(1)
@@ -299,6 +311,23 @@ class Team(ABC):
             mail.Send()
         except Exception as e:
             self.log.add_error_log(f"Error sending email with orders to team: {e}")
+
+    def __get_email_source_from_TXT_file__(self, file) -> str:
+            with open(file, 'r') as file:
+                return file.read()
+            
+    def __replace_email_values__(self, emailSource: str, 
+        selected_team_name: str, ship_date: str, total_amount_of_orders: int, 
+        amount_of_orders_processed: int, amount_of_orders_not_processed: int) -> str:
+        
+        emailSource = emailSource.replace("|VAR_SELECTED_TEAM|", selected_team_name)
+        emailSource = emailSource.replace("|VAR_SHIP_DATE|", ship_date)
+        emailSource = emailSource.replace("|VAR_TOTAL_AMOUNT_OF_ORDERS|", str(total_amount_of_orders))
+        emailSource = emailSource.replace("|VAR_AMOUNT_OF_ORDERS_PROCESSED|", str(amount_of_orders_processed))
+        emailSource = emailSource.replace("|VAR_AMOUNT_OF_ORDERS_NOT_PROCESSED|", str(amount_of_orders_not_processed))
+        emailSource = emailSource.replace("|VAR_TMO_LOGO|", os.getcwd() + "\\media\\TMO_logo_email.jpg")
+
+        return emailSource
 
     def __check_if_user_and_password_are_correct__(self, carrierWebpage: CarrierWebpage, username: str, password: str) -> bool:
         return carrierWebpage.check_if_user_and_password_are_correct(username, password)

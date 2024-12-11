@@ -11,7 +11,7 @@ RELATIVE_DATE = next_weekday
 class TestTeam(Team):
     def __init__(self, folder_path_to_download: str, log : Log):
         super().__init__(log)
-        self.carrierWebpage = self.__build_carrier_Webpage__("Carrier Webpage For Testing", folder_path_to_download)
+        self.carrierWebpage = self.__build_carrier_Webpage__("Transportes Ambientales HTTP", folder_path_to_download)
 
     def get_team_name(self) -> str:
         return "Team_for_testings"
@@ -40,14 +40,16 @@ class TestTeam(Team):
     def apply_team_specific_changes_for_orders_tables(self, ordersDataFrame: pd.DataFrame) -> pd.DataFrame:
         ordersDataFrame["PRINT_RETURN_DOCUMENT"] = True
 
-        #ordersDataFrame["HAS_RETURN"] = (ordersDataFrame["AMOUNT_OF_BOXES_TO_RETURN"] > 0) & (ordersDataFrame["TEMPERATURE"] != "Ambient")
+        ordersDataFrame["HAS_RETURN"] = (ordersDataFrame["AMOUNT_OF_BOXES_TO_RETURN"] > 0) & (ordersDataFrame["TEMPERATURE"] != "Ambient")
         #ordersDataFrame["AMOUNT_OF_BOXES_TO_RETURN"] = ordersDataFrame["AMOUNT_OF_BOXES_TO_RETURN"].apply(lambda x: x if x > 0 else 0)
-        #ordersDataFrame["TYPE_OF_RETURN"] = ordersDataFrame["HAS_RETURN"].apply(lambda x: "CREDO" if x else "NA")
+        ordersDataFrame["TYPE_OF_RETURN"] = ordersDataFrame["HAS_RETURN"].apply(lambda x: "CREDO" if x else "NA")
 
         return ordersDataFrame
     
-    def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str):
-        self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "")
+    def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str,
+                totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int) -> None:
+        self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "inaki.costa@thermofisher",
+                    totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed)
 
     def readOrdersExcel(self, path_from_get_data: str, orders_sheet: str, columns_types: dict) -> pd.DataFrame:
         try:
@@ -130,8 +132,8 @@ class TestTeam(Team):
                         type_of_material = "Medicine",
                         temperature = "Refrigerated",
                         amount_of_boxes_to_send = 1,
-                        has_return = "TRUE",
-                        return_to_carrier_depot = "TRUE",
+                        has_return = True,
+                        return_to_carrier_depot = True,
                         type_of_return = "CREDO",
                         amount_of_boxes_to_return = 1,
                         tracking_number = "",
@@ -229,17 +231,9 @@ class TestTeam(Team):
                                                         ivrs_number="ORDER WITH ANOTHER TEMPERATURE")
         orders.append(orderWithAnotherTemperature)
 
-        """orderWithAmountOfBoxesToSendNotInteger = self.__get_order_template__(amount_of_boxes_to_send="TEST",
-                                                        ivrs_number="ORDER WITH AMOUNT OF BOXES TO SEND NOT INTEGER")
-        orders.append(orderWithAmountOfBoxesToSendNotInteger)""" # When excel loads, if finds an non-integer value, it will throw an error
-
         orderWithAmountOfBoxesToSendNegative = self.__get_order_template__(amount_of_boxes_to_send=-1,
                                                         ivrs_number="ORDER WITH AMOUNT OF BOXES TO SEND NEGATIVE")
         orders.append(orderWithAmountOfBoxesToSendNegative)
-
-        """orderWithAmountOfBoxesToReturnNotInteger = self.__get_order_template__(amount_of_boxes_to_return="TEST",
-                                                        ivrs_number="ORDER WITH AMOUNT OF BOXES TO RETURN NOT INTEGER")
-        orders.append(orderWithAmountOfBoxesToReturnNotInteger)""" # When excel loads, if finds an non-integer value, it will throw an error
 
         orderWithAmountOfBoxesToReturnNegative = self.__get_order_template__(amount_of_boxes_to_return=-1,
                                                         ivrs_number="ORDER WITH AMOUNT OF BOXES TO RETURN NEGATIVE")
@@ -321,6 +315,53 @@ class TestTeam(Team):
         orderWithNotWorkingDay = self.__get_order_template__(ivrs_number="ORDER WITH NOT WORKING DAY, SHOULD RETURN ON 5TH DAY or more",
                                                         delivery_date=(RELATIVE_DATE + dt.timedelta(days=2)))
         orders.append(orderWithNotWorkingDay)
+        
+        validOrderAmbientWithNoReturn = self.__get_order_template__(ivrs_number="VALID ORDER AMBIENT WITH NO RETURN",
+                                                        temperature="Ambient",
+                                                        has_return=False,
+                                                        return_to_carrier_depot=False,
+                                                        type_of_return="NA",
+                                                        amount_of_boxes_to_return=0)
+        orders.append(validOrderAmbientWithNoReturn)
+
+        validOrderControlledAmbientWithReturnToCarrierDepot = self.__get_order_template__(ivrs_number="VALID ORDER CONTROLLED AMBIENT WITH RETURN TO CARRIER DEPOT",
+                                                        temperature="Controlled Ambient")
+        orders.append(validOrderControlledAmbientWithReturnToCarrierDepot)
+
+        validOrderControlledAmbientWithReturnToFCS = self.__get_order_template__(ivrs_number="VALID ORDER CONTROLLED AMBIENT WITH RETURN TO FCS",
+                                                        temperature="Controlled Ambient",
+                                                        return_to_carrier_depot=False)
+        orders.append(validOrderControlledAmbientWithReturnToFCS)
+
+        validOrderRefrigeratedWith2Boxes = self.__get_order_template__(ivrs_number="VALID ORDER REFRIGERATED WITH 2 BOXES",
+                                                        temperature="Refrigerated",
+                                                        amount_of_boxes_to_send=2)
+        orders.append(validOrderRefrigeratedWith2Boxes)
+
+        validOrderFrozenWithReturn = self.__get_order_template__(ivrs_number="VALID ORDER FROZEN WITH RETURN",
+                                                        temperature="Frozen")
+        orders.append(validOrderFrozenWithReturn)
+
+        validOrderWithReturnOfDatalloger = self.__get_order_template__(ivrs_number="VALID ORDER WITH RETURN OF DATALOGGER",
+                                                        type_of_return="DATALOGGER")
+        orders.append(validOrderWithReturnOfDatalloger)
+
+        validOrderWithReturnOfBoxAndDatalogger = self.__get_order_template__(ivrs_number="VALID ORDER WITH RETURN OF BOX AND DATALOGGER",
+                                                        type_of_return="CREDO AND DATALOGGER")
+        orders.append(validOrderWithReturnOfBoxAndDatalogger)
+
+        validOrderWithAncillariesType = self.__get_order_template__(ivrs_number="VALID ORDER WITH ANCILLARIES",
+                                                        site="Receive Ancillaries",
+                                                        type_of_material="Ancillary Type 1")
+        orders.append(validOrderWithAncillariesType)
+
+        orderWithNotCommonLetters = self.__get_order_template__(ivrs_number="Letra ñ Ñ y tilde á Á é É í Í ó Ó ú Ú ü Ü")
+        orders.append(orderWithNotCommonLetters)
+
+        orderWithIncorrectContact = self.__get_order_template__( site="Incorrect Contacts",
+                                                        ivrs_number="ORDER WITH INCORRECT CONTACT")
+
+        orders.append(orderWithIncorrectContact)
 
         ordersDataFrame = pd.DataFrame(orders)
 
@@ -329,7 +370,7 @@ class TestTeam(Team):
     def __get_contact_template__(self, 
                         study = "TEST",
                         site = "01",
-                        carrier_id = "5616",
+                        carrier_id = "83",
                         delivery_time_from = "10:00:00",
                         delivery_time_to = "12:00:00",
                         contacts = "Contact 1",
@@ -363,7 +404,6 @@ class TestTeam(Team):
         return order
     
     def __get_contacts_for_testing__(self):
-        
         contacts = []
 
         contactToReceiveOnlyMedicines = self.__get_contact_template__(site="Only Medicines",
@@ -416,6 +456,12 @@ class TestTeam(Team):
                                                                                         delivery_time_to="08:00:00",
                                                         contacts="Contact With Delivery Time To Earlier Than Delivery Time From")
         contacts.append(contactsWithDeliveryTimeToEarlierThanDeliveryTimeFrom)
+
+        incorrectContacts = self.__get_contact_template__( site = "Incorrect Contacts",
+                                                        delivery_time_from="10:00:00",
+                                                        delivery_time_to="12:00:00",
+                                                        contacts="IncorrectContact1; Incorrect/ Contact. 3")
+        contacts.append(incorrectContacts)
 
         contacts_df = pd.DataFrame(contacts)
 

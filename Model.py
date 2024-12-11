@@ -111,11 +111,11 @@ class Model:
 
     # Other mainUserForm methods
     def on_open_excel_double_btn_click(self, temporal_selected_team_name: str) -> None:
-        temporal_selected_team = TeamFactory().create_team(temporal_selected_team_name, "", self.log)
-
-        excel_dataPath = temporal_selected_team.get_data_path(["team_excel_path"])
-
         try:
+            temporal_selected_team = TeamFactory().create_team(temporal_selected_team_name, "", self.log)
+
+            excel_dataPath = temporal_selected_team.get_data_path(["team_excel_path"])
+
             if excel_dataPath[0] == "" or not os.path.exists(excel_dataPath[0]) or not excel_dataPath[0].endswith(".xlsx"):
                 self.add_warning_log("Excel file path not found")
                 return
@@ -155,8 +155,13 @@ class Model:
         
         selected_date_str = selected_date.strftime("%Y-%m-%d")
         
-        selected_team.send_email_to_team_with_orders(folder_path_to_download, selected_date_str)
+        totalAmountOfOrders = len(ordersAndContactsDataframe)
+        amountOfOrdersProcessed = len(ordersAndContactsDataframe[ordersAndContactsDataframe['TRACKING_NUMBER'] != ""])
+        amountOfOrdersReadyToBeProcessed = len(ordersAndContactsDataframe[(ordersAndContactsDataframe['TRACKING_NUMBER'] == "")])
 
+        selected_team.send_email_to_team_with_orders(folder_path_to_download, selected_date_str,
+                    totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed)
+        
         return ordersAndContactsDataframe
 
     def __processOrdersAndCalculateTime__(self, selected_team: Team, selected_date: dt.datetime, folder_path_to_download: str, ordersAndContactsDataframe: pd.DataFrame) -> None:

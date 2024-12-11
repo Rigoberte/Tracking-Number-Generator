@@ -43,11 +43,9 @@ class TransportesAmbientales(CarrierWebpage):
             return True
         except Exception as e:
             return False
-        
     
     def complete_login_form(self, username: str, password: str) -> None:
         """
-        self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/input[1]")))
         Completes login form
 
         Args:
@@ -55,6 +53,8 @@ class TransportesAmbientales(CarrierWebpage):
             username (str): username
             password (str): password
         """
+        self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/form/input[1]")))
+        
         self.driver.find_element(By.XPATH, "/html/body/form/input[1]").send_keys(username)
         self.driver.find_element(By.XPATH, "/html/body/form/input[2]").send_keys(password)
         self.driver.find_element(By.XPATH, "/html/body/form/button").click()
@@ -174,47 +174,6 @@ class TransportesAmbientales(CarrierWebpage):
             self.driver.implicitly_wait(5)
 
             tracking_number = self.driver.find_element(By.XPATH, "/html/body/form/div[2]/div/div[3]/div[5]/table/caption").text[5:14]
-
-
-            """
-            # To avoid using selenium and avoid web scraping, we will change the code with something similar to this:
-            # (this code is not tested and the web service is not implemented on carrier webpage yet. It will be implemented around August 15, 2024)
-
-            url = f"https://sgi.tanet.com.ar/sgi/srv.SrvCliente.editarEnvio+idubicacion={carrier_id}"
-
-            headers = {
-                "Authorization": "Bearer TOKEN",
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-
-            order_parameters = {
-                "reference": reference,
-                "ship_date": ship_date,
-                "ship_time_from": ship_time_from,
-                "ship_time_to": ship_time_to,
-                "delivery_date": delivery_date,
-                "delivery_time_from": delivery_time_from,
-                "delivery_time_to": delivery_time_to,
-                "type_of_material": type_of_material,
-                "temperature": temperature,
-                "contacts": contacts,
-                "amount_of_boxes": amount_of_boxes
-            }
-
-            response = requests.post(url, headers=headers, data=json.dumps(data))
-            numero_de_servicio = ""
-
-            if response.status_code == 201:
-                respuesta_json = response.json()
-                numero_de_servicio = respuesta_json.get("TRACKING_NUMBER")
-                print(f"Servicio creado exitosamente. Número de servicio: {numero_de_servicio}")
-                
-            else:
-                raise Exception("{response.status_code} - {response.text}")
-
-            return numero_de_servicio
-            """
             
         except Exception as e:
             raise Exception(e)

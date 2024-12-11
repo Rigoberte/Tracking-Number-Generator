@@ -27,8 +27,10 @@ class NoSelectedTeam(Team):
     def apply_team_specific_changes_for_orders_tables(self, ordersDataframe: pd.DataFrame) -> pd.DataFrame:
         return ordersDataframe
 
-    def send_email_to_team_with_orders(self, df: pd.DataFrame, date: str):
-        return ""
+    def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str,
+                totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int) -> None:
+        self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "inaki.costa@thermofisher",
+                    totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed)
     
     def readOrdersExcel(self, path_from_get_data: str, orders_sheet: str, columns_types: dict) -> pd.DataFrame:
         return self.__getEmptyOrdersDataFrame__()

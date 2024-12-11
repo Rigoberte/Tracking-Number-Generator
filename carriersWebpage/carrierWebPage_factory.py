@@ -26,6 +26,10 @@ class CarrierWebPageFactory:
                 from .TransportesAmbientales import TransportesAmbientales
                 return TransportesAmbientales(folder_path_to_download, log)
             
+            case "Transportes Ambientales HTTP":
+                from .TransportesAmbientales_requests import TransportesAmbientales_requests
+                return TransportesAmbientales_requests(folder_path_to_download, log)
+            
             case "Carrier Webpage For Testing":
                 from .CarrierWebpageForTesting import CarrierWebpageForTesting
                 return CarrierWebpageForTesting(folder_path_to_download, log)

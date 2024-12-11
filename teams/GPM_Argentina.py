@@ -74,8 +74,10 @@ class GPMArgentinaTeam(Team):
 
         return ordersDataFrame
 
-    def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str):
-        self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "")
+    def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str,
+                totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int) -> None:
+        self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "inaki.costa@thermofisher",
+                    totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed)
 
     def readOrdersExcel(self, path_from_get_data: str, orders_sheet: str, columns_types: dict) -> pd.DataFrame:
         try:

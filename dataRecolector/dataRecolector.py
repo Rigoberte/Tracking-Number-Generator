@@ -244,7 +244,7 @@ class DataRecolector:
         contactsDataFrame["DELIVERY_TIME_TO"] = self.__correctTimeColumns__(contactsDataFrame, "DELIVERY_TIME_TO")
 
         contactsDataFrame["TEAM_EMAILS"] = team.getTeamEmail()
-        
+
         return contactsDataFrame
 
     def __checkErrorsOnEachOrder__(self, row: pd.Series) -> str:
@@ -285,15 +285,20 @@ class DataRecolector:
             return assertIfIsNotNull(row['DELIVERY_DATE'])
         
         def assertIfAreValidDates(row: pd.Series) -> bool:
-            today = dt.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+            try:
+                today = dt.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
 
-            shipdate = str(row['SHIP_DATE']).split("/")
-            shipdate = dt.datetime(year=int(shipdate[2]), month=int(shipdate[1]), day=int(shipdate[0]))
+                shipdate = str(row['SHIP_DATE']).split("/")
+                shipdate = dt.datetime(year=int(shipdate[2]), month=int(shipdate[1]), day=int(shipdate[0]))
 
-            deliverydate = str(row['DELIVERY_DATE']).split("/")
-            deliverydate = dt.datetime(year=int(deliverydate[2]), month=int(deliverydate[1]), day=int(deliverydate[0]))
+                deliverydate = str(row['DELIVERY_DATE']).split("/")
+                deliverydate = dt.datetime(year=int(deliverydate[2]), month=int(deliverydate[1]), day=int(deliverydate[0]))
 
-            return ( today <= shipdate and shipdate <= deliverydate )
+                return (type(today) == dt.datetime and type(shipdate) == dt.datetime and type(deliverydate) == dt.datetime and 
+                        today <= shipdate and shipdate <= deliverydate)
+            
+            except (ValueError, TypeError):
+                return False
 
         def assertIfShipTimeFromIsNotEmpty(row: pd.Series) -> bool:
             return assertIfIsNotNull(row['SHIP_TIME_FROM'])
@@ -335,7 +340,7 @@ class DataRecolector:
             return type(row['AMOUNT_OF_BOXES_TO_RETURN']) == int and (row['AMOUNT_OF_BOXES_TO_RETURN'] >= 0) and (row['AMOUNT_OF_BOXES_TO_RETURN'] <= row['AMOUNT_OF_BOXES_TO_SEND'])
         
         def assertIfTypeOfReturnIsValid(row: pd.Series) -> bool:
-            return row['TYPE_OF_RETURN'] in ["CREDO", "DATALOGGER", "CREDO AND DATALOGGER", "NA"]
+            return row['TYPE_OF_RETURN'] in ["CREDO", "DATALOGGER", "CREDO AND DATALOGGER", "NA"] and not (row['HAS_RETURN'] and row['TYPE_OF_RETURN'] == "NA")
         
         def assertIfHasReturnIsNotEmpty(row: pd.Series) -> bool:
             return assertIfIsNotNull(row['HAS_RETURN'])

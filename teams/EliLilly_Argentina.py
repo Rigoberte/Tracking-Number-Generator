@@ -34,7 +34,9 @@ class EliLillyArgentinaTeam(Team):
         return columns_names, columns_types
     
     def apply_team_specific_changes_for_contacts_table(self, contactsDataFrame: pd.DataFrame) -> pd.DataFrame:
-        contactsDataFrame["CONTACTS"] = "No contact"
+        if not "CONTACTS" in contactsDataFrame.columns:
+            contactsDataFrame["CONTACTS"] = "No contact"
+        
         contactsDataFrame["CAN_RECEIVE_MEDICINES"] = True
         contactsDataFrame["CAN_RECEIVE_ANCILLARIES_TYPE1"] = False
         contactsDataFrame["CAN_RECEIVE_ANCILLARIES_TYPE2"] = False
@@ -86,8 +88,10 @@ class EliLillyArgentinaTeam(Team):
 
         return ordersDataFrame
 
-    def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str):
-        self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "inaki.costa@thermofisher")
+    def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str,
+                totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int) -> None:
+        self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "inaki.costa@thermofisher",
+                    totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed)
 
     def build_driver(self):
         self.__build_driver__(self.carrierWebpage)
