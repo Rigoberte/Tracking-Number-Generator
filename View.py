@@ -4,6 +4,7 @@ from userForms.mains.mainUserForm import MyUserForm
 from userForms.logins.logInUserForm import LogInUserForm
 from userForms.mains.logConsole import LogConsole
 from userForms.mains.configUserForm import ConfigUserForm
+from userForms.mains.emailDataUserForm import EmailDataUserForm
 
 class View:
     def __init__(self):
@@ -47,6 +48,17 @@ class View:
         self.configUserForm = ConfigUserForm()
         self.configUserForm.connect_with_controller(controller = controller)
         self.configUserForm.show_userform()
+
+    def show_emailDataUserForm(self, controller) -> None:
+        self.emailDataUserForm = EmailDataUserForm()
+        self.emailDataUserForm.connect_with_controller(controller = controller)
+        self.emailDataUserForm.show_userform()
+
+    def destroy_emailDataUserForm(self) -> None:
+        self.emailDataUserForm.hide_userform()
+
+    def update_widgets_from_emailDataUserForm(self, config: dict) -> None:
+        self.emailDataUserForm.update_widgets(config)
 
     # Getters from MainUserForm
     def get_selected_team_name_from_mainUserForm(self) -> str:
@@ -103,6 +115,22 @@ class View:
 
     def config_button_on_click(self, controller) -> None:
         self.show_configUserForm(controller = controller)
+
+    # Getters from EmailDataUserForm
+    def get_full_name_from_emailDataUserForm(self) -> str:
+        return self.emailDataUserForm.get_full_name()
+    
+    def get_job_position_from_emailDataUserForm(self) -> str:
+        return self.emailDataUserForm.get_job_position()
+    
+    def get_address_from_emailDataUserForm(self) -> str:
+        return self.emailDataUserForm.get_address()
+    
+    def get_phone_number_from_emailDataUserForm(self) -> str:
+        return self.emailDataUserForm.get_phone_number()
+    
+    def get_email_address_from_emailDataUserForm(self) -> str:
+        return self.emailDataUserForm.get_email_address()
 
     # LogInUserForm methods
     def on_login_failed(self) -> None:

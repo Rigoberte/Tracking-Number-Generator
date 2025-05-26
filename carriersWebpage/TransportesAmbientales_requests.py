@@ -19,7 +19,7 @@ class TransportesAmbientales_requests(CarrierWebpage):
         super().__init__(log)
         self.folder_path_to_download = folder_path_to_download
         
-        self.url_base = "http://sgi.tatest.com.ar/sgi/sgi"
+        self.url_base = "http://sgi.tanet.com.ar/sgi"
         self.sitesDataFrame = pd.DataFrame()
 
     def build_driver(self) -> None:
@@ -67,9 +67,10 @@ class TransportesAmbientales_requests(CarrierWebpage):
         ubicacion = self.__get_site_info__(carrier_id)
 
         if len(ubicacion) > 0:
-            ubicacion_sector = ubicacion.get('sector', 'NA')
-            ubicacion_site = ubicacion.get('site', 'NA')
-            telContacto = ubicacion.get('telefono_contacto', 'NA')
+            ubicacion_sector = str(ubicacion.get('sector', 'NA'))
+            ubicacion_site = str(ubicacion.get('site', 'NA'))
+            telContacto = str(ubicacion.get('telefono_contacto', 'NA'))
+            telContacto = telContacto.replace("+", "")
         else:
             ubicacion_sector = "NA"
             ubicacion_site = "NA"
@@ -88,7 +89,7 @@ class TransportesAmbientales_requests(CarrierWebpage):
 
         # Standarize contacts
         if contacts == "" or contacts == "No contact":
-                contacts = ubicacion['contacto']
+                contacts = str(ubicacion['contacto'])
         contacts = self.__standarize_contacts__(contacts)
         self.contacts = contacts
 
@@ -123,10 +124,11 @@ class TransportesAmbientales_requests(CarrierWebpage):
         ubicacion = self.__get_site_info__(carrier_id)
 
         if len(ubicacion) > 0:
-            ubicacion_sector = ubicacion.get('sector', 'NA')
-            ubicacion_site = ubicacion.get('site', 'NA')
-            ubicacion_visitas = ubicacion.get('visitas', 'NA')
-            ubicacion_telefono_contacto = ubicacion.get('telefono_contacto', 'NA')
+            ubicacion_sector = str(ubicacion.get('sector', 'NA'))
+            ubicacion_site = str(ubicacion.get('site', 'NA'))
+            ubicacion_visitas = str(ubicacion.get('visitas', 'NA'))
+            ubicacion_telefono_contacto = str(ubicacion.get('telefono_contacto', 'NA'))
+            ubicacion_telefono_contacto = ubicacion_telefono_contacto.replace("+", "")
         else:
             ubicacion_sector = "NA"
             ubicacion_site = "NA"

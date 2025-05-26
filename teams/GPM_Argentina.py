@@ -4,6 +4,7 @@ from typing import Tuple
 
 from .team import Team
 from logClass.log import Log
+from emailSender.emailSender import EmailSender
 
 class GPMArgentinaTeam(Team):
     def __init__(self, folder_path_to_download: str, log : Log):
@@ -75,9 +76,9 @@ class GPMArgentinaTeam(Team):
         return ordersDataFrame
 
     def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str,
-                totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int) -> None:
+                totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int, emailSender: EmailSender) -> None:
         self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "inaki.costa@thermofisher",
-                    totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed)
+                    totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed, emailSender)
 
     def readOrdersExcel(self, path_from_get_data: str, orders_sheet: str, columns_types: dict) -> pd.DataFrame:
         try:

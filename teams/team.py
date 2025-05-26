@@ -4,6 +4,7 @@ import pandas as pd
 from abc import ABC, abstractmethod
 from typing import Tuple
 import time
+import pythoncom
 
 from carriersWebpage.carrierWebPage import CarrierWebpage
 from carriersWebpage.carrierWebPage_factory import CarrierWebPageFactory
@@ -11,6 +12,7 @@ from .team_factory import TeamFactory
 from logClass.log import Log
 from utils.zip_folder import zip_folder
 from dataPathController.dataPathController import DataPathController
+from emailSender.emailSender import EmailSender
 
 class Team(ABC):
     """
@@ -122,7 +124,7 @@ class Team(ABC):
     
     @abstractmethod
     def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str,
-                totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int):
+                totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int, emailSender: EmailSender):
         """
         Sends an email with the orders table to the team
 
@@ -271,7 +273,7 @@ class Team(ABC):
     def __sendEmailWithOrdersToTeam__(self, 
             folder_path_with_orders_files: str, date: str, 
             emails_of_team: str, emails_of_admin: str,
-            totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int):
+            totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int, emailSender: EmailSender):
         
         try:
             # Obtener la carpeta padre
@@ -291,16 +293,19 @@ class Team(ABC):
 
             time.sleep(1)
 
-            outlook = win32.Dispatch('outlook.application')
+            outlook = win32.Dispatch('outlook.application', pythoncom.CoInitialize())
 
             mail = outlook.CreateItem(0)
             mail.To = emails_of_team
-            mail.Cc = emails_of_admin
+            #mail.CC = emails_of_admin
             mail.Subject = f"Shipping orders with dispatch date {date} - {self.get_team_name()}"
             
             emailSource = self.__get_email_source_from_TXT_file__("media/email_to_team.txt")
             emailSource = self.__replace_email_values__(emailSource, self.get_team_name(), date, 
                         totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed)
+            
+            emailSource = emailSender.replace_email_signature(emailSource)
+
             mail.HTMLBody = emailSource
 
             # Adjuntar el archivo ZIP

@@ -1,14 +1,16 @@
 import pandas as pd
 import datetime as dt
+import numpy as np
 from typing import Tuple
 
 from .team import Team
 from logClass.log import Log
+from emailSender.emailSender import EmailSender
 
 class EliLillyArgentinaTeam(Team):
     def __init__(self, folder_path_to_download: str, log : Log):
         super().__init__(log)
-        self.carrierWebpage = self.__build_carrier_Webpage__("Transportes Ambientales", folder_path_to_download)
+        self.carrierWebpage = self.__build_carrier_Webpage__("Transportes Ambientales HTTP", folder_path_to_download)
 
     def get_team_name(self) -> str:
         return "Eli Lilly Argentina"
@@ -22,9 +24,34 @@ class EliLillyArgentinaTeam(Team):
     
     def readContactsExcel(self, path_from_get_data: str, contacts_sheet: str, columns_types: dict) -> pd.DataFrame:
         try:
-            contactsDataFrame = pd.read_excel(path_from_get_data, sheet_name=contacts_sheet, dtype=columns_types, header=0)
+            contactsDataFrame = pd.read_excel(path_from_get_data, sheet_name=contacts_sheet, dtype=str, header=0)
+
+            # Función para convertir valores según el tipo deseado
+            def convertir_valor(valor, tipo):
+                if pd.isna(valor):
+                    return np.nan
+                try:
+                    if tipo == 'int':
+                        return int(valor)
+                    elif tipo == 'float':
+                        return float(valor)
+                    elif tipo == 'str':
+                        return str(valor)
+                    elif tipo == 'bool':
+                        return bool(int(valor))
+                    else:
+                        return valor
+                except ValueError:
+                    return np.nan
+
+            # Aplicar la conversión de tipos según el diccionario
+            for column, _type in columns_types.items():
+                if column in contactsDataFrame.columns:
+                    contactsDataFrame[column] = contactsDataFrame[column].apply(lambda x: convertir_valor(x, _type))
+
         except Exception as e:
             raise e
+        
         return contactsDataFrame
 
     def get_column_rename_type_config_for_contacts_table(self) -> Tuple[dict, dict]:
@@ -89,9 +116,9 @@ class EliLillyArgentinaTeam(Team):
         return ordersDataFrame
 
     def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str,
-                totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int) -> None:
+                totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int, emailSender: EmailSender) -> None:
         self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "inaki.costa@thermofisher",
-                    totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed)
+                    totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed, emailSender)
 
     def build_driver(self):
         self.__build_driver__(self.carrierWebpage)

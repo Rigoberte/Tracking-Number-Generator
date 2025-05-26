@@ -11,6 +11,7 @@ from dataPathController.dataPathController import DataPathController
 from teams.team import Team
 from teams.team_factory import TeamFactory
 from logClass.log import Log
+from emailSender.emailSender import EmailSender
 from utils.create_folder import create_folder
 from utils.getFolderPathToDownload import getFolderPathToDownload
 
@@ -19,7 +20,8 @@ class Model:
         pd.set_option('future.no_silent_downcasting', True)
         self.queue = queue.Queue()
         self.log = Log()
-
+        self.emailSender = EmailSender("", "", "", "", "")
+        
         self.selected_team = TeamFactory().create_team("No Selected Team", "", self.log)
         self.ordersAndContactsDataframe = self.get_empty_ordersAndContactsData()
         
@@ -33,6 +35,8 @@ class Model:
         self.ordersAndContactsDataframe = self.get_empty_ordersAndContactsData()
     
         self.queue.put(self.ordersAndContactsDataframe)
+
+        self.emailSender = EmailSender("", "", "", "", "")
         
         thread = threading.Thread(target=self.__loadOrdersAndCalculateTime__, args=(selected_team_name, selected_date), daemon=True)
         thread.start()
@@ -60,7 +64,9 @@ class Model:
 
     # OrderProcessor methods
     def on_login_successful(self) -> None:
-        thread = threading.Thread( target= self.__processOrdersAndCalculateTime__, args=(self.selected_team, self.selected_date, self.folder_path_to_download, self.ordersAndContactsDataframe), daemon=True)
+        thread = threading.Thread( target= self.__processOrdersAndCalculateTime__, 
+                args=(self.selected_team, self.selected_date, self.folder_path_to_download,
+                    self.ordersAndContactsDataframe, self.emailSender), daemon=True)
         thread.start()
 
     def on_login_failed(self) -> None:
@@ -85,10 +91,26 @@ class Model:
     def on_export_logs_to_csv(self) -> None:
         self.log.export_to_csv(os.path.expanduser("~\\Downloads"))
 
+    # EmailSender methods
+    def confirm_email_sender(self, full_name, job_position, address, phone_number, email_address) -> None:
+        self.emailSender = EmailSender(full_name, job_position, address, phone_number, email_address)
+        self.emailSender.save_last_sender_config(full_name, job_position, address, phone_number, email_address)
+
+    def get_last_sender_config(self) -> dict:
+        return self.emailSender.get_last_sender_config()
+
     # Configs methods
     def get_config_of_a_team(self, teamName: str) -> str:
         return DataPathController().get_config_of_a_team(teamName)
     
+    def selected_team_must_send_email_to_medical_centers(self) -> bool:
+        try:
+            email_must_be_sent_to_medical_centers = self.selected_team.get_data_path(["team_send_email_to_medical_centers"])[0]
+        except:
+            email_must_be_sent_to_medical_centers = False
+
+        return email_must_be_sent_to_medical_centers
+        
     def on_click_save_config_button(self, 
                                     team_name : str, 
                                     team_excel_path : str, 
@@ -148,10 +170,10 @@ class Model:
 
         self.queue.put("UNBLOCK MAIN USERFORM WIDGETS")
 
-    def __processOrders__(self, selected_team: Team, selected_date: dt.datetime, folder_path_to_download: str, ordersAndContactsDataframe: pd.DataFrame) -> pd.DataFrame:
+    def __processOrders__(self, selected_team: Team, selected_date: dt.datetime, folder_path_to_download: str, ordersAndContactsDataframe: pd.DataFrame, emailSender: EmailSender) -> pd.DataFrame:
         create_folder(folder_path_to_download)
 
-        ordersAndContactsDataframe = OrderProcessor(folder_path_to_download, selected_team, self.queue, self.log).process_orders_and_contacts_dataFrame(ordersAndContactsDataframe)
+        ordersAndContactsDataframe = OrderProcessor(folder_path_to_download, selected_team, emailSender, self.queue, self.log).process_orders_and_contacts_dataFrame(ordersAndContactsDataframe)
         
         selected_date_str = selected_date.strftime("%Y-%m-%d")
         
@@ -160,11 +182,12 @@ class Model:
         amountOfOrdersReadyToBeProcessed = len(ordersAndContactsDataframe[(ordersAndContactsDataframe['TRACKING_NUMBER'] == "")])
 
         selected_team.send_email_to_team_with_orders(folder_path_to_download, selected_date_str,
-                    totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed)
+                    totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed, emailSender)
         
         return ordersAndContactsDataframe
 
-    def __processOrdersAndCalculateTime__(self, selected_team: Team, selected_date: dt.datetime, folder_path_to_download: str, ordersAndContactsDataframe: pd.DataFrame) -> None:
+    def __processOrdersAndCalculateTime__(self, selected_team: Team, selected_date: dt.datetime, 
+        folder_path_to_download: str, ordersAndContactsDataframe: pd.DataFrame, emailSender: EmailSender) -> None:
         self.queue.put("BLOCK MAIN USERFORM WIDGETS")
         
         amountOfOrdersToProcess = len(ordersAndContactsDataframe[(ordersAndContactsDataframe["TRACKING_NUMBER"] == "") & (ordersAndContactsDataframe["HAS_AN_ERROR"] == "No error")])
@@ -175,7 +198,7 @@ class Model:
         try:
             self.ordersAndContactsDataframe = self.__processOrders__(
                                             selected_team, selected_date,
-                                            folder_path_to_download, ordersAndContactsDataframe)
+                                            folder_path_to_download, ordersAndContactsDataframe, emailSender)
         finally:
             time1 = time.time()
             total_time = time1 - time0

@@ -85,11 +85,32 @@ class Controller:
 
         if self.model.validate_login(username, password):
             # WebDriver keeps built
-            self.model.on_login_successful()
             self.view.destroy_logInUserForm()
+
+            if self.model.selected_team_must_send_email_to_medical_centers():
+                self.view.show_emailDataUserForm(controller=self)
+            else:
+                self.model.on_login_successful()
+
         else:
             self.model.on_login_failed()
             self.view.on_login_failed()
+
+    # EmailDataUserForm buttons methods
+    def update_widgets_from_emailDataForm(self) -> None:
+        config = self.model.get_last_sender_config()
+        self.view.update_widgets_from_emailDataUserForm(config)
+
+    def confirm_email_sender(self) -> None:
+        full_name = self.view.get_full_name_from_emailDataUserForm()
+        job_position = self.view.get_job_position_from_emailDataUserForm()
+        site_address = self.view.get_address_from_emailDataUserForm()
+        phone_number = self.view.get_phone_number_from_emailDataUserForm()
+        email_address = self.view.get_email_address_from_emailDataUserForm()
+        self.view.destroy_emailDataUserForm()
+
+        self.model.confirm_email_sender(full_name, job_position, site_address, phone_number, email_address)
+        self.model.on_login_successful()
 
     # Getters from Model
     def get_empty_ordersAndContactsData(self) -> pd.DataFrame:

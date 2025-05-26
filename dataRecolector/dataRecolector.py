@@ -379,17 +379,21 @@ class DataRecolector:
         if not deliveryDateIsNotEmpty:
             errors += "No delivery date; "
         
-        if not assertIfDeliveryTimeFromIsNotEmpty(row):
+        deliveryTimeFromIsNotEmpty = assertIfDeliveryTimeFromIsNotEmpty(row)
+        if not deliveryTimeFromIsNotEmpty:
             errors += "No delivery time from; "
 
-        if not assertIfDeliveryTimeToIsNotEmpty(row):
+        deliveryTimeToIsNotEmpty = assertIfDeliveryTimeToIsNotEmpty(row)
+        if not deliveryTimeToIsNotEmpty:
             errors += "No delivery time to; "
         
-        if not assertIfAreValidDeliveryTimes(row):
-            errors += "Invalid delivery times; "
+        if deliveryTimeFromIsNotEmpty and deliveryTimeToIsNotEmpty:
+            if not assertIfAreValidDeliveryTimes(row):
+                errors += "Invalid delivery times; "
 
-        if shipDateIsNotEmpty and deliveryDateIsNotEmpty and not assertIfAreValidDates(row):
-            errors += "Invalid dates; "
+        if shipDateIsNotEmpty and deliveryDateIsNotEmpty:
+            if not assertIfAreValidDates(row):
+                errors += "Invalid dates; "
 
         if not assertIfTypeOfMaterialIsNotEmpty(row):
             errors += "No type of material; "

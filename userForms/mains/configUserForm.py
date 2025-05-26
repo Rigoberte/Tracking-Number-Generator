@@ -4,7 +4,7 @@ import customtkinter as ctk
 import tkinter as tk
 import tkinter.ttk as ttk
 
-class ConfigUserForm(tk.Tk):
+class ConfigUserForm(tk.Toplevel):
     def __init__(self):
         super().__init__()
         

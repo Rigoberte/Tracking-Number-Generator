@@ -44,3 +44,4 @@ class Browser(object):
         chrome_options.add_experimental_option("prefs", chrome_prefs)
 
         self.driver = webdriver.Chrome(options=chrome_options)
+        self.driver.minimize_window()

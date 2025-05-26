@@ -82,12 +82,38 @@ div.WordSection1
 	<p class=MsoNormal style='margin-bottom:12.0pt'><span lang=ES-AR style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>Ante cualquier consulta adicional, por favor contactarse a la brevedad. </span><span style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>Saludos,</span><span style='mso-fareast-language:ES-MX'><o:p></o:p></span></p>
 	<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'><o:p>&nbsp;</o:p></span></p>
 	<p class=MsoNormal><b><span style='font-size:9.0pt;font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'><o:p>&nbsp;</o:p></span></b></p>
-	<p class=MsoNormal><b><span lang=EN-US style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>Client Services Department</span></b><span lang=EN-US style='font-family:"Arial",sans-serif;mso-fareast-language:ES-MX'><br></span><span lang=EN-US style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>Thermo Fisher Bot</span><b><span lang=EN-US style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'><o:p></o:p></span></b></p>
-	<p class=MsoNormal><span lang=EN-US style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>Clinical Trials Services<br>Thermo Fisher Scientific<o:p></o:p></span></p>
-	<p class=MsoNormal><span style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>Av. Del Campo 1550/60, Ciudad Autónoma de Buenos Aires, CP1427<o:p></o:p></span></p>
-	<p class=MsoNormal><span lang=EN-US style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>Office: +54 (11) 5235-9467 | Avaya 891-2467<o:p></o:p></span></p>
-	<p class=MsoNormal><span lang=EN-US style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>Email address: </span><span style='mso-fareast-language:ES-MX'><a href="mailto:|VAR_TEAM_EMAIL|"><span lang=EN-US style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;color:blue'>|VAR_TEAM_EMAIL|</span></a></span><span lang=EN-US style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'> | </span><span style='mso-fareast-language:ES-MX'><a href="thermofisher.com/patheon"><span lang=EN-US style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;color:blue'>thermofisher.com/patheon</span></a></span><span lang=EN-US style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'><o:p></o:p></span></p>
+	
+	<p class=MsoNormal><b><span lang=EN-US style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>
+	|VAR_FULL_NAME|
+	</span></b><span lang=EN-US style='font-family:"Arial",sans-serif;mso-fareast-language:ES-MX'><br></span><span lang=EN-US style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>
+	|VAR_JOB_POSITION|
+	</span><b><span lang=EN-US style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'><o:p></o:p></span></b></p>
+	
+	<p class=MsoNormal><span lang=EN-US style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>
+	Clinical Trials Services<br>Thermo Fisher Scientific
+	<o:p></o:p></span></p>
+	
+	<p class=MsoNormal><span style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>
+	Site Address: |VAR_SITE_ADDRESS|
+	<o:p></o:p></span></p>
+	
+	<p class=MsoNormal><span lang=EN-US style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>
+	Phone Number: |VAR_PHONE_NUMBER|
+	<o:p></o:p></span></p>
+	
+	<p class=MsoNormal><span lang=EN-US style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>
+	Email address: </span><span style='mso-fareast-language:ES-MX'>
+	<a href="mailto:|VAR_EMAIL_ADDRESS|">
+	<span lang=EN-US style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;color:blue'>
+	|VAR_EMAIL_ADDRESS|
+	</span></a></span><span lang=EN-US style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>
+	 | </span><span style='mso-fareast-language:ES-MX'><a href="thermofisher.com/patheon"><span lang=EN-US style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;color:blue'>
+	 thermofisher.com/patheon
+	</span></a></span><span lang=EN-US style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'><o:p></o:p></span></p>
+	
 	<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'><o:p>&nbsp;</o:p></span></p>
-	<p class=MsoNormal><span lang=EN-US style='font-size:9.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>WORLDWIDE CONFIDENTIALITY NOTE: Dissemination, distribution or copying of this e-mail or the information herein by anyone other than the intended recipient, or an employee or agent of a system responsible for delivering the message to the intended recipient, is prohibited. If you are not the intended recipient, please inform the sender and delete all copies.<o:p></o:p></span></p>
+	<p class=MsoNormal><span lang=EN-US style='font-size:9.0pt;font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>
+	WORLDWIDE CONFIDENTIALITY NOTE: Dissemination, distribution or copying of this e-mail or the information herein by anyone other than the intended recipient, or an employee or agent of a system responsible for delivering the message to the intended recipient, is prohibited. If you are not the intended recipient, please inform the sender and delete all copies.
+	<o:p></o:p></span></p>
 	<p class=MsoNormal><span lang=EN-US><o:p>&nbsp;</o:p></span></p>
 </div></body></html>

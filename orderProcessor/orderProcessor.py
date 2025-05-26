@@ -5,26 +5,29 @@ import time
 import os
 from typing import Tuple
 import queue
+import pythoncom
 
 from teams.team import Team
 from logClass.log import Log
+from emailSender.emailSender import EmailSender
 from utils.renameReturnPDFFile import renameReturnPDFFile
 from utils.export_to_excel import export_to_excel
 
 class OrderProcessor:
-    def __init__(self, folder_path_to_download : str, selectedTeam: Team, queue: queue.Queue, log: Log = Log()):
+    def __init__(self, folder_path_to_download : str, selectedTeam: Team, emailSender: EmailSender, queue: queue.Queue, log: Log = Log()):
         """
         Class constructor
 
         Args:
-            self.driver (webdriver): selenium self.driver
-
-        Attributes:
-            self.driver (webdriver): selenium self.driver
-            wait (WebDriverWait): selenium wait
+            folder_path_to_download (str): folder path to download
+            selectedTeam (Team): selected team
+            emailSender (EmailSender): email sender
+            queue (queue): queue
+            log (Log): log
         """
         self.folder_path_to_download = folder_path_to_download
         self.selectedTeam = selectedTeam
+        self.emailSender = emailSender
         self.queue = queue
         self.log = log
     
@@ -378,7 +381,7 @@ class OrderProcessor:
             contacts (str): contacts
         """
         try:
-            outlook = win32.Dispatch('outlook.application')
+            outlook = win32.Dispatch('outlook.application', pythoncom.CoInitialize())
             mail = outlook.CreateItem(0)
 
             mail.Subject = f"Orden de envío || Estudio: {study} || Site#: {site} || Número de IVRS: {ivrs_number}"
@@ -395,6 +398,7 @@ class OrderProcessor:
                                                     type_of_material, temperature, amount_of_boxes, 
                                                     hasReturn, type_of_return, amount_of_boxes_to_return, 
                                                     tracking_number, return_tracking_number, contacts, team_emails)
+            emailSource = self.emailSender.replace_email_signature(emailSource)
             mail.HTMLBody = emailSource
 
             # Enviar el correo

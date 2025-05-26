@@ -4,6 +4,7 @@ from typing import Tuple
 
 from .team import Team
 from logClass.log import Log
+from emailSender.emailSender import EmailSender
 
 next_weekday = dt.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) + dt.timedelta(days= 1 if dt.datetime.today().weekday() < 4 else 7 - dt.datetime.today().weekday())
 RELATIVE_DATE = next_weekday
@@ -47,9 +48,9 @@ class TestTeam(Team):
         return ordersDataFrame
     
     def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str,
-                totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int) -> None:
+                totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int, emailSender: EmailSender) -> None:
         self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "inaki.costa@thermofisher",
-                    totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed)
+                    totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed, emailSender)
 
     def readOrdersExcel(self, path_from_get_data: str, orders_sheet: str, columns_types: dict) -> pd.DataFrame:
         try:
@@ -207,9 +208,10 @@ class TestTeam(Team):
         orders.append(orderWithOutBoxes)
 
         orderWithOutReturn = self.__get_order_template__(has_return="",
-                                                        ivrs_number="ORDER WITHOUT RETURN")
+                                                        ivrs_number="ORDER WITHOUT RETURN - MAY HAVE NO ERROR")
         orders.append(orderWithOutReturn)
 
+        """
         orderWithOutReturnToCarrierDepot = self.__get_order_template__(return_to_carrier_depot="",
                                                         ivrs_number="ORDER WITHOUT RETURN TO CARRIER DEPOT")
         orders.append(orderWithOutReturnToCarrierDepot)
@@ -247,6 +249,7 @@ class TestTeam(Team):
         orderWithAnotherTypeOfReturn = self.__get_order_template__(type_of_return="TEST",
                                                         ivrs_number="ORDER WITH ANOTHER TYPE OF RETURN  - MAY HAVE NO ERROR")
         orders.append(orderWithAnotherTypeOfReturn)
+        """
 
         validOrderNotDone = self.__get_order_template__(ivrs_number="VALID NOT PROCESSED ORDER")
         orders.append(validOrderNotDone)
@@ -341,7 +344,7 @@ class TestTeam(Team):
         validOrderFrozenWithReturn = self.__get_order_template__(ivrs_number="VALID ORDER FROZEN WITH RETURN",
                                                         temperature="Frozen")
         orders.append(validOrderFrozenWithReturn)
-
+        
         validOrderWithReturnOfDatalloger = self.__get_order_template__(ivrs_number="VALID ORDER WITH RETURN OF DATALOGGER",
                                                         type_of_return="DATALOGGER")
         orders.append(validOrderWithReturnOfDatalloger)
