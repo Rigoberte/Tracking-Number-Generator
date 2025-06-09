@@ -63,6 +63,8 @@ class EliLillyArgentinaTeam(Team):
     def apply_team_specific_changes_for_contacts_table(self, contactsDataFrame: pd.DataFrame) -> pd.DataFrame:
         if not "CONTACTS" in contactsDataFrame.columns:
             contactsDataFrame["CONTACTS"] = "No contact"
+        else:
+            contactsDataFrame["CONTACTS"] = contactsDataFrame["CONTACTS"].replace("", "No contact").fillna("No contact")
         
         contactsDataFrame["CAN_RECEIVE_MEDICINES"] = True
         contactsDataFrame["CAN_RECEIVE_ANCILLARIES_TYPE1"] = False

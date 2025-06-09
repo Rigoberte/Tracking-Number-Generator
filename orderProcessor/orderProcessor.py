@@ -12,6 +12,7 @@ from logClass.log import Log
 from emailSender.emailSender import EmailSender
 from utils.renameReturnPDFFile import renameReturnPDFFile
 from utils.export_to_excel import export_to_excel
+from utils.merge_PDFs import merge_PDFs
 
 class OrderProcessor:
     def __init__(self, folder_path_to_download : str, selectedTeam: Team, emailSender: EmailSender, queue: queue.Queue, log: Log = Log()):
@@ -61,6 +62,8 @@ class OrderProcessor:
             time.sleep(2) # Wait for the download to finish
 
             self.__rename_all_return_files__(ordersDataFrame)
+
+            self.__group_and_merge_pdfs__(ordersDataFrame)
 
             self.__export_to_excel__(ordersDataFrame)
 
@@ -169,6 +172,44 @@ class OrderProcessor:
             except Exception as e:
                 self.log.add_warning_log(f"Error renaming return file: {e}")
 
+    def __group_and_merge_pdfs__(self, ordersAndContactsDataframe: pd.DataFrame) -> None:
+        """
+        Groups and merges the PDFs of the orders
+
+        Args:
+            ordersAndContactsDataframe (DataFrame): orders table
+        """
+        
+        list_of_waybills_and_labels_PDFs = []
+        list_of_return_waybill_PDFs = []
+        
+        for index, row in ordersAndContactsDataframe.iterrows():
+            if row['TRACKING_NUMBER'] != "":
+                waybill_path = self.folder_path_to_download + "\\JOB " + row['TRACKING_NUMBER'] + ".pdf"
+                if os.path.exists(waybill_path):
+                    list_of_waybills_and_labels_PDFs.append(waybill_path)
+                    
+                label_path = self.folder_path_to_download + "\\JOB " + row['TRACKING_NUMBER'] + " Rotulo.pdf"
+                if os.path.exists(label_path):
+                    list_of_waybills_and_labels_PDFs.append(label_path)
+
+            if row['RETURN_TRACKING_NUMBER'] != "":
+                return_waybill_path = self.folder_path_to_download + "\\JOB " + row['RETURN_TRACKING_NUMBER'] + " RETORNO DE CREDO.pdf"
+                if os.path.exists(return_waybill_path):
+                    list_of_return_waybill_PDFs.append(return_waybill_path)
+
+        if list_of_waybills_and_labels_PDFs != []:
+            try:
+                merge_PDFs(list_of_waybills_and_labels_PDFs, self.folder_path_to_download, "Merged_Waybills_and_Labels")
+            except Exception as e:
+                self.log.add_error_log(f"Error merging waybills and labels PDFs: {e}")
+
+        if list_of_return_waybill_PDFs != []:
+            try:
+                merge_PDFs(list_of_return_waybill_PDFs, self.folder_path_to_download, "Merged_Return_Waybills")
+            except Exception as e:
+                self.log.add_error_log(f"Error merging return waybills PDFs: {e}")
+
     def __process_all_shipping_orders__(self, ordersAndContactsDataframe: pd.DataFrame) -> None:
         """
         Process all orders in the table
@@ -244,7 +285,7 @@ class OrderProcessor:
         else:
             return
         
-        if print_return_document and return_tracking_number != "" and return_tracking_number != "Error":
+        if print_return_document and return_tracking_number != "" and return_tracking_number != "ERROR":
             self.selectedTeam.print_return_wayBill_document(return_tracking_number, 1)
 
     def __get_tracking_numbers_from_carrier__(self, carrier_id: int, system_number: str, ivrs_number: str, 

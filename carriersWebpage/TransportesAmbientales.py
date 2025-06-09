@@ -107,6 +107,7 @@ class TransportesAmbientales(CarrierWebpage):
             if type_of_material == "Medicine": it_type_of_material = 1
             elif type_of_material == "Ancillary": it_type_of_material = 2
             elif type_of_material == "Equipment": it_type_of_material = 3
+            elif type_of_material == "Equipment with Battery": it_type_of_material = 4
             else: raise ValueError("Type of material not valid")
 
             for i in range(0, it_type_of_material):

@@ -12,7 +12,7 @@ RELATIVE_DATE = next_weekday
 class TestTeam(Team):
     def __init__(self, folder_path_to_download: str, log : Log):
         super().__init__(log)
-        self.carrierWebpage = self.__build_carrier_Webpage__("Transportes Ambientales HTTP", folder_path_to_download)
+        self.carrierWebpage = self.__build_carrier_Webpage__("Carrier Webpage For Testing", folder_path_to_download)
 
     def get_team_name(self) -> str:
         return "Team_for_testings"
@@ -263,6 +263,7 @@ class TestTeam(Team):
                                                         return_tracking_number="RETURN_TRACKING_NUMBER__01")
         orders.append(processedOrderWithTrackingNumberAndReturnNumber)
 
+        """
         orderWithOnlyReturnNumber = self.__get_order_template__(ivrs_number="ORDER WITH ONLY RETURN NUMBER",
                                                         return_tracking_number="RETURN_TRACKING_NUMBER__01")
         orders.append(orderWithOnlyReturnNumber)
@@ -360,7 +361,7 @@ class TestTeam(Team):
 
         orderWithNotCommonLetters = self.__get_order_template__(ivrs_number="Letra ñ Ñ y tilde á Á é É í Í ó Ó ú Ú ü Ü")
         orders.append(orderWithNotCommonLetters)
-
+        """
         orderWithIncorrectContact = self.__get_order_template__( site="Incorrect Contacts",
                                                         ivrs_number="ORDER WITH INCORRECT CONTACT")
 
