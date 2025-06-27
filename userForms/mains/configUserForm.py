@@ -167,7 +167,7 @@ class ConfigUserForm(tk.Toplevel):
 
         self.team_email = self.__create_entry_with_label__(frames["team_email_frame"], "Team email")
 
-        self.send_email_toggle_button = ttk.Checkbutton(frames["send_email_button_frame"], text="Send email", variable=self.send_email_var)
+        self.send_email_toggle_button = ttk.Checkbutton(frames["send_email_button_frame"], text="Send email to medical centers", variable=self.send_email_var)
         self.send_email_toggle_button.pack(fill=tk.X)
 
         self.save_button = ctk.CTkButton(frames["bottom_bottom_frame"], text="Save")
