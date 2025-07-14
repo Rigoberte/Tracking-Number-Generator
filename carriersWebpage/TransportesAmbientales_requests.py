@@ -88,9 +88,6 @@ class TransportesAmbientales_requests(CarrierWebpage):
         it_temperature = self.__get_it_temperature__(temperature)
 
         # Standarize contacts
-        if contacts == "" or contacts == "No contact":
-                contacts = str(ubicacion['contacto'])
-        contacts = self.__standarize_contacts__(contacts)
         self.contacts = contacts
 
         # Builds URL
@@ -172,6 +169,14 @@ class TransportesAmbientales_requests(CarrierWebpage):
     def print_return_wayBill_document(self, return_tracking_number: str, amount_of_copies: int) -> None:
         url_guias_return = f"{self.url_base}/srv.SrvPdf.emitirOde+id={return_tracking_number[:7]}&idservicio={return_tracking_number[:7]}&copies={amount_of_copies}"
         self.__print_webpage__(self.driver, url_guias_return)
+
+    def get_contacts(self, carrier_id: str) -> str:
+        ubicacion = self.__get_site_info__(carrier_id)
+
+        contacts = str(ubicacion['contacto'])
+        contacts = self.__standarize_contacts__(contacts)
+        
+        return contacts
 
     def __standarize_contacts__(self, contacts: str) -> str:
         replacements = [" / ", "/ ", " /", "/", 

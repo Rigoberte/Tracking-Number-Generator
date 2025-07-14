@@ -66,13 +66,26 @@ class EliLillyArgentinaTeam(Team):
         else:
             contactsDataFrame["CONTACTS"] = contactsDataFrame["CONTACTS"].replace("", "No contact").fillna("No contact")
         
+        if not "MEDICAL_CENTER_EMAILS" in contactsDataFrame.columns:
+            contactsDataFrame["MEDICAL_CENTER_EMAILS"] = ""
+        else:
+            contactsDataFrame["MEDICAL_CENTER_EMAILS"] = contactsDataFrame["MEDICAL_CENTER_EMAILS"].replace("", "").fillna("")
+
+        if not "CUSTOMER_EMAIL" in contactsDataFrame.columns:
+            contactsDataFrame["CUSTOMER_EMAIL"] = ""
+        else:
+            contactsDataFrame["CUSTOMER_EMAIL"] = contactsDataFrame["CUSTOMER_EMAIL"].replace("", "").fillna("")
+
+        if not "CRA_EMAILS" in contactsDataFrame.columns:
+            contactsDataFrame["CRA_EMAILS"] = ""
+        else:
+            contactsDataFrame["CRA_EMAILS"] = contactsDataFrame["CRA_EMAILS"].replace("", "").fillna("")
+        
         contactsDataFrame["CAN_RECEIVE_MEDICINES"] = True
         contactsDataFrame["CAN_RECEIVE_ANCILLARIES_TYPE1"] = False
         contactsDataFrame["CAN_RECEIVE_ANCILLARIES_TYPE2"] = False
         contactsDataFrame["CAN_RECEIVE_EQUIPMENTS"] = False
-        contactsDataFrame["MEDICAL_CENTER_EMAILS"] = ""
-        contactsDataFrame["CUSTOMER_EMAIL"] = ""
-        contactsDataFrame["CRA_EMAILS"] = ""
+        
         return contactsDataFrame
     
     def get_column_rename_type_config_for_orders_tables(self) -> Tuple[dict, dict]:
@@ -135,12 +148,15 @@ class EliLillyArgentinaTeam(Team):
                                     ship_date: str, ship_time_from: str, ship_time_to: str,
                                     delivery_date: str, delivery_time_from: str, delivery_time_to: str,
                                     type_of_material: str, temperature: str,
-                                    contacts: str, amount_of_boxes: int) -> str:
-        return self.__complete_shipping_order_form__(self.carrierWebpage, carrier_id, reference,
+                                    contacts: str, amount_of_boxes: int) -> Tuple[str, str]:
+        
+        str_waybill, contacts = self.__complete_shipping_order_form__(self.carrierWebpage, carrier_id, reference,
                                     ship_date, ship_time_from, ship_time_to,
                                     delivery_date, delivery_time_from, delivery_time_to,
                                     type_of_material, temperature,
                                     contacts, amount_of_boxes)
+        
+        return (str_waybill, contacts)
     
     def complete_shipping_order_return_form(self, carrier_id: str, reference_return: str,
                                             delivery_date: str, return_time_from: str,
