@@ -85,7 +85,7 @@ class OrderProcessor:
         except Exception as e:
             self.log.add_error_log(f"Error exporting to excel: {e}")
 
-    def __get_shipping_tracking_number__(self, carrier_id: int, system_number: str, ivrs_number: str, 
+    def __get_shipping_tracking_number_and_contacts__(self, carrier_id: int, system_number: str, ivrs_number: str, 
                                     ship_date: str, ship_time_from: str, ship_time_to: str, 
                                     delivery_date: str, delivery_time_from: str, delivery_time_to: str,
                                     type_of_material: str, temperature: str,
@@ -115,15 +115,15 @@ class OrderProcessor:
         reference = f"{system_number} {ivrs_number}"[:50]
         delivery_date = dt.datetime.strptime(delivery_date, '%d/%m/%Y').strftime('%d/%m/%Y')
 
-        tracking_number = self.selectedTeam.complete_shipping_order_form(
+        tracking_number, new_contacts = self.selectedTeam.complete_shipping_order_form(
             carrier_id, reference, 
             ship_date, ship_time_from, ship_time_to, 
             delivery_date, delivery_time_from, delivery_time_to, 
             type_of_material, temperature, 
             contacts, amount_of_boxes
         )
-        
-        return tracking_number
+
+        return (tracking_number, new_contacts)
     
     def __get_return_tracking_number__(self, carrier_id: int, system_number: str, ivrs_number: str,
                                     delivery_date: str,  tracking_number: str, hasReturn: bool,
@@ -231,8 +231,8 @@ class OrderProcessor:
             if row['HAS_AN_ERROR'] != "No error":
                 # Skip orders with errors
                 continue
-            
-            tracking_number, return_tracking_number = self.__get_tracking_numbers_from_carrier__(
+
+            tracking_number, return_tracking_number, new_contacts = self.__get_tracking_numbers_and_contacts_from_carrier__(
                 row["CARRIER_ID"], row["SYSTEM_NUMBER"], row["IVRS_NUMBER"],
                 row["SHIP_DATE"], row["SHIP_TIME_FROM"], row["SHIP_TIME_TO"],
                 row["DELIVERY_DATE"], row["DELIVERY_TIME_FROM"], row["DELIVERY_TIME_TO"],
@@ -248,6 +248,7 @@ class OrderProcessor:
 
             ordersAndContactsDataframe.loc[index, "TRACKING_NUMBER"] = tracking_number
             ordersAndContactsDataframe.loc[index, "RETURN_TRACKING_NUMBER"] = return_tracking_number
+            ordersAndContactsDataframe.loc[index, "CONTACTS"] = new_contacts
             
             self.__print_order_documents__(tracking_number, return_tracking_number, row["PRINT_RETURN_DOCUMENT"])
 
@@ -258,7 +259,7 @@ class OrderProcessor:
                     row["TYPE_OF_MATERIAL"], row["TEMPERATURE"], row["AMOUNT_OF_BOXES_TO_SEND"],
                     row["HAS_RETURN"], row["TYPE_OF_RETURN"], row["AMOUNT_OF_BOXES_TO_RETURN"],
                     tracking_number, return_tracking_number,
-                    row["CONTACTS"], row["MEDICAL_CENTER_EMAILS"], row["CUSTOMER_EMAIL"], row["CRA_EMAILS"], row["TEAM_EMAILS"])
+                    new_contacts, row["MEDICAL_CENTER_EMAILS"], row["CUSTOMER_EMAIL"], row["CRA_EMAILS"], row["TEAM_EMAILS"])
                 except Exception as e:
                     self.log.add_warning_log(f"Error sending email to medical center: {e}")
                     self.log.add_warning_log(f"Order: {row['SYSTEM_NUMBER']} {row['IVRS_NUMBER']}")
@@ -267,6 +268,7 @@ class OrderProcessor:
             row_dict["INDEX"] = index
             row_dict["TRACKING_NUMBER"] = tracking_number
             row_dict["RETURN_TRACKING_NUMBER"] = return_tracking_number
+            row_dict["CONTACTS"] = new_contacts
 
             self.__update_treeview_line_from_main_userform__(row_dict)
 
@@ -288,13 +290,13 @@ class OrderProcessor:
         if print_return_document and return_tracking_number != "" and return_tracking_number != "ERROR":
             self.selectedTeam.print_return_wayBill_document(return_tracking_number, 1)
 
-    def __get_tracking_numbers_from_carrier__(self, carrier_id: int, system_number: str, ivrs_number: str, 
+    def __get_tracking_numbers_and_contacts_from_carrier__(self, carrier_id: int, system_number: str, ivrs_number: str, 
         ship_date: str, ship_time_from: str, ship_time_to: str, 
         delivery_date: str, delivery_time_from: str, delivery_time_to: str,
         type_of_material: str, temperature: str, 
         contacts: str, amount_of_boxes: int, 
         hasReturn: bool, return_delivery_date: str, return_delivery_hour_from: str, return_delivery_hour_to: str, 
-        return_to_TA: bool, type_of_return: str, amount_of_boxes_to_return: int) -> Tuple[str, str]:
+        return_to_TA: bool, type_of_return: str, amount_of_boxes_to_return: int) -> Tuple[str, str, str]:
         """
         - Process an order by completing the carrier form
         - Creates a return order if necessary
@@ -326,7 +328,7 @@ class OrderProcessor:
         tracking_number, return_tracking_number = "", ""
 
         try:
-            tracking_number = self.__get_shipping_tracking_number__(
+            tracking_number, new_contacts = self.__get_shipping_tracking_number_and_contacts__(
                 carrier_id, system_number, ivrs_number,
                 ship_date, ship_time_from, ship_time_to,
                 delivery_date, delivery_time_from, delivery_time_to,
@@ -349,7 +351,7 @@ class OrderProcessor:
             self.log.add_error_log(f"Order: {system_number} {ivrs_number}")
 
         finally:
-            return tracking_number, return_tracking_number
+            return tracking_number, return_tracking_number, new_contacts
 
     def __update_treeview_line_from_main_userform__(self, row: dict) -> None:
         """
@@ -376,9 +378,7 @@ class OrderProcessor:
         emailSource = emailSource.replace("|VAR_IVRS_NUMBER|", ivrs_number)
         emailSource = emailSource.replace("|VAR_DELIVERY_DATE|", delivery_date)
         emailSource = emailSource.replace("|VAR_DELIVERY_TIME|", delivery_time_from + " to " + delivery_time_to)
-        emailSource = emailSource.replace("|VAR_TYPE_OF_MATERIAL|", type_of_material)
         emailSource = emailSource.replace("|VAR_TEMPERATURE|", temperature)
-        emailSource = emailSource.replace("|VAR_AMOUNT_OF_BOXES|", str(amount_of_boxes))
         emailSource = emailSource.replace("|VAR_TRACKING_NUMBER|", tracking_number)
         emailSource = emailSource.replace("|VAR_CONTACTS|", contacts)
         emailSource = emailSource.replace("|VAR_TEAM_EMAIL|", team_emails)
@@ -386,12 +386,10 @@ class OrderProcessor:
 
         if hasReturn:
             emailSource = emailSource.replace("|VAR_TYPE_OF_RETURN|", type_of_return)
-            emailSource = emailSource.replace("|VAR_AMOUNT_OF_BOXES_TO_RETURN|", str(amount_of_boxes_to_return))
-            emailSource = emailSource.replace("|VAR_RETURN_TRACKING_NUMBER|", return_tracking_number)
+            emailSource = emailSource.replace("|VAR_COMMENTS|", "***ENVÍO CON CAJA CREDO. EL COURIER AGUARDARÁ QUE EL CENTRO ALMACENE LA MEDICACIÓN Y RETORNE EL EMBALAJE***")
         else:
             emailSource = emailSource.replace("|VAR_TYPE_OF_RETURN|", "NA")
-            emailSource = emailSource.replace("|VAR_AMOUNT_OF_BOXES_TO_RETURN|", "0")
-            emailSource = emailSource.replace("|VAR_RETURN_TRACKING_NUMBER|", "NA")
+            emailSource = emailSource.replace("|VAR_COMMENTS|", "NA")
 
         return emailSource
     

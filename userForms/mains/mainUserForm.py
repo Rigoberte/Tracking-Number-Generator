@@ -47,7 +47,7 @@ class MyUserForm(tk.Tk):
         selected_date = self.cal.get_date()
         return selected_date
 
-    def update_a_line_to_processed_of_represented_ordersAndContactsDataframe(self, index: int, tracking_number: str, return_tracking_number: str) -> None:
+    def update_a_line_to_processed_of_represented_ordersAndContactsDataframe(self, index: int, tracking_number: str, return_tracking_number: str, contacts: str) -> None:
         """
         Updates a line of the orders table
 
@@ -55,10 +55,12 @@ class MyUserForm(tk.Tk):
             index (int): row index
             tracking_number (str): tracking number
             return_tracking_number (str): return tracking number
+            contacts (str): contacts
         """
         self.representedOrdersAndContactsDataframe.loc[index, "TRACKING_NUMBER"] = tracking_number
         self.representedOrdersAndContactsDataframe.loc[index, "RETURN_TRACKING_NUMBER"] = return_tracking_number
-
+        self.representedOrdersAndContactsDataframe.loc[index, "CONTACTS"] = contacts
+        
         self.__update_tag_color_of_a_treeview_line__(index)
         self.__update_bottom_dataFrame_description__()
 
@@ -546,7 +548,7 @@ class MyUserForm(tk.Tk):
         for index, row in self.representedOrdersAndContactsDataframe.iterrows():
             row_values = [index] + list(row)
             self.treeview.insert("", "end", iid=index, values=row_values)
-            self.update_a_line_to_processed_of_represented_ordersAndContactsDataframe(index, row['TRACKING_NUMBER'], row['RETURN_TRACKING_NUMBER'])
+            self.update_a_line_to_processed_of_represented_ordersAndContactsDataframe(index, row['TRACKING_NUMBER'], row['RETURN_TRACKING_NUMBER'], row['CONTACTS'])
     
     def __set_colors__(self) -> None:
             def changeImage(self, widget, dark_image, light_image, size, bg_color):
