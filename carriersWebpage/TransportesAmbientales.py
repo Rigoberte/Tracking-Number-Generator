@@ -258,6 +258,10 @@ class TransportesAmbientales(CarrierWebpage):
         url_guias_return = f"https://sgi.tanet.com.ar/sgi/srv.SrvPdf.emitirOde+id={return_tracking_number[:7]}&idservicio={return_tracking_number[:7]}&copies={amount_of_copies}"
         self.__print_webpage__(self.driver, url_guias_return)
 
+    def get_contacts(self, carrier_id: str) -> str:
+        contacts = "No contact"
+        return contacts
+
     def __standarize_contacts__(self, contacts: str) -> str:
         replacements = [" / ", "/ ", " /", "/", 
                         " ; ", "; ", " ;", ";", 

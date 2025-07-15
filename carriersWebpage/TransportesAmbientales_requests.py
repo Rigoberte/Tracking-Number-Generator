@@ -93,7 +93,7 @@ class TransportesAmbientales_requests(CarrierWebpage):
         # Builds URL
         create_shipment_url = f"{self.url_base}/srv.SrvClienteJSON.crearEnvio+RSID={self.rsid}&idubicacion={carrier_id}"
         create_shipment_url += f"&referencia={reference}&retiradde={retiradde}&retirahta={retirahta}&entregadde={entregadde}&entregahta={entregahta}"
-        create_shipment_url += f"&obsOper={comments}&tipomaterial={it_type_of_material}&temperatura={it_temperature}&autRecibe={contacts}&telContacto={telContacto}&cajas={amount_of_boxes}"
+        create_shipment_url += f"&obsOper={comments}&tipomaterial={it_type_of_material}&temperatura={it_temperature}&autRecibe=[{contacts}]&telContacto={telContacto}&cajas={amount_of_boxes}"
         
         response = self.__do_a_http_request__(create_shipment_url)
 
@@ -173,6 +173,9 @@ class TransportesAmbientales_requests(CarrierWebpage):
     def get_contacts(self, carrier_id: str) -> str:
         ubicacion = self.__get_site_info__(carrier_id)
 
+        if len(ubicacion) == 0:
+            return "No contact"
+        
         contacts = str(ubicacion['contacto'])
         contacts = self.__standarize_contacts__(contacts)
         
@@ -191,8 +194,6 @@ class TransportesAmbientales_requests(CarrierWebpage):
 
         if contacts[-1:] == ",":
             contacts = contacts[:-1]
-
-        contacts = f"[{contacts}]"
 
         return contacts
 

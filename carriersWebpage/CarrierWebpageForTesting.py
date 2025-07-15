@@ -120,3 +120,7 @@ class CarrierWebpageForTesting(CarrierWebpage):
 
     def print_return_wayBill_document(self, return_tracking_number: str, amount_of_copies: int) -> None:
         pass
+
+    def get_contacts(self, carrier_id: str) -> str:
+        contacts = "No contact"
+        return contacts
