@@ -110,13 +110,16 @@ class EliLillyArgentinaTeam(Team):
         ordersDataFrame["CUSTOMER"] = "Eli Lilly and Company"
 
         temperatures = {"L": "Ambient",
-                        "M": "Controlled Ambient", "M + L": "Controlled Ambient",
-                        "H": "Controlled Ambient", "H + M": "Controlled Ambient", "H + L": "Controlled Ambient", "H + M + L": "Controlled Ambient",
-                        "REF": "Refrigerated", "REF + H": "Refrigerated", "REF + M": "Refrigerated", "REF + L": "Refrigerated",
-                        "REF + H + M": "Refrigerated", "REF + H + L": "Refrigerated", "REF + M + L": "Refrigerated",
-                        "REF + H + M + L": "Refrigerated"}
+                        "M": "Controlled Ambient", "M + L": "Controlled Ambient, Ambient",
+                        "H": "Controlled Ambient", "H + M": "Controlled Ambient", "H + L": "Controlled Ambient, Ambient", "H + M + L": "Controlled Ambient, Ambient",
+                        "REF": "Refrigerated", "REF + H": "Refrigerated, Controlled Ambient", "REF + M": "Refrigerated, Controlled Ambient", "REF + L": "Refrigerated, Ambient",
+                        "REF + H + M": "Refrigerated, Controlled Ambient", "REF + H + L": "Refrigerated, Controlled Ambient, Ambient", "REF + M + L": "Refrigerated, Controlled Ambient, Ambient",
+                        "REF + H + M + L": "Refrigerated, Controlled Ambient, Ambient"}
         ordersDataFrame["TEMPERATURE"] = ordersDataFrame["TEMPERATURE"].replace(temperatures)
         ordersDataFrame.loc[(ordersDataFrame["TEMPERATURE"] == "Ambient") & (ordersDataFrame["RETURN_TRACKING_NUMBER"] != "N"), "TEMPERATURE"] = "Controlled Ambient"
+        ordersDataFrame.loc[(ordersDataFrame["TEMPERATURE"] == "Controlled Ambient, Ambient") & (ordersDataFrame["RETURN_TRACKING_NUMBER"] != "N"), "TEMPERATURE"] = "Controlled Ambient"
+        ordersDataFrame.loc[(ordersDataFrame["TEMPERATURE"] == "Refrigerated, Ambient") & (ordersDataFrame["RETURN_TRACKING_NUMBER"] != "N"), "TEMPERATURE"] = "Refrigerated"
+        ordersDataFrame.loc[(ordersDataFrame["TEMPERATURE"] == "Refrigerated, Controlled Ambient, Ambient") & (ordersDataFrame["RETURN_TRACKING_NUMBER"] != "N"), "TEMPERATURE"] = "Refrigerated, Controlled Ambient"
         
         ordersDataFrame["Cajas (Carton)"] = ordersDataFrame["Cajas (Carton)"].replace("", 0).fillna(0).astype(int)
         ordersDataFrame["AMOUNT_OF_BOXES_TO_RETURN"] = ordersDataFrame["AMOUNT_OF_BOXES_TO_SEND"] - ordersDataFrame["Cajas (Carton)"]

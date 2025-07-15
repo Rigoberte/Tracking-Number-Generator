@@ -245,12 +245,20 @@ class TransportesAmbientales_requests(CarrierWebpage):
         elif type_of_material == "Equipment": return 8
 
     def __get_it_temperature__(self, temperature: str) -> int:
-        if temperature == "Ambient": return 1
-        elif temperature == "Refrigerated": return 2
-        elif temperature == "Frozen": return 2
-        elif temperature == "Refrigerated with Dry Ice": return 3
-        elif temperature == "Frozen with Liquid Nitrogen": return 4
-        elif temperature == "Controlled Ambient": return 5
+        temperature_mapping = {
+            "Frozen with Liquid Nitrogen": 4,
+            "Refrigerated with Dry Ice": 3,
+            "Refrigerated": 2,
+            "Controlled Ambient": 5,
+            "Ambient": 1
+        }
+
+        for key in temperature_mapping:
+            if key in temperature:
+                # Return the max temperature
+                return temperature_mapping[key]
+        
+        return 1  # Default to "Ambient" if no match is found
 
     def __get_it_tipo_retorno__(self, type_of_return: str) -> str:
         if type_of_return == "CREDO": return 'E'

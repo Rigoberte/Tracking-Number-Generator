@@ -378,9 +378,7 @@ class OrderProcessor:
         emailSource = emailSource.replace("|VAR_IVRS_NUMBER|", ivrs_number)
         emailSource = emailSource.replace("|VAR_DELIVERY_DATE|", delivery_date)
         emailSource = emailSource.replace("|VAR_DELIVERY_TIME|", delivery_time_from + " to " + delivery_time_to)
-        emailSource = emailSource.replace("|VAR_TYPE_OF_MATERIAL|", type_of_material)
         emailSource = emailSource.replace("|VAR_TEMPERATURE|", temperature)
-        emailSource = emailSource.replace("|VAR_AMOUNT_OF_BOXES|", str(amount_of_boxes))
         emailSource = emailSource.replace("|VAR_TRACKING_NUMBER|", tracking_number)
         emailSource = emailSource.replace("|VAR_CONTACTS|", contacts)
         emailSource = emailSource.replace("|VAR_TEAM_EMAIL|", team_emails)
@@ -388,12 +386,10 @@ class OrderProcessor:
 
         if hasReturn:
             emailSource = emailSource.replace("|VAR_TYPE_OF_RETURN|", type_of_return)
-            emailSource = emailSource.replace("|VAR_AMOUNT_OF_BOXES_TO_RETURN|", str(amount_of_boxes_to_return))
-            emailSource = emailSource.replace("|VAR_RETURN_TRACKING_NUMBER|", return_tracking_number)
+            emailSource = emailSource.replace("|VAR_COMMENTS|", "***ENVÍO CON CAJA CREDO. EL COURIER AGUARDARÁ QUE EL CENTRO ALMACENE LA MEDICACIÓN Y RETORNE EL EMBALAJE***")
         else:
             emailSource = emailSource.replace("|VAR_TYPE_OF_RETURN|", "NA")
-            emailSource = emailSource.replace("|VAR_AMOUNT_OF_BOXES_TO_RETURN|", "0")
-            emailSource = emailSource.replace("|VAR_RETURN_TRACKING_NUMBER|", "NA")
+            emailSource = emailSource.replace("|VAR_COMMENTS|", "NA")
 
         return emailSource
     
