@@ -1,44 +1,80 @@
-<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns:m="http://schemas.microsoft.com/office/2004/12/omml" xmlns="http://www.w3.org/TR/REC-html40"><head><meta http-equiv=Content-Type content="text/html; charset=iso-8859-1"><meta name=Generator content="Microsoft Word 15 (filtered medium)"><!--[if !mso]><style>v\:* {behavior:url(#default#VML);}
+<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns:m="http://schemas.microsoft.com/office/2004/12/omml" xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="Generator" content="Microsoft Word 15 (filtered medium)">
+
+<style>v\:* {behavior:url(#default#VML);}
 o\:* {behavior:url(#default#VML);}
 w\:* {behavior:url(#default#VML);}
 .shape {behavior:url(#default#VML);}
 </style><![endif]--><style><!--
 /* Font Definitions */
 @font-face
-	{font-family:"Cambria Math";
-	panose-1:2 4 5 3 5 4 6 3 2 4;}
+    {font-family:"Cambria Math";
+    panose-1:2 4 5 3 5 4 6 3 2 4;}
 @font-face
-	{font-family:Calibri;
-	panose-1:2 15 5 2 2 2 4 3 2 4;}
+    {font-family:Calibri;
+    panose-1:2 15 5 2 2 2 4 3 2 4;}
 @font-face
-	{font-family:"Calibri Light";
-	panose-1:2 15 3 2 2 2 4 3 2 4;}
+    {font-family:"Calibri Light";
+    panose-1:2 15 3 2 2 2 4 3 2 4;}
 /* Style Definitions */
 p.MsoNormal, li.MsoNormal, div.MsoNormal
-	{margin:0in;
-	font-size:11.0pt;
-	font-family:"Calibri",sans-serif;
-	mso-ligatures:standardcontextual;
-	mso-fareast-language:EN-US;}
+    {margin:0in;
+    font-size:11.0pt;
+    font-family:"Calibri",sans-serif;
+    mso-ligatures:standardcontextual;
+    mso-fareast-language:EN-US;}
 span.EmailStyle17
-	{mso-style-type:personal-compose;
-	font-family:"Calibri",sans-serif;
-	color:windowtext;}
+    {mso-style-type:personal-compose;
+    font-family:"Calibri",sans-serif;
+    color:windowtext;}
 .MsoChpDefault
-	{mso-style-type:export-only;
-	mso-fareast-language:EN-US;}
+    {mso-style-type:export-only;
+    mso-fareast-language:EN-US;}
 @page WordSection1
-	{size:8.5in 11.0in;
-	margin:1.0in 1.0in 1.0in 1.0in;}
+    {size:8.5in 11.0in;
+    margin:1.0in 1.0in 1.0in 1.0in;}
 div.WordSection1
-	{page:WordSection1;}
+    {page:WordSection1;}
 --></style><!--[if gte mso 9]><xml>
 <o:shapedefaults v:ext="edit" spidmax="1026" />
 </xml><![endif]--><!--[if gte mso 9]><xml>
 <o:shapelayout v:ext="edit">
 <o:idmap v:ext="edit" data="1" />
 </o:shapelayout></xml><![endif]--></head>
+
 <body lang=ES-MX link="#0563C1" vlink="#954F72" style='word-wrap:break-word'>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;
+color:black;mso-fareast-language:ES-MX'>Estimados,<o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=ES-US style='font-family:"Calibri Light",sans-serif;
+color:black;mso-ansi-language:ES-US;mso-fareast-language:ES-MX'>Les solicitamos
+<b><u>CONFIRMAR</u></b> a la brevedad la posibilidad de recibir el envío en la
+fecha y horario indicados a continuación. <o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=ES-US style='font-family:"Calibri Light",sans-serif;
+color:black;mso-ansi-language:ES-US;mso-fareast-language:ES-MX'>En caso de no
+recibir respuesta, asumiremos que pueden recibirlo y procederemos con el envío
+de la medicación.<o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=ES-US style='font-family:"Calibri Light",sans-serif;
+color:black;mso-ansi-language:ES-US;mso-fareast-language:ES-MX'><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=ES-US style='font-family:"Calibri Light",sans-serif;
+color:black;mso-ansi-language:ES-US;mso-fareast-language:ES-MX'>Agradecemos de
+antemano su atención.&nbsp;</span><b><i><span lang=ES-AR style='font-size:10.0pt;
+color:#1F497D;mso-ansi-language:ES-AR'><br style='mso-special-character:line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></span></i></b><span lang=ES-US style='font-family:"Calibri Light",sans-serif;
+color:black;mso-ansi-language:ES-US;mso-fareast-language:ES-MX'>
+
+<o:p></o:p></span></p>
+
 <div class=WordSection1>
 	<p class=MsoNormal style='margin-bottom:12.0pt'>
 		<span lang=EN-US style='mso-fareast-language:ES-MX'>
@@ -48,40 +84,223 @@ div.WordSection1
 			<o:p></o:p>
 		</span>
 	</p>
-	<table class=MsoNormalTable border=0 cellspacing=0 cellpadding=0 width=640 style='width:480.0pt;border-collapse:collapse'>
-	<tr style='height:14.5pt'><td width=243 nowrap style='width:182.0pt;border-top:solid #AEAAAA 1.0pt;border-left:solid #AEAAAA 1.0pt;border-bottom:none;border-right:none;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>FECHA DE ENTREGA<o:p></o:p></span></b></p></td><td width=397 nowrap style='width:298.0pt;border-top:solid #AEAAAA 1.0pt;border-left:none;border-bottom:none;border-right:solid #AEAAAA 1.0pt;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_DELIVERY_DATE|<o:p></o:p></span></p></td></tr>
 	
-	<tr style='height:14.5pt'><td width=243 nowrap style='width:182.0pt;border:none;border-left:solid #AEAAAA 1.0pt;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>HORARIO DE ENTREGA<o:p></o:p></span></b></p></td><td width=397 nowrap style='width:298.0pt;border:none;border-right:solid #AEAAAA 1.0pt;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_DELIVERY_TIME|<b><o:p></o:p></b></span></p></td></tr>
-	
-	<tr style='height:14.5pt'><td width=243 nowrap style='width:182.0pt;border:none;border-left:solid #AEAAAA 1.0pt;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>ESTUDIO<o:p></o:p></span></b></p></td><td width=397 nowrap style='width:298.0pt;border:none;border-right:solid #AEAAAA 1.0pt;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_STUDY|<b><o:p></o:p></b></span></p></td></tr>
-	
-	<tr style='height:14.85pt'><td width=243 nowrap style='width:182.0pt;border:none;border-left:solid #AEAAAA 1.0pt;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;height:14.85pt'><p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>SITE#<o:p></o:p></span></b></p></td><td width=397 style='width:298.0pt;border:none;border-right:solid #AEAAAA 1.0pt;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;height:14.85pt'><p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_SITE#|<b><o:p></o:p></b></span></p></td></tr>
-	
-	<tr style='height:14.5pt'><td width=243 nowrap style='width:182.0pt;border:none;border-left:solid #AEAAAA 1.0pt;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>NUMERO DE ORDEN IVRS<o:p></o:p></span></b></p></td><td width=397 nowrap style='width:298.0pt;border:none;border-right:solid #AEAAAA 1.0pt;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_IVRS_NUMBER|<o:p></o:p></span></p></td></tr>
-	
-	<tr style='height:14.5pt'><td width=243 nowrap style='width:182.0pt;border:none;border-left:solid #AEAAAA 1.0pt;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>TRACKING NUMBER DE TRANSPORTE<o:p></o:p></span></b></p></td><td width=397 nowrap style='width:298.0pt;border:none;border-right:solid #AEAAAA 1.0pt;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_TRACKING_NUMBER|</span><span lang=ES-AR style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'><o:p></o:p></span></p></td></tr>
-	
-	<tr style='height:14.5pt'><td width=243 nowrap style='width:182.0pt;border:none;border-left:solid #AEAAAA 1.0pt;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>CONTACTOS AUTORIZADOS<o:p></o:p></span></b></p></td><td width=397 nowrap style='width:298.0pt;border:none;border-right:solid #AEAAAA 1.0pt;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_CONTACTS|</span><span lang=ES-AR style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'><o:p></o:p></span></p></td></tr>
-	
-	<tr style='height:14.5pt'><td width=243 nowrap style='width:182.0pt;border:none;border-left:solid #AEAAAA 1.0pt;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>TIPO DE ENVIO<o:p></o:p></span></b></p></td><td width=397 nowrap style='width:298.0pt;border:none;border-right:solid #AEAAAA 1.0pt;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_TYPE_OF_MATERIAL|</span><span lang=ES-AR style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'><o:p></o:p></span></p></td></tr>
-	
-	<tr style='height:14.5pt'><td width=243 nowrap style='width:182.0pt;border:none;border-left:solid #AEAAAA 1.0pt;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>CONDICION DE TEMPERATURA</span></b><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'><o:p></o:p></span></b></p></td><td width=397 nowrap style='width:298.0pt;border:none;border-right:solid #AEAAAA 1.0pt;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_TEMPERATURE|</span><span lang=ES-AR style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'><o:p></o:p></span></p></td></tr>
-	
-	<tr style='height:14.5pt'><td width=243 nowrap style='width:182.0pt;border:none;border-left:solid #AEAAAA 1.0pt;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>CANTIDAD DE BULTOS</span></b><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'><o:p></o:p></span></b></p></td><td width=397 nowrap style='width:298.0pt;border:none;border-right:solid #AEAAAA 1.0pt;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_AMOUNT_OF_BOXES|</span><span lang=ES-AR style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'><o:p></o:p></span></p></td></tr>
-	
-	<tr style='height:14.5pt'><td width=243 nowrap style='width:182.0pt;border:none;border-left:solid #AEAAAA 1.0pt;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>TIPO DE RETORNO<o:p></o:p></span></b></p></td><td width=397 nowrap style='width:298.0pt;border:none;border-right:solid #AEAAAA 1.0pt;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_TYPE_OF_RETURN|</span><span lang=ES-AR style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'><o:p></o:p></span></p></td></tr>
-	
-	<tr style='height:14.5pt'><td width=243 nowrap style='width:182.0pt;border:none;border-left:solid #AEAAAA 1.0pt;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>CANTIDAD DE BULTOS A RETORNAR<o:p></o:p></span></b></p></td><td width=397 nowrap style='width:298.0pt;border:none;border-right:solid #AEAAAA 1.0pt;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><span lang=EN-US style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_AMOUNT_OF_BOXES_TO_RETURN|<o:p></o:p></span></p></td></tr>
-	
-	<tr style='height:14.5pt'><td width=243 nowrap style='width:182.0pt;border-top:none;border-left:solid #AEAAAA 1.0pt;border-bottom:solid #BFBFBF 1.0pt;border-right:none;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>TRACKING NUMBER DE RETORNO<o:p></o:p></span></b></p></td><td width=397 nowrap style='width:298.0pt;border-top:none;border-left:none;border-bottom:solid #BFBFBF 1.0pt;border-right:solid #AEAAAA 1.0pt;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'><p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>|VAR_RETURN_TRACKING_NUMBER|</span><span lang=ES-AR style='font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'><o:p></o:p></span></p></td></tr>
-	
+	<table class=MsoNormalTable border=0 cellspacing=0 cellpadding=0 width=773 style='width:580.1pt;border-collapse:collapse;mso-yfti-tbllook:1184; mso-padding-alt:0in 0in 0in 0in'>
+		<tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes;height:14.5pt'>
+			<td width=275 nowrap style='width:206.6pt;border-top:solid #A6A6A6 1.0pt;
+			mso-border-top-themecolor:background1;mso-border-top-themeshade:166;
+			border-left:solid #A6A6A6 1.0pt;mso-border-left-themecolor:background1;
+			mso-border-left-themeshade:166;border-bottom:none;border-right:none;
+			mso-border-top-alt:solid #A6A6A6 .5pt;mso-border-top-themecolor:background1;
+			mso-border-top-themeshade:166;mso-border-left-alt:solid #A6A6A6 .5pt;
+			mso-border-left-themecolor:background1;mso-border-left-themeshade:166;
+			padding:0in 5.4pt 0in 5.4pt;height:14.5pt'>
+			<p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>FECHA DE ENTREGA<o:p></o:p></span></b></p>
+			</td>
+			<td width=498 nowrap style='width:373.5pt;border-top:solid #A6A6A6 1.0pt;
+			mso-border-top-themecolor:background1;mso-border-top-themeshade:166;
+			border-left:none;border-bottom:none;border-right:solid #A6A6A6 1.0pt;
+			mso-border-right-themecolor:background1;mso-border-right-themeshade:166;
+			mso-border-top-alt:solid #A6A6A6 .5pt;mso-border-top-themecolor:background1;
+			mso-border-top-themeshade:166;mso-border-right-alt:solid #A6A6A6 .5pt;
+			mso-border-right-themecolor:background1;mso-border-right-themeshade:166;
+			padding:0in 5.4pt 0in 5.4pt;height:14.5pt'>
+			<p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>|VAR_DELIVERY_DATE|<o:p></o:p></span></p>
+			</td>
+		</tr>
+		<tr style='mso-yfti-irow:1;height:14.5pt'>
+			<td width=275 nowrap style='width:206.6pt;border:none;border-left:solid #A6A6A6 1.0pt;
+			mso-border-left-themecolor:background1;mso-border-left-themeshade:166;
+			mso-border-left-alt:solid #A6A6A6 .5pt;mso-border-left-themecolor:background1;
+			mso-border-left-themeshade:166;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;
+			height:14.5pt'>
+			<p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>HORARIO DE ENTREGA<o:p></o:p></span></b></p>
+			</td>
+			<td width=498 nowrap style='width:373.5pt;border:none;border-right:solid #A6A6A6 1.0pt;
+			mso-border-right-themecolor:background1;mso-border-right-themeshade:166;
+			mso-border-right-alt:solid #A6A6A6 .5pt;mso-border-right-themecolor:background1;
+			mso-border-right-themeshade:166;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;
+			height:14.5pt'>
+			<p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>|VAR_DELIVERY_TIME|<b><o:p></o:p></b></span></p>
+			</td>
+		</tr>
+		<tr style='mso-yfti-irow:2;height:14.5pt'>
+			<td width=275 nowrap style='width:206.6pt;border:none;border-left:solid #A6A6A6 1.0pt;
+			mso-border-left-themecolor:background1;mso-border-left-themeshade:166;
+			mso-border-left-alt:solid #A6A6A6 .5pt;mso-border-left-themecolor:background1;
+			mso-border-left-themeshade:166;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'>
+			<p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>ESTUDIO<o:p></o:p></span></b></p>
+			</td>
+			<td width=498 nowrap style='width:373.5pt;border:none;border-right:solid #A6A6A6 1.0pt;
+			mso-border-right-themecolor:background1;mso-border-right-themeshade:166;
+			mso-border-right-alt:solid #A6A6A6 .5pt;mso-border-right-themecolor:background1;
+			mso-border-right-themeshade:166;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'>
+			<p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>|VAR_STUDY|<b><o:p></o:p></b></span></p>
+			</td>
+		</tr>
+		<tr style='mso-yfti-irow:3;height:14.85pt'>
+			<td width=275 nowrap style='width:206.6pt;border:none;border-left:solid #A6A6A6 1.0pt;
+			mso-border-left-themecolor:background1;mso-border-left-themeshade:166;
+			mso-border-left-alt:solid #A6A6A6 .5pt;mso-border-left-themecolor:background1;
+			mso-border-left-themeshade:166;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;
+			height:14.85pt'>
+			<p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>SITE#<o:p></o:p></span></b></p>
+			</td>
+			<td width=498 style='width:373.5pt;border:none;border-right:solid #A6A6A6 1.0pt;
+			mso-border-right-themecolor:background1;mso-border-right-themeshade:166;
+			mso-border-right-alt:solid #A6A6A6 .5pt;mso-border-right-themecolor:background1;
+			mso-border-right-themeshade:166;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;
+			height:14.85pt'>
+			<p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>|VAR_SITE#|<b><o:p></o:p></b></span></p>
+			</td>
+		</tr>
+		<tr style='mso-yfti-irow:4;height:14.5pt'>
+			<td width=275 nowrap style='width:206.6pt;border:none;border-left:solid #A6A6A6 1.0pt;
+			mso-border-left-themecolor:background1;mso-border-left-themeshade:166;
+			mso-border-left-alt:solid #A6A6A6 .5pt;mso-border-left-themecolor:background1;
+			mso-border-left-themeshade:166;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'>
+			<p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>NUMERO DE ORDEN IVRS<o:p></o:p></span></b></p>
+			</td>
+			<td width=498 nowrap style='width:373.5pt;border:none;border-right:solid #A6A6A6 1.0pt;
+			mso-border-right-themecolor:background1;mso-border-right-themeshade:166;
+			mso-border-right-alt:solid #A6A6A6 .5pt;mso-border-right-themecolor:background1;
+			mso-border-right-themeshade:166;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'>
+			<p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>|VAR_IVRS_NUMBER|<o:p></o:p></span></p>
+			</td>
+		</tr>
+		<tr style='mso-yfti-irow:5;height:14.5pt'>
+			<td width=275 nowrap style='width:206.6pt;border:none;border-left:solid #A6A6A6 1.0pt;
+			mso-border-left-themecolor:background1;mso-border-left-themeshade:166;
+			mso-border-left-alt:solid #A6A6A6 .5pt;mso-border-left-themecolor:background1;
+			mso-border-left-themeshade:166;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;
+			height:14.5pt'>
+			<p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>TRACKING NUMBER DE TRANSPORTE<o:p></o:p></span></b></p>
+			</td>
+			<td width=498 nowrap style='width:373.5pt;border:none;border-right:solid #A6A6A6 1.0pt;
+			mso-border-right-themecolor:background1;mso-border-right-themeshade:166;
+			mso-border-right-alt:solid #A6A6A6 .5pt;mso-border-right-themecolor:background1;
+			mso-border-right-themeshade:166;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;
+			height:14.5pt'>
+			<p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>|VAR_TRACKING_NUMBER|</span><span
+			lang=ES-AR style='font-family:"Calibri Light",sans-serif;color:black;
+			mso-ansi-language:ES-AR;mso-fareast-language:ES-MX'><o:p></o:p></span></p>
+			</td>
+		</tr>
+		<tr style='mso-yfti-irow:6;height:14.5pt'>
+			<td width=275 nowrap style='width:206.6pt;border:none;border-left:solid #A6A6A6 1.0pt;
+			mso-border-left-themecolor:background1;mso-border-left-themeshade:166;
+			mso-border-left-alt:solid #A6A6A6 .5pt;mso-border-left-themecolor:background1;
+			mso-border-left-themeshade:166;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'>
+			<p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>CONTACTOS AUTORIZADOS<o:p></o:p></span></b></p>
+			</td>
+			<td width=498 nowrap style='width:373.5pt;border:none;border-right:solid #A6A6A6 1.0pt;
+			mso-border-right-themecolor:background1;mso-border-right-themeshade:166;
+			mso-border-right-alt:solid #A6A6A6 .5pt;mso-border-right-themecolor:background1;
+			mso-border-right-themeshade:166;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'>
+			<p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>|VAR_CONTACTS|<o:p></o:p></span></p>
+			</td>
+		</tr>
+		<tr style='mso-yfti-irow:7;height:14.5pt'>
+			<td width=275 nowrap style='width:206.6pt;border:none;border-left:solid #A6A6A6 1.0pt;
+			mso-border-left-themecolor:background1;mso-border-left-themeshade:166;
+			mso-border-left-alt:solid #A6A6A6 .5pt;mso-border-left-themecolor:background1;
+			mso-border-left-themeshade:166;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;
+			height:14.5pt'>
+			<p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>CONDICION DE TEMPERATURA<o:p></o:p></span></b></p>
+			</td>
+			<td width=498 nowrap style='width:373.5pt;border:none;border-right:solid #A6A6A6 1.0pt;
+			mso-border-right-themecolor:background1;mso-border-right-themeshade:166;
+			mso-border-right-alt:solid #A6A6A6 .5pt;mso-border-right-themecolor:background1;
+			mso-border-right-themeshade:166;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;
+			height:14.5pt'>
+			<p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>|VAR_TEMPERATURE|</span><span
+			lang=ES-AR style='font-family:"Calibri Light",sans-serif;color:black;
+			mso-ansi-language:ES-AR;mso-fareast-language:ES-MX'><o:p></o:p></span></p>
+			</td>
+		</tr>
+		<tr style='mso-yfti-irow:8;height:14.5pt'>
+			<td width=275 nowrap style='width:206.6pt;border:none;border-left:solid #A6A6A6 1.0pt;
+			mso-border-left-themecolor:background1;mso-border-left-themeshade:166;
+			mso-border-left-alt:solid #A6A6A6 .5pt;mso-border-left-themecolor:background1;
+			mso-border-left-themeshade:166;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'>
+			<p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>TIPO DE RETORNO<o:p></o:p></span></b></p>
+			</td>
+			<td width=498 nowrap style='width:373.5pt;border:none;border-right:solid #A6A6A6 1.0pt;
+			mso-border-right-themecolor:background1;mso-border-right-themeshade:166;
+			mso-border-right-alt:solid #A6A6A6 .5pt;mso-border-right-themecolor:background1;
+			mso-border-right-themeshade:166;padding:0in 5.4pt 0in 5.4pt;height:14.5pt'>
+			<p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>|VAR_TYPE_OF_RETURN|</span><span
+			lang=ES-AR style='font-family:"Calibri Light",sans-serif;color:black;
+			mso-ansi-language:ES-AR;mso-fareast-language:ES-MX'><o:p></o:p></span></p>
+			</td>
+		</tr>
+		<tr style='mso-yfti-irow:9;mso-yfti-lastrow:yes;height:14.5pt'>
+			<td width=275 nowrap style='width:206.6pt;border-top:none;border-left:solid #A6A6A6 1.0pt;
+			mso-border-left-themecolor:background1;mso-border-left-themeshade:166;
+			border-bottom:solid #A6A6A6 1.0pt;mso-border-bottom-themecolor:background1;
+			mso-border-bottom-themeshade:166;border-right:none;mso-border-left-alt:solid #A6A6A6 .5pt;
+			mso-border-left-themecolor:background1;mso-border-left-themeshade:166;
+			mso-border-bottom-alt:solid #A6A6A6 .5pt;mso-border-bottom-themecolor:background1;
+			mso-border-bottom-themeshade:166;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;
+			height:14.5pt'>
+			<p class=MsoNormal><b><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>COMENTARIOS<o:p></o:p></span></b></p>
+			</td>
+			<td width=498 nowrap style='width:373.5pt;border-top:none;border-left:none;
+			border-bottom:solid #A6A6A6 1.0pt;mso-border-bottom-themecolor:background1;
+			mso-border-bottom-themeshade:166;border-right:solid #A6A6A6 1.0pt;mso-border-right-themecolor:
+			background1;mso-border-right-themeshade:166;mso-border-bottom-alt:solid #A6A6A6 .5pt;
+			mso-border-bottom-themecolor:background1;mso-border-bottom-themeshade:166;
+			mso-border-right-alt:solid #A6A6A6 .5pt;mso-border-right-themecolor:background1;
+			mso-border-right-themeshade:166;background:#F2F2F2;padding:0in 5.4pt 0in 5.4pt;
+			height:14.5pt'>
+			<p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;
+			color:black;mso-fareast-language:ES-MX'>|VAR_COMMENTS|<o:p></o:p></span></p>
+			</td>
+		</tr>
 	</table>
 	
-	<p class=MsoNormal style='margin-left:.5in'><span style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'><o:p>&nbsp;</o:p></span></p>
-	<p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'><o:p>&nbsp;</o:p></span></p>
-	<p class=MsoNormal style='margin-bottom:12.0pt'><span lang=ES-AR style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>Ante cualquier consulta adicional, por favor contactarse a la brevedad. </span><span style='font-size:10.0pt;font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'>Saludos,</span><span style='mso-fareast-language:ES-MX'><o:p></o:p></span></p>
-	<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'><o:p>&nbsp;</o:p></span></p>
-	<p class=MsoNormal><b><span style='font-size:9.0pt;font-family:"Calibri Light",sans-serif;color:black;mso-fareast-language:ES-MX'><o:p>&nbsp;</o:p></span></b></p>
+	<p class=MsoNormal><span lang=ES-MX style='font-size:11.0pt;font-family:"Calibri Light",sans-serif;
+	mso-ansi-language:ES-MX;mso-fareast-language:ES-MX'><o:p>&nbsp;</o:p></span></p>
+
+	<p class=MsoNormal><span lang=ES-MX style='font-family:"Calibri Light",sans-serif;
+	mso-ansi-language:ES-MX;mso-fareast-language:ES-MX'>En caso de discrepancia o
+	desvío de temperatura, por favor envíe la documentación (Packing List completo,
+	firmado y fechado, y datos del sensor de temperatura). Para obtener el FFU/NFFU
+	en el caso de órdenes NO IWRS, envíe la información a la siguiente dirección: </span><span
+	style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'><a
+	href="mailto:ar.lilly.logistics@fishersci.com"><span lang=ES-US
+	style='mso-ansi-language:ES-US'>ar.lilly.logistics@fishersci.com</span></a></span><span
+	lang=ES-US style='font-family:"Calibri Light",sans-serif;mso-ansi-language:
+	ES-US;mso-fareast-language:ES-MX'><o:p></o:p></span></p>
+
+	<p class=MsoNormal><span lang=ES-MX style='font-family:"Calibri Light",sans-serif;
+	mso-ansi-language:ES-MX;mso-fareast-language:ES-MX'><o:p>&nbsp;</o:p></span></p>
+
+	<p class=MsoNormal><span lang=ES-MX style='font-family:"Calibri Light",sans-serif;
+	mso-ansi-language:ES-MX;mso-fareast-language:ES-MX'>Ante cualquier consulta
+	adicional, por favor contactarse a la brevedad. Saludos,<o:p></o:p></span></p>
+
+	<p class=MsoNormal><span style='font-family:"Calibri Light",sans-serif;
+	mso-bidi-font-family:"Times New Roman";mso-bidi-theme-font:minor-bidi'><o:p>&nbsp;</o:p></span></p>
 	
 	<p class=MsoNormal><b><span lang=EN-US style='font-family:"Calibri Light",sans-serif;mso-fareast-language:ES-MX'>
 	|VAR_FULL_NAME|

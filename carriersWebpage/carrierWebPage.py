@@ -149,6 +149,23 @@ class CarrierWebpage(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_contacts(self, carrier_id: str) -> str:
+        """
+        Gets contacts from carrier webpage
+
+        Args:
+            carrier_id (str): carrier ID
+
+        Returns:
+            str: contacts
+        """
+        try:
+            pass
+        except Exception as e:
+            self.log.add_error_log(f"Error getting contacts: {e}")
+            return "No contact"
+
     # Private methods
     def __build_driver__(self, folder_path_to_download: str):
         browser = Browser(folder_path_to_download)

@@ -201,7 +201,7 @@ class Team(ABC):
                                     ship_date: str, ship_time_from: str, ship_time_to: str,
                                     delivery_date: str, delivery_time_from: str, delivery_time_to: str,
                                     type_of_material: str, temperature: str,
-                                    contacts: str, amount_of_boxes: int) -> str:
+                                    contacts: str, amount_of_boxes: int) -> Tuple[str, str]:
         """
         Completes shipping order form
         """
@@ -350,12 +350,17 @@ class Team(ABC):
                                     ship_date: str, ship_time_from: str, ship_time_to: str,
                                     delivery_date: str, delivery_time_from: str, delivery_time_to: str,
                                     type_of_material: str, temperature: str,
-                                    contacts: str, amount_of_boxes: int) -> str:
-        return carrierWebpage.complete_shipping_order_form(carrier_id, reference,
+                                    contacts: str, amount_of_boxes: int) -> Tuple[str, str]:
+        if contacts == "" or contacts == "No contact":
+                contacts = carrierWebpage.get_contacts(carrier_id)
+        
+        str_waybill = carrierWebpage.complete_shipping_order_form(carrier_id, reference,
                                     ship_date, ship_time_from, ship_time_to,
                                     delivery_date, delivery_time_from, delivery_time_to,
                                     type_of_material, temperature,
                                     contacts, amount_of_boxes)
+        
+        return (str_waybill, contacts)
 
     def __complete_shipping_order_return_form__(self, carrierWebpage: CarrierWebpage, carrier_id: str, reference_return: str,
                                                 delivery_date: str, return_time_from: str,

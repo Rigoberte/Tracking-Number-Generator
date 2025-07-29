@@ -16,7 +16,8 @@ class View:
         elif type(objectOrInstruction) == dict:
             self.update_a_line_to_processed_of_represented_ordersAndContactsDataframe(objectOrInstruction["INDEX"],
                                                                                     objectOrInstruction["TRACKING_NUMBER"], 
-                                                                                    objectOrInstruction["RETURN_TRACKING_NUMBER"])
+                                                                                    objectOrInstruction["RETURN_TRACKING_NUMBER"],
+                                                                                    objectOrInstruction["CONTACTS"])
         elif type(objectOrInstruction) == str:
             if objectOrInstruction == "BLOCK MAIN USERFORM WIDGETS":
                 self.mainUserForm.block_widgets()
@@ -144,8 +145,8 @@ class View:
     def update_ordersAndContactsDataframe_and_widgets(self, ordersAndContactsDataframe: pd.DataFrame) -> None:
         self.mainUserForm.update_whole_represented_ordersAndContactsDataframe(ordersAndContactsDataframe)
 
-    def update_a_line_to_processed_of_represented_ordersAndContactsDataframe(self, index: int, tracking_number: str, return_tracking_number: str) -> None:
-        self.mainUserForm.update_a_line_to_processed_of_represented_ordersAndContactsDataframe(index, tracking_number, return_tracking_number)
+    def update_a_line_to_processed_of_represented_ordersAndContactsDataframe(self, index: int, tracking_number: str, return_tracking_number: str, contacts: str) -> None:
+        self.mainUserForm.update_a_line_to_processed_of_represented_ordersAndContactsDataframe(index, tracking_number, return_tracking_number, contacts)
 
     # Update widgets from ConfigUserForm
     def update_widgets_from_configUserForm(self, config: dict) -> None:

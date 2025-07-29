@@ -88,15 +88,12 @@ class TransportesAmbientales_requests(CarrierWebpage):
         it_temperature = self.__get_it_temperature__(temperature)
 
         # Standarize contacts
-        if contacts == "" or contacts == "No contact":
-                contacts = str(ubicacion['contacto'])
-        contacts = self.__standarize_contacts__(contacts)
         self.contacts = contacts
 
         # Builds URL
         create_shipment_url = f"{self.url_base}/srv.SrvClienteJSON.crearEnvio+RSID={self.rsid}&idubicacion={carrier_id}"
         create_shipment_url += f"&referencia={reference}&retiradde={retiradde}&retirahta={retirahta}&entregadde={entregadde}&entregahta={entregahta}"
-        create_shipment_url += f"&obsOper={comments}&tipomaterial={it_type_of_material}&temperatura={it_temperature}&autRecibe={contacts}&telContacto={telContacto}&cajas={amount_of_boxes}"
+        create_shipment_url += f"&obsOper={comments}&tipomaterial={it_type_of_material}&temperatura={it_temperature}&autRecibe=[{contacts}]&telContacto={telContacto}&cajas={amount_of_boxes}"
         
         response = self.__do_a_http_request__(create_shipment_url)
 
@@ -173,6 +170,17 @@ class TransportesAmbientales_requests(CarrierWebpage):
         url_guias_return = f"{self.url_base}/srv.SrvPdf.emitirOde+id={return_tracking_number[:7]}&idservicio={return_tracking_number[:7]}&copies={amount_of_copies}"
         self.__print_webpage__(self.driver, url_guias_return)
 
+    def get_contacts(self, carrier_id: str) -> str:
+        ubicacion = self.__get_site_info__(carrier_id)
+
+        if len(ubicacion) == 0:
+            return "No contact"
+        
+        contacts = str(ubicacion['contacto'])
+        contacts = self.__standarize_contacts__(contacts)
+        
+        return contacts
+
     def __standarize_contacts__(self, contacts: str) -> str:
         replacements = [" / ", "/ ", " /", "/", 
                         " ; ", "; ", " ;", ";", 
@@ -186,8 +194,6 @@ class TransportesAmbientales_requests(CarrierWebpage):
 
         if contacts[-1:] == ",":
             contacts = contacts[:-1]
-
-        contacts = f"[{contacts}]"
 
         return contacts
 
@@ -239,12 +245,20 @@ class TransportesAmbientales_requests(CarrierWebpage):
         elif type_of_material == "Equipment": return 8
 
     def __get_it_temperature__(self, temperature: str) -> int:
-        if temperature == "Ambient": return 1
-        elif temperature == "Refrigerated": return 2
-        elif temperature == "Frozen": return 2
-        elif temperature == "Refrigerated with Dry Ice": return 3
-        elif temperature == "Frozen with Liquid Nitrogen": return 4
-        elif temperature == "Controlled Ambient": return 5
+        temperature_mapping = {
+            "Frozen with Liquid Nitrogen": 4,
+            "Refrigerated with Dry Ice": 3,
+            "Refrigerated": 2,
+            "Controlled Ambient": 5,
+            "Ambient": 1
+        }
+
+        for key in temperature_mapping:
+            if key in temperature:
+                # Return the max temperature
+                return temperature_mapping[key]
+        
+        return 1  # Default to "Ambient" if no match is found
 
     def __get_it_tipo_retorno__(self, type_of_return: str) -> str:
         if type_of_return == "CREDO": return 'E'
