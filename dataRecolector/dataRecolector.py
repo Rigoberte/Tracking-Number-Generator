@@ -6,6 +6,8 @@ import queue
 from teams.team import Team
 from logClass.log import Log
 
+# comentario
+
 class DataRecolector:
     def __init__(self, aTeam: Team, queue: queue.Queue = queue.Queue(), log: Log = Log()):
         self.selectedTeam = aTeam
