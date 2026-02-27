@@ -89,14 +89,14 @@ class EliLillyArgentinaTeam(Team):
         return contactsDataFrame
     
     def get_column_rename_type_config_for_orders_tables(self) -> Tuple[dict, dict]:
-        columns_names = {"CT-WIN": "SYSTEM_NUMBER", "IVRS": "IVRS_NUMBER",
+        columns_names = {"CT-WIN": "SYSTEM_NUMBER", "IWRS": "IVRS_NUMBER",
                         "Trial Alias": "STUDY", "Site ": "SITE#",
                         "Order received": "ENTER DATE", "Ship date": "SHIP_DATE",
                         "Horario de Despacho": "SHIP_TIME_FROM",  
-                        "Dia de entrega": "DELIVERY_DATE", "Destination": "DESTINATION",
+                        "Delivery Date": "DELIVERY_DATE", "Destination": "DESTINATION",
                         "CONDICION": "TEMPERATURE", "TT4": "AMOUNT_OF_BOXES_TO_SEND",  
                         "AWB": "TRACKING_NUMBER", "Shipper return AWB": "RETURN_TRACKING_NUMBER"}
-        columns_types = {"CT-WIN": str, "IVRS": str, 
+        columns_types = {"CT-WIN": str, "IWRS": str, 
                         "Trial Alias": str, "Site ": str, 
                         "Order received": str, 
                         "Horario de Despacho": str,
@@ -135,7 +135,7 @@ class EliLillyArgentinaTeam(Team):
 
     def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str,
                 totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int, emailSender: EmailSender) -> None:
-        self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "inaki.costa@thermofisher",
+        self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "inaki.costa@thermofisher.com",
                     totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed, emailSender)
 
     def build_driver(self):
