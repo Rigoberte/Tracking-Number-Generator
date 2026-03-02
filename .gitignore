@@ -4,3 +4,5 @@ __pycache__/
 *.pyd
 *.so
 *.pyc
+
+_deprecated/

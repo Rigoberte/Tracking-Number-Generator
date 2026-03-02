@@ -1,6 +1,15 @@
 import tkinter as tk
 
+
 class BottomBarToolTip:
+    """Modern tooltip for bottom bar icons."""
+    
+    # Modern styling constants
+    BG_COLOR = "#1F2937"  # Dark slate
+    FG_COLOR = "#F9FAFB"  # Light gray
+    FONT = ("Segoe UI", 9)
+    PADDING = 8
+    
     def __init__(self, widget):
         self.widget = widget
         self.tip_window = None
@@ -12,26 +21,41 @@ class BottomBarToolTip:
         
         self.tip_window = tw = tk.Toplevel(self.widget)
         tw.wm_overrideredirect(1)
+        tw.attributes('-alpha', 0.95)  # Slight transparency
         
-        label = tk.Label(tw, text=text, justify=tk.LEFT,
-                        background="#ffffe0", relief=tk.SOLID, borderwidth=1,
-                        font=("tahoma", "8", "normal"))
-        label.pack(ipadx=1)
+        # Modern styled frame
+        frame = tk.Frame(
+            tw,
+            background=self.BG_COLOR,
+            highlightbackground="#374151",
+            highlightthickness=1,
+        )
+        frame.pack()
+        
+        label = tk.Label(
+            frame,
+            text=text,
+            justify=tk.LEFT,
+            background=self.BG_COLOR,
+            foreground=self.FG_COLOR,
+            font=self.FONT,
+            padx=self.PADDING,
+            pady=self.PADDING // 2,
+        )
+        label.pack()
 
         screen_x = self.widget.winfo_pointerx()
         screen_y = self.widget.winfo_pointery()
         screen_width = tw.winfo_screenwidth()
         screen_height = tw.winfo_screenheight()
         
-        # Update geometry of the tooltip to ensure it doesn't go off screen
         tw.update_idletasks()
         width, height = tw.winfo_width(), tw.winfo_height()
         
-        # Adjust x position if tooltip goes beyond screen width and place it in the current screen
+        # Position above the cursor
         number_of_current_screen_x = screen_x // screen_width
         x = screen_x - width // 2
 
-        # Adjust y position to place tip above the log image
         number_of_current_screen_y = screen_y // screen_height
         y = screen_y - height - 20
 

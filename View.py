@@ -10,6 +10,39 @@ class View:
     def __init__(self):
         self.mainUserForm = MyUserForm()
 
+    # New typed event handlers (preferred)
+    def block_widgets(self) -> None:
+        """Block UI widgets during processing."""
+        self.mainUserForm.block_widgets()
+    
+    def unblock_widgets(self) -> None:
+        """Unblock UI widgets after processing."""
+        self.mainUserForm.unblock_widgets()
+    
+    def update_orders_table(self, dataframe: pd.DataFrame) -> None:
+        """Update the orders table with new data."""
+        self.update_ordersAndContactsDataframe_and_widgets(dataframe)
+    
+    def show_message(self, message: str) -> None:
+        """Show an informational message (currently no-op, can be extended)."""
+        # TODO: Implement message display (status bar, popup, etc.)
+        pass
+    
+    def show_error(self, error: str) -> None:
+        """Show an error message (currently no-op, can be extended)."""
+        # TODO: Implement error display
+        pass
+    
+    def update_row(self, row_data: dict) -> None:
+        """Update a single row in the orders table."""
+        self.update_a_line_to_processed_of_represented_ordersAndContactsDataframe(
+            row_data["INDEX"],
+            row_data["TRACKING_NUMBER"],
+            row_data["RETURN_TRACKING_NUMBER"],
+            row_data["CONTACTS"]
+        )
+
+    # Legacy handler (kept for backward compatibility)
     def queue_action(self, objectOrInstruction) -> None:
         if type(objectOrInstruction) == pd.DataFrame:
             self.update_ordersAndContactsDataframe_and_widgets(objectOrInstruction)

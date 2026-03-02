@@ -1,5 +1,8 @@
 import pandas as pd
-import queue
+import queue as queue_module
+
+from services.ui_events import UIEvent, UIEventType
+
 
 class Controller:
     def __init__(self, model, view):
@@ -129,12 +132,29 @@ class Controller:
     # Check if there are tasks in the queue
     def check_queue(self) -> None:
         try:
-            while True:
-                if self.model.queue.empty():
-                    break
-                
-                task = self.model.queue.get_nowait()
-                self.view.queue_action(task)
-        except queue.Empty:
+            while self.model.has_pending_events():
+                event = self.model.poll_event()
+                self._handle_event(event)
+        except queue_module.Empty:
             pass
         self.view.get_main_userform_root().after(100, self.check_queue)
+    
+    def _handle_event(self, event: UIEvent) -> None:
+        """
+        Handle a UI event with proper typing.
+        
+        Args:
+            event: The UIEvent to handle
+        """
+        if event.event_type == UIEventType.BLOCK_WIDGETS:
+            self.view.block_widgets()
+        elif event.event_type == UIEventType.UNBLOCK_WIDGETS:
+            self.view.unblock_widgets()
+        elif event.event_type == UIEventType.UPDATE_ORDERS:
+            self.view.update_orders_table(event.data)
+        elif event.event_type == UIEventType.UPDATE_ROW:
+            self.view.update_row(event.data)
+        elif event.event_type == UIEventType.SHOW_MESSAGE:
+            self.view.show_message(event.data)
+        elif event.event_type == UIEventType.SHOW_ERROR:
+            self.view.show_error(event.data)

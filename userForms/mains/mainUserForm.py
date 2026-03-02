@@ -8,7 +8,7 @@ import os
 
 from ..tooltips.treeviewTooltip import TreeviewToolTip
 from ..tooltips.bottomBarToolTip import BottomBarToolTip
-from ..chroma import Chroma
+from ..chroma import Chroma, UI
 
 class MyUserForm(tk.Tk):
     def __init__(self):
@@ -380,12 +380,39 @@ class MyUserForm(tk.Tk):
             today = dt.datetime.now()
             next_working_day = nextWorkingDay(today + dt.timedelta(days=1))
 
-            cal = Calendar(frame, selectmode='day', locale='en_US', 
-                            disabledforeground='red',
-                            cursor="hand2", date_pattern='yyyy-MM-dd',
-                            year=next_working_day.year, month=next_working_day.month, day=next_working_day.day)
+            # Modern calendar styling
+            cal = Calendar(
+                frame,
+                selectmode='day',
+                locale='en_US',
+                cursor="hand2",
+                date_pattern='yyyy-MM-dd',
+                year=next_working_day.year,
+                month=next_working_day.month,
+                day=next_working_day.day,
+                # Modern appearance
+                font=(UI.font_family, UI.font_sm),
+                background=self.colors.theme.surface,
+                foreground=self.colors.theme.text_primary,
+                bordercolor=self.colors.getSidebarColor(),
+                headersbackground=self.colors.getSidebarColor(),
+                headersforeground='#FFFFFF',
+                selectbackground=self.colors.theme.primary,
+                selectforeground='#FFFFFF',
+                normalbackground=self.colors.theme.surface,
+                normalforeground=self.colors.theme.text_primary,
+                weekendbackground=self.colors.theme.surface_hover,
+                weekendforeground=self.colors.theme.text_secondary,
+                othermonthbackground='#F3F4F6',
+                othermonthforeground='#9CA3AF',
+                othermonthwebackground='#E5E7EB',
+                othermonthweforeground='#9CA3AF',
+                disabledforeground='#D1D5DB',
+                borderwidth=0,
+                showweeknumbers=False,
+            )
 
-            cal.pack(padx=50, pady=0, side=tk.LEFT)
+            cal.pack(padx=UI.spacing_xl, pady=UI.spacing_sm, side=tk.LEFT)
 
             return cal
 
@@ -399,21 +426,61 @@ class MyUserForm(tk.Tk):
         
         def load_treeview(self, frame, treeviewColumns) -> tk.ttk.Treeview:
             style = tk.ttk.Style()
-            style.configure("mystyle.Treeview", highlightthickness=0, bd=0, font=('Calibri', 13)) # Font of the body
-            style.configure("mystyle.Treeview.Heading", font=('Calibri', 13,'bold')) # Font of the headings
-            style.configure("mystyle.Treeview", rowheight=25)
-            style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})]) # Remove the borders
             
-            treeview = tk.ttk.Treeview(frame, columns=treeviewColumns , show='headings', style="mystyle.Treeview")
-            treeview.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+            # Use 'clam' theme to allow full header customization (Windows native themes don't allow it)
+            style.theme_use('clam')
             
-            treeview.tag_configure('odd', background='#E8E8E8')
-            treeview.tag_configure('odd_done', background='#C6E0B4')
-            treeview.tag_configure('odd_error', background='#FFC7CE')
+            # Modern treeview styling
+            style.configure(
+                "Modern.Treeview",
+                highlightthickness=0,
+                bd=0,
+                font=(UI.font_family, UI.font_md),
+                rowheight=36,
+                background=self.colors.theme.table_row_odd,
+                foreground=self.colors.theme.text_primary,
+                fieldbackground=self.colors.theme.surface,
+            )
+            style.configure(
+                "Modern.Treeview.Heading",
+                font=(UI.font_family, UI.font_md, 'bold'),
+                background=self.colors.theme.table_header,
+                foreground=self.colors.theme.text_primary,
+                relief='flat',
+                padding=(UI.spacing_sm, UI.spacing_sm),
+                borderwidth=0,
+            )
+            style.map(
+                "Modern.Treeview.Heading",
+                background=[
+                    ('active', self.colors.theme.surface_hover),
+                    ('!active', self.colors.theme.table_header)
+                ],
+                foreground=[
+                    ('active', self.colors.theme.text_primary),
+                    ('!active', self.colors.theme.text_primary)
+                ],
+                relief=[('pressed', 'flat'), ('!pressed', 'flat')],
+            )
+            style.map(
+                "Modern.Treeview",
+                background=[('selected', self.colors.theme.primary_light)],
+                foreground=[('selected', self.colors.theme.text_primary)],
+            )
+            style.layout("Modern.Treeview", [('Modern.Treeview.treearea', {'sticky': 'nswe'})])
+            
+            treeview = tk.ttk.Treeview(frame, columns=treeviewColumns, show='headings', style="Modern.Treeview")
+            treeview.pack(fill=tk.BOTH, expand=True, padx=UI.spacing_md, pady=UI.spacing_md)
+            
+            # Configure row colors using theme
+            table_colors = self.colors.get_table_colors()
+            treeview.tag_configure('odd', background=table_colors['odd'])
+            treeview.tag_configure('odd_done', background=table_colors['odd_done'])
+            treeview.tag_configure('odd_error', background=table_colors['odd_error'])
 
-            treeview.tag_configure('even', background='#DFDFDF')
-            treeview.tag_configure('even_done', background='#A9D08E')
-            treeview.tag_configure('even_error', background='#FFA7BB')
+            treeview.tag_configure('even', background=table_colors['even'])
+            treeview.tag_configure('even_done', background=table_colors['even_done'])
+            treeview.tag_configure('even_error', background=table_colors['even_error'])
 
             # Treeview columns headings and columns width
             treeview.column("#0", width=0, stretch=tk.NO)  # Hide the first column
@@ -461,16 +528,34 @@ class MyUserForm(tk.Tk):
             bottom_dataFrame_description = create_label_template(self, frame, "", font_size = 11, is_bold=False)
             return bottom_dataFrame_description
 
-        def create_label_template(self, frame, text, font = 'Calibri Light', font_size = 16, is_bold = True, side = tk.LEFT) -> tk.Label:
-            font_bold = 'bold' if is_bold else 'normal'
-            label = tk.Label(frame, text=text, font=(font, font_size, font_bold))
-            label.pack(expand=True, side=side)
-            
+        def create_label_template(self, frame, text, font=None, font_size=None, is_bold=True, side=tk.LEFT) -> tk.Label:
+            font = font or UI.font_family
+            font_size = font_size or UI.font_lg
+            font_weight = 'bold' if is_bold else 'normal'
+            label = tk.Label(
+                frame,
+                text=text,
+                font=(font, font_size, font_weight),
+                bg=self.colors.getSidebarColor(),
+                fg=self.colors.theme.text_on_primary,
+            )
+            label.pack(expand=True, side=side, padx=UI.spacing_xs)
             return label
 
         def create_button_template(self, frame, text) -> ctk.CTkButton:
-            button = ctk.CTkButton(frame, text=text, width=150, height=50, font=('Calibri', 22, 'bold'))
-            button.pack(pady=10, padx=10)
+            button = ctk.CTkButton(
+                frame,
+                text=text,
+                width=160,
+                height=UI.btn_height_lg,
+                font=(UI.font_family, UI.font_xl, 'bold'),
+                corner_radius=UI.radius_lg,
+                border_width=0,
+                fg_color=self.colors.getPrimaryColor(),
+                hover_color=self.colors.getPrimaryColorLight(),
+                text_color=self.colors.getTextColorForButtons(),
+            )
+            button.pack(pady=UI.spacing_sm, padx=UI.spacing_sm)
             return button
 
         def load_dark_mode_image(self, frame) -> tk.Label:
@@ -568,33 +653,139 @@ class MyUserForm(tk.Tk):
             def changeAllImages(self):
                 changeImage(self, self.logo, "TMO_logo_dark.png", "TMO_logo_light.png", (284, 61), self.colors.getSidebarColor())
                 
-                changeImage(self, self.dark_mode_image, "moon-regular-24.png", "sun-solid-24.png", (24, 24), self.colors.getBodyColor())
-                changeImage(self, self.log_image, "message-alt-detail-regular-24.png", "message-alt-detail-solid-24.png", (24, 24), self.colors.getBodyColor())
-                changeImage(self, self.open_excel_image, "data-regular-24.png", "data-solid-24.png", (24, 24), self.colors.getBodyColor())
+                changeImage(self, self.dark_mode_image, "moon-regular-24.png", "sun-solid-24.png", (28, 28), self.colors.getBodyColor())
+                changeImage(self, self.log_image, "message-alt-detail-regular-24.png", "message-alt-detail-solid-24.png", (28, 28), self.colors.getBodyColor())
+                changeImage(self, self.open_excel_image, "data-regular-24.png", "data-solid-24.png", (28, 28), self.colors.getBodyColor())
+            
+            def updateTreeviewColors(self):
+                """Update treeview colors based on current theme."""
+                table_colors = self.colors.get_table_colors()
+                self.treeview.tag_configure('odd', background=table_colors['odd'])
+                self.treeview.tag_configure('odd_done', background=table_colors['odd_done'])
+                self.treeview.tag_configure('odd_error', background=table_colors['odd_error'])
+                self.treeview.tag_configure('even', background=table_colors['even'])
+                self.treeview.tag_configure('even_done', background=table_colors['even_done'])
+                self.treeview.tag_configure('even_error', background=table_colors['even_error'])
+                
+                # Update treeview body style
+                style = tk.ttk.Style()
+                style.configure(
+                    "Modern.Treeview",
+                    background=self.colors.theme.table_row_odd,
+                    foreground=self.colors.theme.text_primary,
+                    fieldbackground=self.colors.theme.surface,
+                )
+                
+                # Fix heading colors for dark mode - use theme element
+                style.configure(
+                    "Modern.Treeview.Heading",
+                    background=self.colors.theme.table_header,
+                    foreground=self.colors.theme.text_primary,
+                    relief='flat',
+                )
+                # Force heading colors with map (required for dark mode)
+                style.map(
+                    "Modern.Treeview.Heading",
+                    background=[
+                        ('active', self.colors.theme.surface_hover),
+                        ('!active', self.colors.theme.table_header)
+                    ],
+                    foreground=[
+                        ('active', self.colors.theme.text_primary),
+                        ('!active', self.colors.theme.text_primary)
+                    ],
+                )
+                
+                # Also update vertical scrollbar frame
+                self.frames["vertical_scrollbar"].configure(
+                    fg_color=self.colors.theme.body
+                )
+            
+            def updateCalendarColors(self):
+                """Update calendar colors based on current theme."""
+                if self.colors.getDarkMode():
+                    self.cal.configure(
+                        background=self.colors.theme.surface,
+                        foreground=self.colors.theme.text_primary,
+                        headersbackground=self.colors.getSidebarColor(),
+                        headersforeground='#FFFFFF',
+                        selectbackground=self.colors.theme.primary,
+                        normalbackground=self.colors.theme.surface,
+                        normalforeground=self.colors.theme.text_primary,
+                        weekendbackground=self.colors.theme.surface_hover,
+                        weekendforeground=self.colors.theme.text_secondary,
+                        othermonthbackground='#1E293B',
+                        othermonthforeground='#64748B',
+                        othermonthwebackground='#1E293B',
+                        othermonthweforeground='#64748B',
+                    )
+                else:
+                    self.cal.configure(
+                        background=self.colors.theme.surface,
+                        foreground=self.colors.theme.text_primary,
+                        headersbackground=self.colors.getSidebarColor(),
+                        headersforeground='#FFFFFF',
+                        selectbackground=self.colors.theme.primary,
+                        normalbackground=self.colors.theme.surface,
+                        normalforeground=self.colors.theme.text_primary,
+                        weekendbackground=self.colors.theme.surface_hover,
+                        weekendforeground=self.colors.theme.text_secondary,
+                        othermonthbackground='#F3F4F6',
+                        othermonthforeground='#9CA3AF',
+                        othermonthwebackground='#E5E7EB',
+                        othermonthweforeground='#9CA3AF',
+                    )
             
             self.colors.toggle()
-            self.frames["top"].configure(bg_color=self.colors.getTextColor(),
-                                        fg_color=self.colors.getSidebarColor())
             
-            self.frames["bottom"].configure(bg_color=self.colors.getTextColor(),
-                                        fg_color=self.colors.getBodyColor())
+            # Update frame colors
+            self.frames["top"].configure(
+                bg_color=self.colors.theme.sidebar,
+                fg_color=self.colors.getSidebarColor()
+            )
             
-            self.frames["mid"].configure(bg_color=self.colors.getTextColor(),
-                                        fg_color=self.colors.getBodyColor())
+            self.frames["bottom"].configure(
+                bg_color=self.colors.theme.body,
+                fg_color=self.colors.getBodyColor()
+            )
             
-            self.calendar_text.configure(bg=self.colors.getSidebarColor(), fg="white")
-            self.team_picker_text.configure(bg=self.colors.getSidebarColor(), fg="white")
-            self.bottom_dataFrame_description.configure(fg= self.colors.getTextColor(), bg = self.colors.getBodyColor()) 
+            self.frames["mid"].configure(
+                bg_color=self.colors.theme.body,
+                fg_color=self.colors.getBodyColor()
+            )
             
+            # Update labels
+            self.calendar_text.configure(
+                bg=self.colors.getSidebarColor(),
+                fg=self.colors.theme.text_on_primary
+            )
+            self.team_picker_text.configure(
+                bg=self.colors.getSidebarColor(),
+                fg=self.colors.theme.text_on_primary
+            )
+            self.bottom_dataFrame_description.configure(
+                fg=self.colors.theme.text_secondary,
+                bg=self.colors.getBodyColor()
+            )
             
+            # Update images
             changeAllImages(self)
+            
+            # Update treeview colors
+            updateTreeviewColors(self)
+            
+            # Update calendar colors
+            updateCalendarColors(self)
 
-
+            # Update buttons with modern styling
             buttons = [self.loadOrders_btn, self.processOrders_btn, self.clear_treeview_btn, self.config_btn]
             for button in buttons:
-                button.configure(fg_color=self.colors.getPrimaryColor(),
-                                hover_color = self.colors.getPrimaryColorLight(),
-                                text_color= self.colors.getTextColorForButtons())
+                button.configure(
+                    fg_color=self.colors.getPrimaryColor(),
+                    hover_color=self.colors.getPrimaryColorLight(),
+                    text_color=self.colors.getTextColorForButtons(),
+                    corner_radius=UI.radius_lg,
+                )
 
     def __update_treeview__(self) -> None:
         """
