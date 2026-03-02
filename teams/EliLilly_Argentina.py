@@ -135,7 +135,7 @@ class EliLillyArgentinaTeam(Team):
 
     def send_email_to_team_with_orders(self, folder_path_with_orders_files: str, date: str,
                 totalAmountOfOrders: int, amountOfOrdersProcessed: int, amountOfOrdersReadyToBeProcessed: int, emailSender: EmailSender) -> None:
-        self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "inaki.costa@thermofisher",
+        self.__sendEmailWithOrdersToTeam__(folder_path_with_orders_files, date, self.getTeamEmail(), "inaki.costa@thermofisher.com",
                     totalAmountOfOrders, amountOfOrdersProcessed, amountOfOrdersReadyToBeProcessed, emailSender)
 
     def build_driver(self):
